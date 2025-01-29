@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:test/common/widgets/layout/grid_layout.dart';
 
 import '../../../../../common/widgets/brands/brand_showcase.dart';
-import '../../../../../common/widgets/texts/section_heading.dart';
 import '../../../../../utils/constants/images_strings.dart';
 import '../../../../../utils/constants/size.dart';
 

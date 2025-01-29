@@ -6,7 +6,7 @@ import '../products/product_cards/product_card_vertical.dart';
 class AlkGridLayout extends StatelessWidget {
   const AlkGridLayout({
     super.key, 
-    this.mainAxisExtent = 260, 
+    this.mainAxisExtent = 280, 
     /*required this.itemBuilder, */
     required this.itemCount,
   });
