@@ -169,19 +169,25 @@ print('Discount for product ${productData!['id']}: $discountText');
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
+                    //original price mfassa5 
                     Text(
-                      brandName,
+                      discountText != null ? '$displayPrice TND' : '',
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
-                      style: Theme.of(context).textTheme.labelMedium,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        decoration: TextDecoration.lineThrough,
+                        color: AlkColors.black
+                      ),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Padding(
                           padding: EdgeInsets.only(left: AlkSize.sm),
+                          // prix ken fama discount 
                           child: Text(
-                            '$displayPrice TND',
+                            discountValue > 0 ? '${(double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)} TND' : '$displayPrice TND',
+                         
                             style: Theme.of(context)
                                 .textTheme
                                 .headlineSmall

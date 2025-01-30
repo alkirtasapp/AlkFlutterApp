@@ -75,7 +75,7 @@ class HomeScreen extends StatelessWidget {
 
               //Products Home Page
 
-              AlkGridLayout(itemCount: 6 ,),
+              AlkGridLayout(itemCount: 10),
              
               
 
