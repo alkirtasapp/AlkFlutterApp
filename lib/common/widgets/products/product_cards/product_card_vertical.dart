@@ -56,29 +56,33 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
 
     final title = _safeConvertToString(productData!['name']);
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
-    final rawTTCPrice = double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))?.toStringAsFixed(2) ?? '0.00';
-    final discountData = productData!['discount'] as Map<String, dynamic>?;
+    final rawTTCPrice =
+        double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))
+                ?.toStringAsFixed(2) ??
+            '0.00';
+
     final taxRulesGroupId = productData!['id_tax_rules_group'] ?? 0;
-    final rawPriceHT = double.tryParse(_safeConvertToString(productData!['price'], '0.00'))?.toStringAsFixed(2) ?? '0.00';
+    final rawPriceHT =
+        double.tryParse(_safeConvertToString(productData!['price'], '0.00'))
+                ?.toStringAsFixed(2) ??
+            '0.00';
     final displayPrice = (taxRulesGroupId == 0) ? rawPriceHT : rawTTCPrice;
 
-
-    // If id_tax_rules_group is 0, use original price, otherwise use TTC price
-
-
-
-
-    // Calculate discount percentage
-    String? discountText;
-    if (discountData != null && discountData['reduction_type'] == 'percentage') {
-      final discountValue = double.tryParse(discountData['reduction'] ?? '0') ?? 0;
-      discountText = '${(discountValue * 100).toStringAsFixed(0)}%';
-    } else if (discountData != null && discountData['reduction_type'] == 'amount') {
-      discountText = 'Promo';
-    }
+   // Ensure the discount is always a double
+final double discountValue =
+    (productData!['discount'] as num?)?.toDouble() ?? 0;
 
 
-    final imageUrl = controller.constructImageUrl(productData!['id_default_image']);
+String? discountText;
+if (discountValue > 0) {
+  discountText = '${discountValue.toStringAsFixed(0)}%';
+  print('Displaying discount for product ${productData!['id']}: $discountText');
+} else {
+  print('No discount to display for product ${productData!['id']}');
+}
+print('Discount for product ${productData!['id']}: $discountText');
+    final imageUrl =
+        controller.constructImageUrl(productData!['id_default_image']);
     final dark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
@@ -102,7 +106,8 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
               child: Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(AlkSize.productImageRadius),
+                    borderRadius:
+                        BorderRadius.circular(AlkSize.productImageRadius),
                     child: Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
@@ -113,12 +118,13 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
                         return const Center(child: CircularProgressIndicator());
                       },
                       errorBuilder: (context, error, stackTrace) {
-                        return const Center(child: Icon(Icons.image_not_supported));
+                        return const Center(
+                            child: Icon(Icons.image_not_supported));
                       },
                     ),
                   ),
                   // Discount Tag
-                  if (discountText != null)
+                  if (discountText != null )
                     Positioned(
                       top: 1,
                       left: 1,
@@ -131,7 +137,10 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
                         ),
                         child: Text(
                           discountText,
-                          style: Theme.of(context).textTheme.labelLarge!.apply(color: Colors.black),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge!
+                              .apply(color: Colors.black),
                         ),
                       ),
                     ),
@@ -144,7 +153,8 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
               child: Padding(
                 padding: const EdgeInsets.only(left: AlkSize.sm),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center, // Center the content
+                  mainAxisAlignment:
+                      MainAxisAlignment.center, // Center the content
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -153,31 +163,33 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
                       maxLines: 1,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
-                 
                     Text(
                       brandName,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
-                     Text(
+                    Text(
                       brandName,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
-                  
-                    
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Padding(
-                          padding:  EdgeInsets.only(left: AlkSize.sm),
+                          padding: EdgeInsets.only(left: AlkSize.sm),
                           child: Text(
-                            
                             '$displayPrice TND',
-                            style: Theme.of(context).textTheme.headlineSmall?.apply(color: AlkHelperFunctions.isDarkMode(context) ? AlkColors.white : AlkColors.black),
-                            
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.apply(
+                                    color:
+                                        AlkHelperFunctions.isDarkMode(context)
+                                            ? AlkColors.white
+                                            : AlkColors.black),
                           ),
                         ),
                         Container(
@@ -185,18 +197,18 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
                             color: AlkColors.dark,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(AlkSize.cardRadiusMd),
-                              bottomRight: Radius.circular(AlkSize.productImageRadius),
+                              bottomRight:
+                                  Radius.circular(AlkSize.productImageRadius),
                             ),
                           ),
                           child: SizedBox(
-                            width: AlkSize.iconLg *1.2,
-                            height: AlkSize.iconLg *1.2,
+                            width: AlkSize.iconLg * 1.2,
+                            height: AlkSize.iconLg * 1.2,
                             child: Center(
-                              child: IconButton ( color: AlkColors.white, 
-                              onPressed:(){},
-                               icon: const Icon(Iconsax.add))
-                            
-                            ),
+                                child: IconButton(
+                                    color: AlkColors.white,
+                                    onPressed: () {},
+                                    icon: const Icon(Iconsax.add))),
                           ),
                         ),
                       ],
