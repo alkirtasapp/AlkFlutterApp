@@ -47,39 +47,6 @@ class _StoreScreenState extends State<StoreScreen>{
           ],
           showBackArrow: false,
         ),
-//      Sidebar ...
-        drawer: Drawer(
-          child: ListView(
-            children: [
-              ListTile(
-                title: const Text('Home'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                title: const Text('Livres'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                title: const Text('Papeterie'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-
-            ],
-          ),
-        ),
-
-
-
-
-
-
-
         body: NestedScrollView(
           headerSliverBuilder: (_, innerBoxIsScrolled) {
             return [
