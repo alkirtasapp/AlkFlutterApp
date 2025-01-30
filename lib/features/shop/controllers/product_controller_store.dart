@@ -1,48 +1,48 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:http/http.dart' as http;
 
 class ProductControllerStore {
-  Future<List<Map<String, dynamic>>> fetchRandomProducts() async {
-    try {
-      final List<int> categoryIds = [10, 11, 12, 17, 486, 544, 588, 590];
-      final List<Map<String, dynamic>> allProducts = [];
-      
-      for (int categoryId in categoryIds) {
-        final categoryApi =
-            'https://www.alkirtas.com/api/products?display=[id,name,price,id_default_image,manufacturer_name,id_category_default,id_tax_rules_group]&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+ Future<List<Map<String, dynamic>>> fetchRandomProducts(int categoryId) async {
+  try {
+    final List<Map<String, dynamic>> allProducts = [];
+    
+    final categoryApi =
+        'https://www.alkirtas.com/api/products?filter[active]=1&display=[id,name,price,id_default_image,manufacturer_name,id_category_default,id_tax_rules_group]&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
-        final response = await http.get(Uri.parse(categoryApi));
-        if (response.statusCode == 200) {
-          final categoryData = json.decode(utf8.decode(response.bodyBytes));
-          final categoryProducts = categoryData['products'] as List<dynamic>;
-          
-         allProducts.addAll(categoryProducts.map((product) {
-            return {
-              'id': int.tryParse(product['id'].toString()) ?? 0, // Ensure ID is an int
-              'name': product['name'].toString(),
-              'price': double.tryParse(product['price'].toString()) ?? 0.0,
-              'id_default_image': int.tryParse(product['id_default_image'].toString()) ?? 0,
-              'manufacturer_name': product['manufacturer_name']?.toString() ?? 'Unknown',
-              'id_category_default': int.tryParse(product['id_category_default'].toString()) ?? 0,
-              'id_tax_rules_group': int.tryParse(product['id_tax_rules_group'].toString()) ?? 0,
-            };
-          }));
+    print('📡 Fetching products for category ID: $categoryId');
 
+    final response = await http.get(Uri.parse(categoryApi));
+
+    if (response.statusCode == 200) {
+      final categoryData = json.decode(utf8.decode(response.bodyBytes));
+
+      if (categoryData is Map<String, dynamic> && categoryData.containsKey('products')) {
+        final categoryProducts = categoryData['products'] as List<dynamic>;
+
+        for (var product in categoryProducts) {
+          final productId = int.tryParse(product['id'].toString()) ?? 0;
+
+          allProducts.add({
+            'id': productId,
+            'name': product['name'].toString(),
+            'price': double.tryParse(product['price'].toString()) ?? 0.0,
+            'id_default_image': int.tryParse(product['id_default_image'].toString()) ?? 0,
+            'manufacturer_name': product['manufacturer_name']?.toString() ?? 'Unknown',
+            'id_category_default': int.tryParse(product['id_category_default'].toString()) ?? 0,
+          });
         }
       }
-
-      if (allProducts.isNotEmpty) {
-        allProducts.shuffle(Random()); // Shuffle to get random products
-        return allProducts.take(10).toList();
-      }
-      
-      return [];
-    } catch (e) {
-      print('Error fetching random products: $e');
-      return [];
     }
+
+    return allProducts;
+  } catch (e) {
+    print('🚨 Error fetching products: $e');
+    return [];
   }
+}
+
+
+
 
   Future<Map<String, dynamic>?> fetchDiscount(int productId) async {
     try {

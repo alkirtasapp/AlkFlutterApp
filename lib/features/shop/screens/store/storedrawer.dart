@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test/utils/constants/size.dart';
 
 import '../../../../common/widgets/layout/store_grid_drawer.dart';
 
@@ -23,6 +24,7 @@ class _StorePageState extends State<StoreDrawer> {
   };
 
   String selectedCategory = "Livres"; // Default category
+  Key productListKey = UniqueKey(); // Declare the key at the class level
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +32,8 @@ class _StorePageState extends State<StoreDrawer> {
       appBar: AppBar(
         title: Text(selectedCategory),
       ),
+      
+      
       drawer: Drawer(
         child: ListView(
           children: [
@@ -39,19 +43,28 @@ class _StorePageState extends State<StoreDrawer> {
                 onTap: () {
                   setState(() {
                     selectedCategory = category;
+                    productListKey = UniqueKey(); // Force refresh
                   });
+
+                  print(
+                      '🔄 Changing category to: $selectedCategory'); // Debugging
                   Navigator.pop(context);
                 },
               ),
+           
           ],
         ),
+        
+        
       ),
+      
+    
       body: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(1.0),  
         child: AlkStoreGridDrawer(
-          itemCount: 10, // Number of products to display
+          key: productListKey, // Assign unique key to force refresh
+          itemCount: 10,
           categoryId: categoryMap[selectedCategory]!,
-
         ),
       ),
     );

@@ -33,7 +33,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
   }
 
   Future<void> _loadProductData() async {
-    final products = await controller.fetchRandomProducts();
+final products = await controller.fetchRandomProducts(widget.categoryId);
     if (products.isNotEmpty) {
       setState(() {
   final int validIndex = widget.productIndex % products.length;

@@ -17,21 +17,25 @@ class AlkStoreGridDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      itemCount: itemCount,
-      shrinkWrap: true,
-      padding: EdgeInsets.zero,
-      physics: NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: AlkSize.gridViewSpacing,
-        crossAxisSpacing: AlkSize.gridViewSpacing,
-        mainAxisExtent: mainAxisExtent,
-      ),
-      itemBuilder: (_, index) => ProductCardStore(
-        categoryId: categoryId,
-        productIndex: index,
-      ),
-    );
+    return Expanded( // Ensures GridView has proper constraints
+  child: GridView.builder(
+    
+    itemCount: itemCount,
+    padding: EdgeInsets.all(6.0),
+    physics: AlwaysScrollableScrollPhysics(),
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      mainAxisSpacing: AlkSize.gridViewSpacing,
+      crossAxisSpacing: AlkSize.gridViewSpacing,
+      mainAxisExtent: mainAxisExtent,
+    ),
+    itemBuilder: (_, index) => ProductCardStore(
+      categoryId: categoryId,
+      productIndex: index,
+    ),
+  ),
+);
+
+
   }
 }
