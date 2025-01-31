@@ -33,18 +33,12 @@ class _ProductCardStoreState extends State<ProductCardStore> {
   }
 
   Future<void> _loadProductData() async {
-final products = await controller.fetchRandomProducts(widget.categoryId);
-    if (products.isNotEmpty) {
-      setState(() {
-  final int validIndex = widget.productIndex % products.length;
-  productData = products[validIndex] as Map<String, dynamic>?; // Explicit casting
-  isLoading = false;
-});
-    } else {
-      setState(() {
-        isLoading = false;
-      });
-    }
+    final data = await controller.fetchProductData(
+        widget.productIndex, widget.categoryId);
+    setState(() {
+      productData = data;
+      isLoading = false;
+    });
   }
 
   String _safeConvertToString(dynamic value, [String fallback = 'Unknown']) {
@@ -65,9 +59,37 @@ final products = await controller.fetchRandomProducts(widget.categoryId);
 
     final title = _safeConvertToString(productData!['name']);
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
-    final rawPrice = _safeConvertToString(productData!['price'], '0.00');
-    final imageUrl = controller.constructImageUrl(productData!['id_default_image']);
+    final rawTTCPrice =
+        double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))
+                ?.toStringAsFixed(2) ??
+            '0.00';
+    final taxRulesGroupId = productData!['id_tax_rules_group'] ?? 0;
+    final rawPriceHT =
+        double.tryParse(_safeConvertToString(productData!['price'], '0.00'))
+                ?.toStringAsFixed(2) ??
+            '0.00';
+    final displayPrice = (taxRulesGroupId == 0) ? rawPriceHT : rawTTCPrice;
+   
+
+
+    // Ensure the discount is always a double
+final double discountValue =
+    (productData!['discount'] as num?)?.toDouble() ?? 0;
+
+    String? discountText;
+    if (discountValue > 0) {
+  discountText = '${discountValue.toStringAsFixed(0)}%';
+  print('Displaying discount for product ${productData!['id']}: $discountText');
+} else {
+  print('No discount to display for product ${productData!['id']}');
+}
+print('Discount for product ${productData!['id']}: $discountText');
+ final imageUrl =
+        controller.constructImageUrl(productData!['id_default_image']);
     final dark = Theme.of(context).brightness == Brightness.dark;
+
+
+    
 
     return GestureDetector(
       onTap: () {},
@@ -80,28 +102,55 @@ final products = await controller.fetchRandomProducts(widget.categoryId);
           color: dark ? AlkColors.darkerGrey : AlkColors.white,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min, // Prevent column overflow
           children: [
             // Product Thumbnail
             AlkRoundedContainer(
               height: 180,
               padding: const EdgeInsets.all(AlkSize.sm),
               backgroundColor: dark ? AlkColors.dark : AlkColors.white,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(AlkSize.productImageRadius),
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(child: CircularProgressIndicator());
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(child: Icon(Icons.image_not_supported));
-                  },
-                ),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                        BorderRadius.circular(AlkSize.productImageRadius),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      height: double.infinity,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                            child: Icon(Icons.image_not_supported));
+                      },
+                    ),
+                  ),
+                  // Discount Tag
+                  if (discountText != null )
+                    Positioned(
+                      top: 1,
+                      left: 1,
+                      child: AlkRoundedContainer(
+                        radius: AlkSize.sm,
+                        backgroundColor: AlkColors.secondary.withOpacity(0.8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AlkSize.sm,
+                          vertical: AlkSize.xs,
+                        ),
+                        child: Text(
+                          discountText,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge!
+                              .apply(color: Colors.black),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 
@@ -110,7 +159,8 @@ final products = await controller.fetchRandomProducts(widget.categoryId);
               child: Padding(
                 padding: const EdgeInsets.only(left: AlkSize.sm),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment:
+                      MainAxisAlignment.center, // Center the content
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -125,18 +175,33 @@ final products = await controller.fetchRandomProducts(widget.categoryId);
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
+                    //original price mfassa5 
+                    Text(
+                      discountText != null ? '$displayPrice TND' : '',
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        decoration: TextDecoration.lineThrough,
+                        color: AlkColors.black
+                      ),
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Padding(
                           padding: EdgeInsets.only(left: AlkSize.sm),
+                          // prix ken fama discount 
                           child: Text(
-                            '$rawPrice TND',
-                            style: Theme.of(context).textTheme.headlineSmall?.apply(
-                              color: AlkHelperFunctions.isDarkMode(context)
-                                  ? AlkColors.white
-                                  : AlkColors.black,
-                            ),
+                            discountValue > 0 ? '${(double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)} TND' : '$displayPrice TND',
+                         
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.apply(
+                                    color:
+                                        AlkHelperFunctions.isDarkMode(context)
+                                            ? AlkColors.white
+                                            : AlkColors.black),
                           ),
                         ),
                         Container(
@@ -144,19 +209,18 @@ final products = await controller.fetchRandomProducts(widget.categoryId);
                             color: AlkColors.dark,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(AlkSize.cardRadiusMd),
-                              bottomRight: Radius.circular(AlkSize.productImageRadius),
+                              bottomRight:
+                                  Radius.circular(AlkSize.productImageRadius),
                             ),
                           ),
                           child: SizedBox(
                             width: AlkSize.iconLg * 1.2,
                             height: AlkSize.iconLg * 1.2,
                             child: Center(
-                              child: IconButton(
-                                color: AlkColors.white,
-                                onPressed: () {},
-                                icon: const Icon(Iconsax.add),
-                              ),
-                            ),
+                                child: IconButton(
+                                    color: AlkColors.white,
+                                    onPressed: () {},
+                                    icon: const Icon(Iconsax.add))),
                           ),
                         ),
                       ],
