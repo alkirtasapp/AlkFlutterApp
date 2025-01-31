@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:test/common/widgets/custom_shapes/containers/searchContainer.dart';
 import 'package:test/utils/constants/size.dart';
 
 import '../../../../common/widgets/layout/store_grid_drawer.dart';
@@ -29,44 +31,66 @@ class _StorePageState extends State<StoreDrawer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(selectedCategory),
-      ),
-      
-      
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            for (var category in categoryMap.keys)
-              ListTile(
-                title: Text(category),
-                onTap: () {
-                  setState(() {
-                    selectedCategory = category;
-                    productListKey = UniqueKey(); // Force refresh
-                  });
+        appBar: AppBar(
+          title: Text(selectedCategory),
+          leading: Builder(builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          }),
+        ),
+        drawer: Drawer(
+          child: ListView(
+            children: [
+              for (var category in categoryMap.keys)
+                ListTile(
+                  title: Text(category),
+                  onTap: () {
+                    setState(() {
+                      selectedCategory = category;
+                      productListKey = UniqueKey(); // Force refresh
+                    });
 
-                  print(
-                      '🔄 Changing category to: $selectedCategory'); // Debugging
-                  Navigator.pop(context);
-                },
+                    print(
+                        '🔄 Changing category to: $selectedCategory'); // Debugging
+                    Navigator.pop(context);
+                  },
+                ),
+            ],
+          ),
+        ),
+        body: Padding(
+          padding: EdgeInsets.only(top : 1),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search Container
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+                child: Align(
+                  alignment: Alignment.centerLeft, // Ensures proper positioning
+                  child: AlkSearchContainer(
+                    text: 'Recherche',
+                    icon: Iconsax.search_normal,
+                  ),
+                ),
               ),
-           
-          ],
-        ),
-        
-        
-      ),
-      
-    
-      body: Padding(
-        padding: const EdgeInsets.all(1.0),  
-        child: AlkStoreGridDrawer(
-          key: productListKey, // Assign unique key to force refresh
-          itemCount: 10,
-          categoryId: categoryMap[selectedCategory]!,
-        ),
-      ),
-    );
+
+              // Product Grid
+              Expanded(
+                child: AlkStoreGridDrawer(
+                  key: productListKey,
+                  itemCount: 10,
+                  categoryId: categoryMap[selectedCategory]!,
+                ),
+              ),
+            ],
+          ),
+        ));
   }
 }
+ 

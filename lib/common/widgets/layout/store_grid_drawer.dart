@@ -6,7 +6,7 @@ import '../products/product_cards/store_product_card.dart';
 class AlkStoreGridDrawer extends StatelessWidget {
   const AlkStoreGridDrawer({
     super.key,
-    this.mainAxisExtent = 260,
+    this.mainAxisExtent = 280,
     required this.itemCount,
     required this.categoryId,
   });
