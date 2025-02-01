@@ -76,16 +76,23 @@ class _StorePageState extends State<StoreDrawer> {
                   child: AlkSearchContainer(
                     text: 'Recherche',
                     icon: Iconsax.search_normal,
+                    showBackground: true,                    
                   ),
                 ),
               ),
 
               // Product Grid
               Expanded(
-                child: AlkStoreGridDrawer(
-                  key: productListKey,
-                  itemCount: 10,
-                  categoryId: categoryMap[selectedCategory]!,
+
+                child: Column(
+                  children: [
+                    
+                    AlkStoreGridDrawer(
+                      key: productListKey,
+                      itemCount: 10,
+                      categoryId: categoryMap[selectedCategory]!,
+                    ),
+                  ],
                 ),
               ),
             ],

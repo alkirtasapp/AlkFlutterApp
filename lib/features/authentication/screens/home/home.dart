@@ -50,6 +50,7 @@ class HomeScreen extends StatelessWidget {
                       ],
                   ),
                   ),
+                  const SizedBox(height: AlkSize.spaceBtwSections *1.2,)
                 ],
               ),
             ),
