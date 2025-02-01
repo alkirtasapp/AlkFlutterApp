@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:test/common/widgets/appbar/appbar.dart';
 import 'package:test/common/widgets/custom_shapes/containers/primary_header_container.dart';
@@ -26,7 +27,8 @@ class SettingScreen extends StatelessWidget {
                 children: [
                   // App Bar
                   AlkAppBar(
-                    showBackArrow: true,
+                    showBackArrow: false,
+                    
                     title: Text(
                       ' Mon profile',
                       style: Theme.of(context)
@@ -65,10 +67,14 @@ class SettingScreen extends StatelessWidget {
                   AlkSettingMenuTile(icon: Iconsax.bag_tick, title: 'Mes Commandes', subtitle: 'Commandes en cours et terminées'),
                   AlkSettingMenuTile(icon: Iconsax.discount_shape, title: 'Mes Coupons', subtitle: 'Liste de tous les coupons de réduction'),
                   AlkSettingMenuTile(icon: Iconsax.notification, title: 'Notifications', subtitle: 'Définir tout type de message de notification'),
-
-
+                  SizedBox(height: AlkSize.spaceBtwSections),
+                  // Log out
+                  SizedBox(width: double.infinity,
+                  child: OutlinedButton(onPressed: () => Get.back(), child: const Text('Déconnexion')),),
                 ],
-              ),)
+                
+              ),
+              ),
           ],
         ),
       ),
