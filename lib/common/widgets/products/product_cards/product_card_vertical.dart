@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:test/features/shop/screens/product_details/product_details.dart';
 import 'package:test/utils/helpers/helper_functions.dart';
 import '../../../../features/shop/controllers/product_card_controller.dart';
 import '../../../../utils/constants/colors.dart';
@@ -86,7 +88,7 @@ print('Discount for product ${productData!['id']}: $discountText');
     final dark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () {},
+      onTap: () => Get.to(()=>  ProductDetails()),
       child: Container(
         width: 180,
         padding: const EdgeInsets.all(1),

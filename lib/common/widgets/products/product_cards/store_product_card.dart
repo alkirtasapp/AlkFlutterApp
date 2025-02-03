@@ -170,7 +170,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     Text(
-                      brandName,
+                      brandName =='false' ? brandName : 'A L K I R T A S',
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,
