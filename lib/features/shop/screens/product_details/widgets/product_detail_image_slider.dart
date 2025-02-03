@@ -21,7 +21,7 @@ class AlkProductImageslider extends StatelessWidget {
           children: [
             // main Large image
             SizedBox(
-              height: 400,
+              height: 450,
               child: Padding(
                 padding:
                     const EdgeInsets.all(AlkSize.productImageRadius * 2),

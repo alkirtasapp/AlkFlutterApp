@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:readmore/readmore.dart';
 import 'package:test/common/widgets/images/AlkCircularImage.dart';
 import 'package:test/common/widgets/roundedContainer.dart';
 import 'package:test/common/widgets/texts/brand__title_text_verif_icon.dart';
@@ -7,6 +8,7 @@ import 'package:test/utils/constants/enums.dart';
 import 'package:test/utils/constants/images_strings.dart';
 import 'package:test/utils/constants/size.dart';
 
+import '../../../../../common/widgets/texts/section_heading.dart';
 import '../../../../../utils/constants/colors.dart';
 
 class AlkProductMetadata extends StatelessWidget {
@@ -18,6 +20,10 @@ class AlkProductMetadata extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // original price and discounted price if it exists
+
+        // Title
+        AlkProductTitleText(title: 'Product Tilte',smallSize: false,),
+        SizedBox(height: AlkSize.spaceBtwItems ),
         Row(
           children: [
             // discount tag
@@ -48,15 +54,13 @@ class AlkProductMetadata extends StatelessWidget {
             Text('90 TND ',
                 style: Theme.of(context)
                     .textTheme
-                    .headlineMedium!
-                    .apply(color: AlkColors.primaryColor)),
+                    .headlineSmall!
+                    .apply(color: AlkColors.dark)),
           ],
         ),
-        SizedBox(height: AlkSize.spaceBtwItems / 1.5),
+        SizedBox(height: AlkSize.spaceBtwItems),
 
-        // Title
-        AlkProductTitleText(title: 'Product Tilte'),
-        SizedBox(height: AlkSize.spaceBtwItems / 1.5),
+        
 
         // Stock
         Row(
@@ -69,7 +73,7 @@ class AlkProductMetadata extends StatelessWidget {
           ],
         ),
         SizedBox(
-          height: AlkSize.spaceBtwItems / 1.5,
+          height: AlkSize.spaceBtwItems ,
         ),
 
         // Brand
@@ -83,8 +87,13 @@ class AlkProductMetadata extends StatelessWidget {
                overlayColor: AlkColors.black,
                ),
             AlkBrandTitleTextVerifIcon(title: 'Brand Title',brandTextSize: TextSizes.medium,),
+            SizedBox(height: AlkSize.spaceBtwSections,),
+
+            
           ],
-        )
+          
+        ),
+     
       ],
     );
   }
