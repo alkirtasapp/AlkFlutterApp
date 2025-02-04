@@ -26,12 +26,19 @@ dependencies:
   shared_preferences: ^2.0.0
   readmore: ^3.0.0
 
+  #hive for cache
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+
 
 # Development-only dependencies
 dev_dependencies:
   flutter_test:
     sdk: flutter # Tools for testing Flutter applications
   flutter_lints: ^5.0.0 # Code linting for better coding practices
+  hive_generator: ^2.0.1
+  build_runner: ^2.1.7
 
 # Flutter-specific settings
 flutter:

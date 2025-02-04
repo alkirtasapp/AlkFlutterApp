@@ -18,6 +18,7 @@ class AlkProductMetadata extends StatelessWidget {
   final String productOldPrice;
   final String productNewPrice;
   final String productStock;
+ 
   final String productBrandId;
 
   const AlkProductMetadata({
@@ -27,8 +28,9 @@ class AlkProductMetadata extends StatelessWidget {
     required this.productBrand,
     required this.productOldPrice,
     required this.productNewPrice,
-    required this.productStock,
+
     required this.productBrandId,
+     required this.productStock,
   });
 
   @override
@@ -90,7 +92,7 @@ class AlkProductMetadata extends StatelessWidget {
             // const AlkProductTitleText(title: 'Disponibilité :'),
             SizedBox(width: AlkSize.spaceBtwItems),
             // Text('En Stock', style: Theme.of(context).textTheme.titleMedium),
-            productStock == 'En Stock'
+            productStock != '0'
                 ? AlkRoundedContainer(
                     radius: AlkSize.sm,
                     backgroundColor: Colors.green.withOpacity(0.8),

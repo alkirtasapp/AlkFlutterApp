@@ -72,6 +72,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
     final description = _safeConvertToString(productData!['description_short']);
     final brandId = _safeConvertToString(productData!['id_manufacturer']);
+    final productStock =_safeConvertToString(productData!['quantity']);
     final List<String> imageList = (productData!['image_urls'] as List<dynamic>).cast<String>();
     final rawTTCPrice =
         double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))
@@ -105,7 +106,7 @@ print('Discount for product ${productData!['id']}: $discountText');
 
     return GestureDetector(
       onTap: () => Get.to(() => ProductDetails(
-        productStock: stock,
+       
         productId: id,
         productName: title,
         productReference : reference,
@@ -114,6 +115,7 @@ print('Discount for product ${productData!['id']}: $discountText');
         productBrandId:brandId,
         productImage: imageUrl,
         productImageList: imageList,  // Now correctly passing as List<String>
+        productStock : productStock,
   
 
         productDescription : description,

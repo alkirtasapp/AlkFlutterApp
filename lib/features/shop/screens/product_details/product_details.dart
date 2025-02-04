@@ -22,12 +22,12 @@ class ProductDetails extends StatelessWidget {
   final String productBrand;
   final String productOldPrice;
   final String productNewPrice;
-  final String productStock;
   final String productDescription;
   final String productBrandId;
   final String productId;
   final String productImage;
   final List<String> productImageList;
+  final String productStock;
 
   const ProductDetails({super.key, required  this.productName, required this.productDiscount, required this.productBrand, required this.productOldPrice, required this.productNewPrice, required this.productReference, required this.productStock, required this.productDescription, required this.productBrandId, required this.productId, required this.productImage, required this.productImageList });
 
@@ -58,7 +58,8 @@ class ProductDetails extends StatelessWidget {
                     productBrandId: productBrandId,
                     productOldPrice: productOldPrice,
                     productNewPrice: productNewPrice,
-                    productStock : productStock ),
+                     productStock: productStock,
+                    ),
                 SizedBox(height: AlkSize.spaceBtwItems,),
                 //description 
                 AlkSectionHeading(title:  'Déscription' , showActionButton: false,),
