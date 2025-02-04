@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:test/features/shop/screens/product_details/product_details.dart';
 import 'package:test/utils/helpers/helper_functions.dart';
 import '../../../../features/shop/controllers/product_controller_store.dart';
 import '../../../../utils/constants/colors.dart';
@@ -56,7 +58,10 @@ class _ProductCardStoreState extends State<ProductCardStore> {
     if (productData == null) {
       return const Center(child: Text('Failed to load product'));
     }
+        final stock = _safeConvertToString(productData!['available_now']);
+         final id = _safeConvertToString(productData!['id']);
 
+    final reference = _safeConvertToString(productData!['reference']);
     final title = _safeConvertToString(productData!['name']);
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
     final rawTTCPrice =
@@ -92,7 +97,19 @@ print('Discount for product ${productData!['id']}: $discountText');
     
 
     return GestureDetector(
-      onTap: () {},
+      onTap: () => Get.to(() => ProductDetails(
+        productId: id,
+        productImage: imageUrl,
+        productStock: stock,
+        productName: title,
+        productReference : reference,
+        productDiscount: discountText ?? '', 
+        productBrand: brandName,
+        productOldPrice: discountText != null ? displayPrice : '', 
+        productNewPrice: discountValue > 0
+            ? (double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)
+            : displayPrice, productDescription: '', productBrandId: '', // If no discount, keep normal price
+      )),
       child: Container(
         width: 180,
         padding: const EdgeInsets.all(1),

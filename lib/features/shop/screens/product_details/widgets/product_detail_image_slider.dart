@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../../../common/widgets/appbar/appbar.dart';
@@ -8,15 +9,16 @@ import '../../../../../utils/constants/images_strings.dart';
 import '../../../../../utils/constants/size.dart';
 
 class AlkProductImageslider extends StatelessWidget {
+  final String productImage ;
   const AlkProductImageslider({
-    super.key,
+    super.key, required this.productImage,
   });
 
   @override
   Widget build(BuildContext context) {
     return AlkCurvedEdgeswidget(
       child: Container(
-        color: AlkColors.light,
+        color: AlkColors.white,
         child: Stack(
           children: [
             // main Large image
@@ -26,9 +28,23 @@ class AlkProductImageslider extends StatelessWidget {
                 padding:
                     const EdgeInsets.all(AlkSize.productImageRadius * 2),
                 child: Center(
-                  child: Image(
-                    image: AssetImage(AlkImages.lighAppLogo),
-                  ),
+                  child:  Image.network(
+                    // product image 
+                      productImage,
+                      
+                      fit: BoxFit.cover,
+                      
+                    
+                    
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                            child: Icon(Icons.image_not_supported));
+                      },
+                    ),
                 ),
               ),
             ),

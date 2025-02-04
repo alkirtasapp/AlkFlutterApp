@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' as htmlParser;
+
 
 class ProductCardControllerTax {
   Future<Map<String, dynamic>?> fetchProductData(int productIndex) async {
@@ -11,7 +13,7 @@ class ProductCardControllerTax {
 
       for (int categoryId in categoryIds) {
         final categoryApi =
-            'https://www.alkirtas.com/api/products?display=[id,name,price,id_default_image,manufacturer_name,id_category_default,id_tax_rules_group]&filter[active]=1&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+            'https://www.alkirtas.com/api/products?display=[id,reference,id_manufacturer,description_short,available_now,name,price,id_default_image,manufacturer_name,id_category_default,id_tax_rules_group]&filter[active]=1&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
         final response = await http.get(Uri.parse(categoryApi));
         if (response.statusCode == 200) {
@@ -27,8 +29,16 @@ class ProductCardControllerTax {
           if (fetchedProducts.length >= 10) break;
         }
       }
+       if (fetchedProducts.isEmpty) {
+      print("No products fetched.");
+      return null;
+    }
+
 
       final product = fetchedProducts[productIndex % fetchedProducts.length];
+
+       // Debugging: Print the fetched product before modifying
+    print("Fetched Product Data Before Modifications: $product");
 
       // Fetch discount data for the product
       final discount = await fetchDiscount(product['id']);
@@ -60,6 +70,20 @@ class ProductCardControllerTax {
       print('Error fetching products: $e');
       return null;
     }
+  }
+  static String cleanDescription(String? description) {
+    if (description == null || description.isEmpty) {
+      return "No description available";
+    }
+
+    // Parse the HTML and extract the text content
+    final document = htmlParser.parse(description);
+    String cleanText = document.body?.text ?? "";
+
+    // Remove extra spaces and newlines
+    cleanText = cleanText.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    return cleanText;
   }
 
   Future<Map<String, dynamic>?> fetchDiscount(int productId) async {
