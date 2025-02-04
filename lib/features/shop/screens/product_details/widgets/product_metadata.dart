@@ -12,88 +12,147 @@ import '../../../../../common/widgets/texts/section_heading.dart';
 import '../../../../../utils/constants/colors.dart';
 
 class AlkProductMetadata extends StatelessWidget {
-  const AlkProductMetadata({super.key});
+  final String productName;
+  final String? productDiscount;
+  final String productBrand;
+  final String productOldPrice;
+  final String productNewPrice;
+  final String productStock;
+  final String productBrandId;
+
+  const AlkProductMetadata({
+    super.key,
+    required this.productName,
+    this.productDiscount,
+    required this.productBrand,
+    required this.productOldPrice,
+    required this.productNewPrice,
+    required this.productStock,
+    required this.productBrandId,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // original price and discounted price if it exists
-
         // Title
-        AlkProductTitleText(title: 'Product Tilte',smallSize: false,),
-        SizedBox(height: AlkSize.spaceBtwItems ),
-        Row(
-          children: [
-            // discount tag
-            AlkRoundedContainer(
-              radius: AlkSize.sm,
-              backgroundColor: AlkColors.secondary.withOpacity(0.8),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AlkSize.sm,
-                vertical: AlkSize.xs,
-              ),
-              child: Text(
-                '10%',
-                style: Theme.of(context)
-                    .textTheme
-                    .labelLarge!
-                    .apply(color: Colors.black),
-              ),
-            ),
-            SizedBox(width: AlkSize.spaceBtwItems),
-
-            // price
-            Text('100 TND  ',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall!
-                    .apply(decoration: TextDecoration.lineThrough)),
-            SizedBox(height: AlkSize.spaceBtwItems),
-            Text('90 TND ',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall!
-                    .apply(color: AlkColors.dark)),
-          ],
-        ),
+        AlkProductTitleText(title: productName, smallSize: false),
         SizedBox(height: AlkSize.spaceBtwItems),
 
-        
+        Row(
+          children: [
+            // Discount tag (only if there is a discount)
+            if (productDiscount != null && productDiscount!.isNotEmpty)
+              AlkRoundedContainer(
+                radius: AlkSize.sm,
+                backgroundColor: AlkColors.secondary.withOpacity(0.8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AlkSize.sm,
+                  vertical: AlkSize.xs,
+                ),
+                child: Text(
+                  productDiscount!,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge!
+                      .apply(color: Colors.black),
+                ),
+              ),
+            SizedBox(width: AlkSize.spaceBtwItems),
+
+            // Original price (strikethrough)
+            if (productDiscount != null && productDiscount!.isNotEmpty)
+              Text(
+                '$productOldPrice TND',
+                style: Theme.of(context).textTheme.titleSmall!.apply(
+                      decoration: TextDecoration.lineThrough,
+                    ),
+              ),
+            SizedBox(width: AlkSize.spaceBtwItems),
+
+            // New price
+            Text(
+              '$productNewPrice TND',
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall!
+                  .apply(color: AlkColors.dark),
+            ),
+          ],
+        ),
+
+        SizedBox(height: AlkSize.spaceBtwItems),
 
         // Stock
         Row(
           children: [
-            const AlkProductTitleText(title: 'Disponibilité :'),
-            SizedBox(
-              width: AlkSize.spaceBtwItems,
-            ),
-            Text('En Stock', style: Theme.of(context).textTheme.titleMedium)
+            // const AlkProductTitleText(title: 'Disponibilité :'),
+            SizedBox(width: AlkSize.spaceBtwItems),
+            // Text('En Stock', style: Theme.of(context).textTheme.titleMedium),
+            productStock == 'En Stock'
+                ? AlkRoundedContainer(
+                    radius: AlkSize.sm,
+                    backgroundColor: Colors.green.withOpacity(0.8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AlkSize.sm,
+                      vertical: AlkSize.xs,
+                    ),
+                    child: Text(
+                      'En Stock',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge!
+                          .apply(color: Colors.white),
+                    ),
+                  )
+                : AlkRoundedContainer(
+                    radius: AlkSize.sm,
+                    backgroundColor: Colors.redAccent.withOpacity(0.8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AlkSize.sm,
+                      vertical: AlkSize.xs,
+                    ),
+                    child: Text(
+                      'hors stock',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge!
+                          .apply(color: Colors.white),
+                    ),
+                  ),
           ],
         ),
-        SizedBox(
-          height: AlkSize.spaceBtwItems ,
-        ),
+        SizedBox(height: AlkSize.spaceBtwItems),
 
         // Brand
         Row(
           children: [
+             productBrandId != '0' ?
             AlkCircularImage(
+              
+               
+              image:
+                   'https://www.alkirtas.com/img/m/${productBrandId}.jpg', // logo brand li jebneh bessif
+              backgroundColor: Colors.transparent,
+              isNetworkImage: true,
+              fit: BoxFit.contain,
+              
+            ): AlkCircularImage(
               isNetworkImage: false,
                image: AlkImages.darkAppLogo,
                width: 52,
                height: 52,
-               overlayColor: AlkColors.black,
+               overlayColor: Colors.purple,
                ),
-            AlkBrandTitleTextVerifIcon(title: 'Brand Title',brandTextSize: TextSizes.medium,),
-            SizedBox(height: AlkSize.spaceBtwSections,),
 
-            
+            AlkBrandTitleTextVerifIcon(
+              title: productBrand == 'False' ? 'A L K I R T A S' : productBrand,
+              brandTextSize: TextSizes.medium,
+            ),
+            SizedBox(height: AlkSize.spaceBtwSections),
           ],
-          
         ),
-     
       ],
     );
   }

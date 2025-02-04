@@ -1,7 +1,10 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:test/features/shop/screens/product_details/product_details.dart';
+import 'package:test/utils/backendData/productDetailData.dart';
 import 'package:test/utils/helpers/helper_functions.dart';
 import '../../../../features/shop/controllers/product_card_controller.dart';
 import '../../../../utils/constants/colors.dart';
@@ -16,6 +19,7 @@ class AlkProductCardVertical extends StatefulWidget {
     super.key,
     required this.productIndex,
   });
+  
 
   @override
   State<AlkProductCardVertical> createState() => _AlkProductCardVerticalState();
@@ -45,7 +49,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
     if (value is bool) return value ? 'True' : 'False';
     return value?.toString() ?? fallback;
   }
-
+     
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -54,10 +58,21 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
 
     if (productData == null) {
       return const Center(child: Text('Failed to load product'));
+     
     }
+      // nchoufou l content mtaa l product data gbal kol chy 
+         print("Product Data mta3 l Store mel Service  : $productData");
+         print("Keys in productData: ${productData!.keys}");
+    
 
     final title = _safeConvertToString(productData!['name']);
+    final id = _safeConvertToString(productData!['id']);
+    final stock = _safeConvertToString(productData!['available_now']);
+    final reference = _safeConvertToString(productData!['reference']);
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
+    final description = _safeConvertToString(productData!['description_short']);
+    final brandId = _safeConvertToString(productData!['id_manufacturer']);
+    final List<String> imageList = (productData!['image_urls'] as List<dynamic>).cast<String>();
     final rawTTCPrice =
         double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))
                 ?.toStringAsFixed(2) ??
@@ -85,10 +100,28 @@ if (discountValue > 0) {
 print('Discount for product ${productData!['id']}: $discountText');
     final imageUrl =
         controller.constructImageUrl(productData!['id_default_image']);
+        
     final dark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () => Get.to(()=>  ProductDetails()),
+      onTap: () => Get.to(() => ProductDetails(
+        productStock: stock,
+        productId: id,
+        productName: title,
+        productReference : reference,
+        productDiscount: discountText ?? '', 
+        productBrand: brandName,
+        productBrandId:brandId,
+        productImage: imageUrl,
+        productImageList: imageList,  // Now correctly passing as List<String>
+  
+
+        productDescription : description,
+        productOldPrice: discountText != null ? displayPrice : '', 
+        productNewPrice: discountValue > 0
+            ? (double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)
+            : displayPrice,  // If no discount, keep normal price
+      )),
       child: Container(
         width: 180,
         padding: const EdgeInsets.all(1),
@@ -112,6 +145,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                         BorderRadius.circular(AlkSize.productImageRadius),
                     child: Image.network(
                       imageUrl,
+                      
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
@@ -146,6 +180,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                         ),
                       ),
                     ),
+                     
                 ],
               ),
             ),
@@ -202,7 +237,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                         ),
                         Container(
                           decoration: BoxDecoration(
-                            color: AlkColors.dark,
+                            color: AlkColors.primaryColor,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(AlkSize.cardRadiusMd),
                               bottomRight:
