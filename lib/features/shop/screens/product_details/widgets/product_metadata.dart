@@ -27,7 +27,8 @@ class AlkProductMetadata extends StatelessWidget {
     required this.productBrand,
     required this.productOldPrice,
     required this.productNewPrice,
-     required this.productStock, required this.productBrandId,
+    required this.productStock,
+    required this.productBrandId,
   });
 
   @override
@@ -52,7 +53,10 @@ class AlkProductMetadata extends StatelessWidget {
                 ),
                 child: Text(
                   productDiscount!,
-                  style: Theme.of(context).textTheme.labelLarge!.apply(color: Colors.black),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge!
+                      .apply(color: Colors.black),
                 ),
               ),
             SizedBox(width: AlkSize.spaceBtwItems),
@@ -62,15 +66,18 @@ class AlkProductMetadata extends StatelessWidget {
               Text(
                 '$productOldPrice TND',
                 style: Theme.of(context).textTheme.titleSmall!.apply(
-                  decoration: TextDecoration.lineThrough,
-                ),
+                      decoration: TextDecoration.lineThrough,
+                    ),
               ),
             SizedBox(width: AlkSize.spaceBtwItems),
 
             // New price
             Text(
               '$productNewPrice TND',
-              style: Theme.of(context).textTheme.headlineSmall!.apply(color: AlkColors.dark),
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall!
+                  .apply(color: AlkColors.dark),
             ),
           ],
         ),
@@ -80,36 +87,40 @@ class AlkProductMetadata extends StatelessWidget {
         // Stock
         Row(
           children: [
-           // const AlkProductTitleText(title: 'Disponibilité :'),
+            // const AlkProductTitleText(title: 'Disponibilité :'),
             SizedBox(width: AlkSize.spaceBtwItems),
-          // Text('En Stock', style: Theme.of(context).textTheme.titleMedium),
-          productStock == 'En Stock' ? 
-          AlkRoundedContainer(
-                radius: AlkSize.sm,
-                backgroundColor: Colors.green.withOpacity(0.8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AlkSize.sm,
-                  vertical: AlkSize.xs,
-                ),
-                child: Text(
-                  'En Stock',
-                  style: Theme.of(context).textTheme.labelLarge!.apply(color: Colors.white),
-                ),
-              )
-              :AlkRoundedContainer(
-                radius: AlkSize.sm,
-                backgroundColor: Colors.redAccent.withOpacity(0.8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AlkSize.sm,
-                  vertical: AlkSize.xs,
-                ),
-                child: Text(
-                  'hors stock',
-                  style: Theme.of(context).textTheme.labelLarge!.apply(color: Colors.white),
-                ),
-              )
-               ,
-            
+            // Text('En Stock', style: Theme.of(context).textTheme.titleMedium),
+            productStock == 'En Stock'
+                ? AlkRoundedContainer(
+                    radius: AlkSize.sm,
+                    backgroundColor: Colors.green.withOpacity(0.8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AlkSize.sm,
+                      vertical: AlkSize.xs,
+                    ),
+                    child: Text(
+                      'En Stock',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge!
+                          .apply(color: Colors.white),
+                    ),
+                  )
+                : AlkRoundedContainer(
+                    radius: AlkSize.sm,
+                    backgroundColor: Colors.redAccent.withOpacity(0.8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AlkSize.sm,
+                      vertical: AlkSize.xs,
+                    ),
+                    child: Text(
+                      'hors stock',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge!
+                          .apply(color: Colors.white),
+                    ),
+                  ),
           ],
         ),
         SizedBox(height: AlkSize.spaceBtwItems),
@@ -117,14 +128,26 @@ class AlkProductMetadata extends StatelessWidget {
         // Brand
         Row(
           children: [
+             productBrandId != '0' ?
             AlkCircularImage(
-                                        image: 'https://www.alkirtas.com/img/m/${productBrandId}.jpg', // logo brand li jebneh bessif 
-                                        backgroundColor: Colors.transparent,
-                                        isNetworkImage: true,
-                                        fit: BoxFit.contain,
-                                      ),
+              
+               
+              image:
+                   'https://www.alkirtas.com/img/m/${productBrandId}.jpg', // logo brand li jebneh bessif
+              backgroundColor: Colors.transparent,
+              isNetworkImage: true,
+              fit: BoxFit.contain,
+              
+            ): AlkCircularImage(
+              isNetworkImage: false,
+               image: AlkImages.darkAppLogo,
+               width: 52,
+               height: 52,
+               overlayColor: Colors.purple,
+               ),
+
             AlkBrandTitleTextVerifIcon(
-              title: productBrand,
+              title: productBrand == 'False' ? 'A L K I R T A S' : productBrand,
               brandTextSize: TextSizes.medium,
             ),
             SizedBox(height: AlkSize.spaceBtwSections),

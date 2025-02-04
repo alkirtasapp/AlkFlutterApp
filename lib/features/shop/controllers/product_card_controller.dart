@@ -10,10 +10,12 @@ class ProductCardControllerTax {
       final List<int> categoryIds = [598, 601, 292, 162, 18];
       const int productsPerCategory = 2;
       final List<Map<String, dynamic>> fetchedProducts = [];
+      
 
       for (int categoryId in categoryIds) {
         final categoryApi =
-            'https://www.alkirtas.com/api/products?display=[id,reference,id_manufacturer,description_short,available_now,name,price,id_default_image,manufacturer_name,id_category_default,id_tax_rules_group]&filter[active]=1&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+            //'https://www.alkirtas.com/api/products?display=[id,reference,id_manufacturer,description_short,available_now,name,price,id_default_image,manufacturer_name,id_category_default,id_tax_rules_group]&filter[active]=1&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+            'https://www.alkirtas.com/api/products?display=full&filter[active]=1&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
         final response = await http.get(Uri.parse(categoryApi));
         if (response.statusCode == 200) {
@@ -64,6 +66,22 @@ class ProductCardControllerTax {
       if (ttcPrice != null) {
         product['ttc_price'] = ttcPrice; // Attach calculated TTC price
       }
+
+        //  Fetch images from associations and store them in product['image_urls']
+      if (product.containsKey('associations') &&
+          product['associations'].containsKey('images')) {
+        final images = product['associations']['images'] as List;
+        List<String> imageUrls = images.map((image) {
+          return constructImageUrl(image['id']);
+        }).toList();
+
+        product['image_urls'] = imageUrls;
+      } else {
+        product['image_urls'] = [];
+      }
+
+      print("Images for product ${product['id']}: ${product['image_urls']}");
+
 
       return product;
     } catch (e) {

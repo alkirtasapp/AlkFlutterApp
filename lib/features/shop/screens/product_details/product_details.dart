@@ -27,7 +27,9 @@ class ProductDetails extends StatelessWidget {
   final String productBrandId;
   final String productId;
   final String productImage;
-  const ProductDetails({super.key, required  this.productName, required this.productDiscount, required this.productBrand, required this.productOldPrice, required this.productNewPrice, required this.productReference, required this.productStock, required this.productDescription, required this.productBrandId, required this.productId, required this.productImage });
+  final List<String> productImageList;
+
+  const ProductDetails({super.key, required  this.productName, required this.productDiscount, required this.productBrand, required this.productOldPrice, required this.productNewPrice, required this.productReference, required this.productStock, required this.productDescription, required this.productBrandId, required this.productId, required this.productImage, required this.productImageList });
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +39,8 @@ class ProductDetails extends StatelessWidget {
       child: Column(
         children: [
           /// Product Image Slider
-          AlkProductImageslider(productImage : productImage),
+          AlkProductImageSlider(productImages: productImageList),
+
 
           /// Product Details
           Padding(

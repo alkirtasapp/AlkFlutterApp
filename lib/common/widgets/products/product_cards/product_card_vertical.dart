@@ -60,10 +60,10 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
       return const Center(child: Text('Failed to load product'));
      
     }
-      // Debugging: Print the entire product data
-         print("Product Data : $productData");
+      // nchoufou l content mtaa l product data gbal kol chy 
+         print("Product Data mta3 l Store mel Service  : $productData");
          print("Keys in productData: ${productData!.keys}");
-
+    
 
     final title = _safeConvertToString(productData!['name']);
     final id = _safeConvertToString(productData!['id']);
@@ -72,7 +72,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
     final description = _safeConvertToString(productData!['description_short']);
     final brandId = _safeConvertToString(productData!['id_manufacturer']);
-
+    final List<String> imageList = (productData!['image_urls'] as List<dynamic>).cast<String>();
     final rawTTCPrice =
         double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))
                 ?.toStringAsFixed(2) ??
@@ -113,6 +113,9 @@ print('Discount for product ${productData!['id']}: $discountText');
         productBrand: brandName,
         productBrandId:brandId,
         productImage: imageUrl,
+        productImageList: imageList,  // Now correctly passing as List<String>
+  
+
         productDescription : description,
         productOldPrice: discountText != null ? displayPrice : '', 
         productNewPrice: discountValue > 0
@@ -177,6 +180,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                         ),
                       ),
                     ),
+                     
                 ],
               ),
             ),
@@ -233,7 +237,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                         ),
                         Container(
                           decoration: BoxDecoration(
-                            color: AlkColors.dark,
+                            color: AlkColors.primaryColor,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(AlkSize.cardRadiusMd),
                               bottomRight:

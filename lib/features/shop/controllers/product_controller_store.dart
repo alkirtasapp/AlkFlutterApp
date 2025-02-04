@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 
 class ProductControllerStore {
- Future<Map<String, dynamic>?> fetchProductData(int productIndex, int categoryId) async {
+ Future<Map<String, dynamic>?> fetchProductDataStore(int productIndex, int categoryId) async {
     try {
       final List<int> categoryIds = [categoryId];
       const int productsPerCategory = 10;
@@ -11,7 +11,7 @@ class ProductControllerStore {
 
       for (int categoryId in categoryIds) {
         final categoryApi =
-            'https://www.alkirtas.com/api/products?display=[id,name,price,id_default_image,manufacturer_name,id_category_default,id_tax_rules_group]&filter[active]=1&filter[id_category_default]=[$categoryId]&sort=[id_DESC]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+            'https://www.alkirtas.com/api/products?display=[id,reference,id_manufacturer,description_short,available_now,name,price,id_default_image,manufacturer_name,id_category_default,id_tax_rules_group]&filter[active]=1&filter[id_category_default]=[$categoryId]&sort=[id_DESC]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
         final response = await http.get(Uri.parse(categoryApi));
         if (response.statusCode == 200) {
@@ -29,6 +29,8 @@ class ProductControllerStore {
       }
 
       final product = fetchedProducts[productIndex % fetchedProducts.length];
+       // Debugging: Print the fetched product before modifying
+    print("product data mta3 STORE PAGE  mel Controller : $product");
 
       // Fetch discount data for the product
       final discount = await fetchDiscount(product['id']);
