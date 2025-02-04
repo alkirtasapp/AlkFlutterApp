@@ -68,6 +68,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
     final reference = _safeConvertToString(productData!['reference']);
     final title = _safeConvertToString(productData!['name']);
     final List<String> imageList = (productData!['image_urls'] as List<dynamic>).cast<String>();
+    final productStock =_safeConvertToString(productData!['quantity']);
 
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
     final brandId = _safeConvertToString(productData!['id_manufacturer']);
@@ -102,7 +103,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
 
     return GestureDetector(
       onTap: () => Get.to(() => ProductDetails(
-        productStock: stock,
+        
         productId: id,
         productName: title,
         productReference : reference,
@@ -111,6 +112,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
         productBrandId:brandId,
         productImage: imageUrl,
         productImageList: imageList,  
+        productStock : productStock,
 
         productDescription : description,
         productOldPrice: discountText != null ? displayPrice : '', 
