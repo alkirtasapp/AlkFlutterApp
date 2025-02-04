@@ -3,14 +3,12 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as htmlParser;
 
-
 class ProductCardControllerTax {
   Future<Map<String, dynamic>?> fetchProductData(int productIndex) async {
     try {
       final List<int> categoryIds = [598, 601, 292, 162, 18];
       const int productsPerCategory = 2;
       final List<Map<String, dynamic>> fetchedProducts = [];
-      
 
       for (int categoryId in categoryIds) {
         final categoryApi =
@@ -31,16 +29,15 @@ class ProductCardControllerTax {
           if (fetchedProducts.length >= 10) break;
         }
       }
-       if (fetchedProducts.isEmpty) {
-      print("No products fetched.");
-      return null;
-    }
-
+      if (fetchedProducts.isEmpty) {
+        print("No products fetched.");
+        return null;
+      }
 
       final product = fetchedProducts[productIndex % fetchedProducts.length];
 
-       // Debugging: Print the fetched product before modifying
-    print("Fetched Product Data Before Modifications: $product");
+      // Debugging: Print the fetched product before modifying
+      print("Fetched Product Data Before Modifications: $product");
 
       // Fetch discount data for the product
       final discount = await fetchDiscount(product['id']);
@@ -67,7 +64,7 @@ class ProductCardControllerTax {
         product['ttc_price'] = ttcPrice; // Attach calculated TTC price
       }
 
-        //  Fetch images from associations and store them in product['image_urls']
+      //  Fetch images from associations and store them in product['image_urls']
       if (product.containsKey('associations') &&
           product['associations'].containsKey('images')) {
         final images = product['associations']['images'] as List;
@@ -82,13 +79,13 @@ class ProductCardControllerTax {
 
       print("Images for product ${product['id']}: ${product['image_urls']}");
 
-
       return product;
     } catch (e) {
       print('Error fetching products: $e');
       return null;
     }
   }
+
   static String cleanDescription(String? description) {
     if (description == null || description.isEmpty) {
       return "No description available";
@@ -105,88 +102,101 @@ class ProductCardControllerTax {
   }
 
   Future<Map<String, dynamic>?> fetchDiscount(int productId) async {
-  try {
-    final discountApi =
-        'https://www.alkirtas.com/api/specific_prices?display=full&filter[id_product]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+    try {
+      final discountApi =
+          'https://www.alkirtas.com/api/specific_prices?display=full&filter[id_product]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
-    final response = await http.get(Uri.parse(discountApi));
+      final response = await http.get(Uri.parse(discountApi));
 
-    print('Response for product $productId: ${response.body}'); // Debugging output
+      print(
+          'Response for product $productId: ${response.body}'); // Debugging output
 
-    if (response.statusCode == 200) {
-      final discountData = json.decode(utf8.decode(response.bodyBytes));
+      if (response.statusCode == 200) {
+        final discountData = json.decode(utf8.decode(response.bodyBytes));
 
-      if (!discountData.containsKey('specific_prices')) {
-        print('No specific_prices key in response for product $productId');
-        return null;
-      }
-
-      final discounts = discountData['specific_prices'] as List<dynamic>?;
-      if (discounts == null || discounts.isEmpty) {
-        print('No discounts found for product $productId');
-        return null;
-      }
-
-      DateTime now = DateTime.now();
-      Map<String, dynamic>? permanentDiscount;
-      Map<String, dynamic>? latestDiscount;
-
-      for (var discount in discounts) {
-        if (!discount.containsKey('reduction') || !discount.containsKey('reduction_type')) {
-          print('Skipping discount for product $productId: Incomplete data ${discount}');
-          continue;
+        if (!discountData.containsKey('specific_prices')) {
+          print('No specific_prices key in response for product $productId');
+          return null;
         }
 
-        String fromDateStr = discount['from'] ?? "";
-        String toDateStr = discount['to'] ?? "";
-
-        DateTime? fromDate = DateTime.tryParse(fromDateStr);
-        DateTime? toDate = DateTime.tryParse(toDateStr);
-
-        // Check for permanent discount (always valid)
-        if (fromDateStr == "0000-00-00 00:00:00" && toDateStr == "0000-00-00 00:00:00") {
-          print('Permanent discount found for product $productId');
-          permanentDiscount = discount;
-          continue; // Still check for other discounts
+        final discounts = discountData['specific_prices'] as List<dynamic>?;
+        if (discounts == null || discounts.isEmpty) {
+          print('No discounts found for product $productId');
+          return null;
         }
 
-        // Ensure the discount is within the valid period
-        if (fromDate != null && toDate != null && (now.isBefore(fromDate) || now.isAfter(toDate))) {
-          print('Skipping expired discount for product $productId: From $fromDate to $toDate');
-          continue;
+        DateTime now = DateTime.now();
+        Map<String, dynamic>? permanentDiscount;
+        Map<String, dynamic>? latestDiscount;
+
+        for (var discount in discounts) {
+          if (!discount.containsKey('reduction') ||
+              !discount.containsKey('reduction_type')) {
+            print(
+                'Skipping discount for product $productId: Incomplete data ${discount}');
+            continue;
+          }
+
+          String fromDateStr = discount['from'] ?? "";
+          String toDateStr = discount['to'] ?? "";
+
+          DateTime? fromDate = DateTime.tryParse(fromDateStr);
+          DateTime? toDate = DateTime.tryParse(toDateStr);
+
+          // Check for permanent discount (always valid)
+          if (fromDateStr == "0000-00-00 00:00:00" &&
+              toDateStr == "0000-00-00 00:00:00") {
+            print('Permanent discount found for product $productId');
+            permanentDiscount = discount;
+            continue; // Still check for other discounts
+          }
+
+          // Ensure the discount is within the valid period
+          if (fromDate != null &&
+              toDate != null &&
+              (now.isBefore(fromDate) || now.isAfter(toDate))) {
+            print(
+                'Skipping expired discount for product $productId: From $fromDate to $toDate');
+            continue;
+          }
+
+          // Select the latest valid discount (based on 'to' date)
+          if (latestDiscount == null ||
+              (toDate != null &&
+                  toDate.isAfter(DateTime.tryParse(latestDiscount['to']) ??
+                      DateTime(1900)))) {
+            latestDiscount = discount;
+          }
         }
 
-        // Select the latest valid discount (based on 'to' date)
-        if (latestDiscount == null || (toDate != null && toDate.isAfter(DateTime.tryParse(latestDiscount['to']) ?? DateTime(1900)))) {
-          latestDiscount = discount;
+        // Apply permanent discount if available; otherwise, use the latest valid discount
+        Map<String, dynamic>? selectedDiscount =
+            permanentDiscount ?? latestDiscount;
+
+        if (selectedDiscount != null) {
+          double parsedReduction =
+              double.tryParse(selectedDiscount['reduction']) ?? 0;
+          parsedReduction = parsedReduction * 100; // Convert to percentage
+
+          print(
+              'Final selected discount for product $productId: $parsedReduction%');
+
+          return {
+            'reduction': parsedReduction.toString(), // Ensure string format
+            'reduction_type': 'percentage',
+          };
         }
+
+        print('No valid discount available for product $productId');
+      } else {
+        print(
+            'Failed to fetch discount for product $productId: ${response.statusCode}');
       }
-
-      // Apply permanent discount if available; otherwise, use the latest valid discount
-      Map<String, dynamic>? selectedDiscount = permanentDiscount ?? latestDiscount;
-
-      if (selectedDiscount != null) {
-        double parsedReduction = double.tryParse(selectedDiscount['reduction']) ?? 0;
-        parsedReduction = parsedReduction * 100; // Convert to percentage
-
-        print('Final selected discount for product $productId: $parsedReduction%');
-
-        return {
-          'reduction': parsedReduction.toString(), // Ensure string format
-          'reduction_type': 'percentage',
-        };
-      }
-
-      print('No valid discount available for product $productId');
-    } else {
-      print('Failed to fetch discount for product $productId: ${response.statusCode}');
+    } catch (e) {
+      print('Error fetching discount for product $productId: $e');
     }
-  } catch (e) {
-    print('Error fetching discount for product $productId: $e');
+    return null;
   }
-  return null;
-}
-
 
   Future<double?> fetchTTCPrice(
       int productId, dynamic priceHT, dynamic taxRulesGroupId) async {
