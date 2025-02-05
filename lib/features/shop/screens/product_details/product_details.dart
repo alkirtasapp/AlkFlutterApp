@@ -69,7 +69,7 @@ class ProductDetails extends StatelessWidget {
                 trimLines: 2,
                 trimMode: TrimMode.Line,
                 trimCollapsedText: 'voir plus', 
-                trimExpandedText: 'moins ',style: Theme.of(context).textTheme.labelMedium,
+                trimExpandedText: '.. moins ',style: Theme.of(context).textTheme.labelMedium,
                 moreStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w300),
                 lessStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w300),
                 

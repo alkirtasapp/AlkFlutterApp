@@ -130,17 +130,18 @@ class AlkProductMetadata extends StatelessWidget {
         // Brand
         Row(
           children: [
+          
              productBrandId != '0' ?
             AlkCircularImage(
-              
-               
+
               image:
                    'https://www.alkirtas.com/img/m/${productBrandId}.jpg', // logo brand li jebneh bessif
               backgroundColor: Colors.transparent,
               isNetworkImage: true,
               fit: BoxFit.contain,
               
-            ): AlkCircularImage(
+            )
+            : AlkCircularImage(
               isNetworkImage: false,
                image: AlkImages.darkAppLogo,
                width: 52,

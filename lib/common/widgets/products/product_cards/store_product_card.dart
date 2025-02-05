@@ -63,7 +63,6 @@ class _ProductCardStoreState extends State<ProductCardStore> {
          print("Product Data mta3 l Store mel Service  : $productData");
          print("Keys in productData: ${productData!.keys}");
     
-    final stock = _safeConvertToString(productData!['available_now']);
     final id = _safeConvertToString(productData!['id']);
     final reference = _safeConvertToString(productData!['reference']);
     final title = _safeConvertToString(productData!['name']);

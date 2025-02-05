@@ -4,6 +4,7 @@ import 'package:test/common/widgets/custom_shapes/containers/searchContainer.dar
 import 'package:test/utils/constants/size.dart';
 
 import '../../../../common/widgets/layout/store_grid_drawer.dart';
+import '../../controllers/categories_store_controller.dart';
 
 class StoreDrawer extends StatefulWidget {
   const StoreDrawer({super.key});
@@ -25,8 +26,20 @@ class _StorePageState extends State<StoreDrawer> {
     "Art et Loisirs": 743,
   };
 
-  String selectedCategory = "Livres"; // Default category
+  final CategoriesStoreController categoriesController =
+      CategoriesStoreController();
+
+  String selectedCategory = "Livres"; // Default category name
+  int selectedCategoryId = 10; // Default category ID
   Key productListKey = UniqueKey(); // Declare the key at the class level
+
+  @override
+  void initState() {
+    super.initState();
+    categoriesController.fetchAllSubcategories().then((_) {
+      setState(() {}); // Refresh UI after fetching subcategories
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,25 +58,46 @@ class _StorePageState extends State<StoreDrawer> {
         drawer: Drawer(
           child: ListView(
             children: [
-              for (var category in categoryMap.keys)
-                ListTile(
-                  title: Text(category),
-                  onTap: () {
-                    setState(() {
-                      selectedCategory = category;
-                      productListKey = UniqueKey(); // Force refresh
-                    });
+              for (var category in categoryMap.entries)
+                ExpansionTile(
+                  title: Text(category.key),
+                  children: [
+                    if (categoriesController.subcategories
+                        .containsKey(category.value))
+                      for (var subcategory in categoriesController
+                          .subcategories[category.value]!)
+                        ListTile(
+                          title: Text("• ${subcategory['name']}"),
+                          onTap: () {
+                            setState(() {
+                              selectedCategory = subcategory['name'];
 
-                    print(
-                        '🔄 Changing category to: $selectedCategory'); // Debugging
-                    Navigator.pop(context);
-                  },
+                              // ✅ Ensure the category ID is always an integer
+                              selectedCategoryId = subcategory['id'] is int
+                                  ? subcategory['id']
+                                  : int.tryParse(
+                                          subcategory['id'].toString()) ??
+                                      0;
+
+                              productListKey = UniqueKey(); // Force refresh
+                            });
+
+                            print(
+                                '🔄 Changing category to: ${subcategory['name']} ${selectedCategoryId}'); // Debugging
+                            Navigator.pop(context);
+                          },
+                        )
+                    else
+                      ListTile(
+                        title: Text("Chargement..."),
+                      ),
+                  ],
                 ),
             ],
           ),
         ),
         body: Padding(
-          padding: EdgeInsets.only(top : 1),
+          padding: EdgeInsets.only(top: 1),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -76,21 +110,20 @@ class _StorePageState extends State<StoreDrawer> {
                   child: AlkSearchContainer(
                     text: 'Recherche',
                     icon: Iconsax.search_normal,
-                    showBackground: true,                    
+                    showBackground: true,
                   ),
                 ),
               ),
 
-              // Product Grid
+              // ✅ Product Grid updates with the selected subcategory's products
               Expanded(
-
                 child: Column(
                   children: [
-                    
                     AlkStoreGridDrawer(
                       key: productListKey,
                       itemCount: 10,
-                      categoryId: categoryMap[selectedCategory]!,
+                      categoryId:
+                          selectedCategoryId, // ✅ Now uses subcategory ID!
                     ),
                   ],
                 ),
@@ -100,4 +133,3 @@ class _StorePageState extends State<StoreDrawer> {
         ));
   }
 }
- 
