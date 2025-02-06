@@ -6,25 +6,42 @@ class CategoriesStoreController {
   final String apiKey = "Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
   final String apiUrl = "https://www.alkirtas.com/api/categories";
 
-  /// Main categories with their respective IDs
-  final Map<String, int> categoryMap = {
-    "Livres": 10,
-    "Papeterie": 11,
-    "Bagagerie": 12,
-    "Parascolaires": 17,
-    "Fournitures": 486,
-    "Cadeaux et Fêtes": 544,
-    "Bureautique": 558,
-    "Jeux et Jouets": 590,
-    "Art et Loisirs": 743,
-  };
+  /// ✅ Main categories dynamically fetched from the API
+  Map<String, int> categoryMap = {};
 
   /// Store subcategories fetched from the API
   Map<int, List<Map<String, dynamic>>> subcategories = {};
 
-  /// Fetch subcategories for all main categories
+  /// Fetch main categories dynamically from the API
+  Future<void> fetchMainCategories() async {
+    final url =
+        "$apiUrl?display=[id,name]&filter[level_depth]=2&output_format=JSON&ws_key=$apiKey";
+
+    _logInfo("📡 Fetching main categories...");
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        final List<dynamic> categories = data['categories'] ?? [];
+
+        categoryMap = {
+          for (var cat in categories) cat["name"]: cat["id"] as int
+        };
+
+        _logSuccess("✅ Loaded ${categoryMap.length} main categories successfully.");
+      } else {
+        _logError("❌ Failed to fetch main categories. HTTP ${response.statusCode}");
+      }
+    } catch (e) {
+      _logError("🔥 Exception while fetching main categories: $e");
+    }
+  }
+
+  /// Fetch subcategories for all main categories after fetching main categories
   Future<void> fetchAllSubcategories() async {
-    _logInfo("Fetching subcategories for all main categories...");
+    _logInfo("📡 Fetching subcategories for all main categories...");
     for (var categoryId in categoryMap.values) {
       await fetchSubcategories(categoryId);
     }
@@ -34,7 +51,7 @@ class CategoriesStoreController {
   /// Fetch subcategories for a specific main category
   Future<void> fetchSubcategories(int categoryId) async {
     final url =
-        "$apiUrl?display=[id,name]&filter[id_parent]=$categoryId&output_format=JSON&ws_key=$apiKey";
+        "$apiUrl?display=[id,name]&filter[level_depth]=3&filter[id_parent]=$categoryId&output_format=JSON&ws_key=$apiKey";
 
     _logInfo("📡 Requesting subcategories for category ID: $categoryId...");
     try {

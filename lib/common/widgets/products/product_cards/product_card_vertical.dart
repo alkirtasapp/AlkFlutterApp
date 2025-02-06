@@ -167,7 +167,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                       left: 1,
                       child: AlkRoundedContainer(
                         radius: AlkSize.sm,
-                        backgroundColor: AlkColors.secondary.withOpacity(0.8),
+                        backgroundColor:  Colors.purple.shade300,
                         padding: const EdgeInsets.symmetric(
                           horizontal: AlkSize.sm,
                           vertical: AlkSize.xs,
@@ -177,7 +177,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                           style: Theme.of(context)
                               .textTheme
                               .labelLarge!
-                              .apply(color: Colors.black),
+                              .apply(color: Colors.white),
                         ),
                       ),
                     ),
@@ -192,7 +192,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                 padding: const EdgeInsets.only(left: AlkSize.sm),
                 child: Column(
                   mainAxisAlignment:
-                      MainAxisAlignment.center, // Center the content
+                      MainAxisAlignment.center, 
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -202,7 +202,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     Text(
-                      brandName ,
+                      brandName != 'False' ? brandName : 'A L K I R T A S ' ,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,

@@ -24,46 +24,68 @@ class ProductControllerStore {
 
     for (int categoryId in categoryIds) {
       final categoryApi =
-      
           'https://www.alkirtas.com/api/products?sort=[id_DESC]&display=full&filter[active]=1&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
+      print("📡 Fetching products for Category ID: $categoryId");
+      
       final response = await http.get(Uri.parse(categoryApi));
+
       if (response.statusCode == 200) {
         final categoryData = json.decode(utf8.decode(response.bodyBytes));
-        final categoryProducts = categoryData['products'] as List<dynamic>;
 
-        //categoryProducts.shuffle(Random());
+        // ✅ Log full API response
+        print("📡 API Response for Category $categoryId: ${categoryData.toString()}");
+
+        final List<dynamic> categoryProducts = categoryData['products'] ?? [];
+
+        // ✅ Ensure categoryProducts is not empty before proceeding
+        if (categoryProducts.isEmpty) {
+          print("⚠️ No products found for Category ID: $categoryId");
+          continue;
+        }
+
         final selectedProducts =
             categoryProducts.take(productsPerCategory).toList();
+        fetchedProducts.addAll(selectedProducts.map((product) => product as Map<String, dynamic>));
 
-        fetchedProducts.addAll(selectedProducts
-            .map((product) => product as Map<String, dynamic>));
         if (fetchedProducts.length >= 10) break;
+      } else {
+        print("❌ API Error: ${response.statusCode} for Category ID: $categoryId");
       }
     }
 
-    final product = fetchedProducts[productIndex % fetchedProducts.length];
+    // ✅ Ensure fetchedProducts is not empty before accessing an index
+    if (fetchedProducts.isEmpty) {
+      print("⚠️ No products available for Category ID: $categoryId");
+      return null;
+    }
 
-    // Debugging: Print the fetched product before modifying
-    print("product data mta3 STORE PAGE  mel Controller: $product");
+    if (productIndex >= fetchedProducts.length) {
+      print("⚠️ Product Index $productIndex is out of range (Max: ${fetchedProducts.length - 1})");
+      return null;
+    }
+
+    final product = fetchedProducts[productIndex];
+
+    // ✅ Ensure all values are correctly formatted
+    product['id'] = int.tryParse(product['id'].toString()) ?? 0;
+    product['price'] = double.tryParse(product['price'].toString()) ?? 0.0;
+    product['quantity'] = int.tryParse(product['quantity'].toString()) ?? 0;
+
+    print("🛒 Selected Product: ${product['name']} (ID: ${product['id']})");
 
     // Fetch discount data for the product
     final discount = await fetchDiscount(product['id']);
-
     if (discount != null && discount['reduction_type'] == 'percentage') {
       final reduction = discount['reduction'];
-
-      if (reduction != null && reduction is String) {
-        product['discount'] = double.tryParse(reduction) ?? 0;
-      } else {
-        product['discount'] = 0;
-      }
+      product['discount'] = (reduction is String)
+          ? double.tryParse(reduction) ?? 0
+          : (reduction ?? 0);
     } else {
       product['discount'] = 0;
     }
 
-    print(
-        'Final discount stored for product ${product['id']}: ${product['discount']}%');
+    print('💲 Discount for product ${product['id']}: ${product['discount']}%');
 
     // Fetch and apply tax calculation
     final ttcPrice = await fetchTTCPrice(
@@ -71,24 +93,24 @@ class ProductControllerStore {
     if (ttcPrice != null) {
       product['ttc_price'] = ttcPrice; // Attach calculated TTC price
     }
-    //  Fetch images from associations and store them in product['image_urls']
+
+    // Fetch images from associations
     if (product.containsKey('associations') &&
         product['associations'].containsKey('images')) {
       final images = product['associations']['images'] as List;
       List<String> imageUrls = images.map((image) {
         return constructImageUrl(image['id']);
       }).toList();
-
       product['image_urls'] = imageUrls;
     } else {
       product['image_urls'] = [];
     }
 
-    print("Images for product ${product['id']}: ${product['image_urls']}");
+    print("🖼️ Images for product ${product['id']}: ${product['image_urls']}");
 
     // Fetch Stock Quantity
     int? stockQuantity = await fetchQuantity(product['id']);
-    product['quantity'] = stockQuantity ?? 0; // Add stock quantity to productData
+    product['quantity'] = stockQuantity ?? 0;
 
     print("📦 Stock for product ${product['id']}: ${product['quantity']} units");
 
@@ -98,10 +120,11 @@ class ProductControllerStore {
 
     return product;
   } catch (e) {
-    print('Error fetching products: $e');
+    print('❌ Error fetching products: $e');
     return null;
   }
 }
+
 
    Future<int?> fetchQuantity(int productId) async {
   try {

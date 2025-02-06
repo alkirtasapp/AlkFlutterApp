@@ -43,12 +43,13 @@ class AlkProductMetadata extends StatelessWidget {
         SizedBox(height: AlkSize.spaceBtwItems),
 
         Row(
+          
           children: [
             // Discount tag (only if there is a discount)
             if (productDiscount != null && productDiscount!.isNotEmpty)
               AlkRoundedContainer(
                 radius: AlkSize.sm,
-                backgroundColor: AlkColors.secondary.withOpacity(0.8),
+                backgroundColor: Colors.purple.shade300,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AlkSize.sm,
                   vertical: AlkSize.xs,
@@ -58,7 +59,7 @@ class AlkProductMetadata extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .labelLarge!
-                      .apply(color: Colors.black),
+                      .apply(color: Colors.white),
                 ),
               ),
             SizedBox(width: AlkSize.spaceBtwItems),
@@ -75,11 +76,12 @@ class AlkProductMetadata extends StatelessWidget {
 
             // New price
             Text(
+              
               '$productNewPrice TND',
               style: Theme.of(context)
                   .textTheme
-                  .headlineSmall!
-                  .apply(color: AlkColors.dark),
+                  .headlineMedium!
+                  .apply(color: AlkColors.darkerGrey),
             ),
           ],
         ),
@@ -90,7 +92,7 @@ class AlkProductMetadata extends StatelessWidget {
         Row(
           children: [
             // const AlkProductTitleText(title: 'Disponibilité :'),
-            SizedBox(width: AlkSize.spaceBtwItems),
+           // SizedBox(width: AlkSize.spaceBtwItems),
             // Text('En Stock', style: Theme.of(context).textTheme.titleMedium),
             productStock != '0'
                 ? AlkRoundedContainer(
@@ -125,7 +127,7 @@ class AlkProductMetadata extends StatelessWidget {
                   ),
           ],
         ),
-        SizedBox(height: AlkSize.spaceBtwItems),
+        SizedBox(height: AlkSize.spaceBtwItems /2),
 
         // Brand
         Row(
