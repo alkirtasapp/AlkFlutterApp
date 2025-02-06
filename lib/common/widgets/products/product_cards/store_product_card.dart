@@ -35,12 +35,25 @@ class _ProductCardStoreState extends State<ProductCardStore> {
   }
 
   Future<void> _loadProductData() async {
-    final data = await controller.fetchProductDataStore(
-        widget.productIndex, widget.categoryId);
-    setState(() {
-      productData = data;
-      isLoading = false;
-    });
+    print(
+        "📡 Fetching product for Category ID: ${widget.categoryId}, Product Index: ${widget.productIndex}");
+
+    try {
+      final data = await controller.fetchProductDataStore(
+          widget.productIndex, widget.categoryId);
+
+      print("✅ Received product data: $data");
+
+      setState(() {
+        productData = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("❌ Error fetching product data: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   String _safeConvertToString(dynamic value, [String fallback = 'Unknown']) {
@@ -57,18 +70,17 @@ class _ProductCardStoreState extends State<ProductCardStore> {
 
     if (productData == null) {
       return const Center(child: Text('Failed to load product'));
-      
     }
-     // nchoufou l content mtaa l product data gbal kol chy 
-         print("Product Data mta3 l Store mel Service  : $productData");
-         print("Keys in productData: ${productData!.keys}");
-    
-    final stock = _safeConvertToString(productData!['available_now']);
+    // nchoufou l content mtaa l product data gbal kol chy
+    print("Product Data mta3 l Store mel Service  : $productData");
+    print("Keys in productData: ${productData!.keys}");
+
     final id = _safeConvertToString(productData!['id']);
     final reference = _safeConvertToString(productData!['reference']);
     final title = _safeConvertToString(productData!['name']);
-    final List<String> imageList = (productData!['image_urls'] as List<dynamic>).cast<String>();
-    final productStock =_safeConvertToString(productData!['quantity']);
+    final List<String> imageList =
+        (productData!['image_urls'] as List<dynamic>).cast<String>();
+    final productStock = _safeConvertToString(productData!['quantity']);
 
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
     final brandId = _safeConvertToString(productData!['id_manufacturer']);
@@ -103,22 +115,22 @@ class _ProductCardStoreState extends State<ProductCardStore> {
 
     return GestureDetector(
       onTap: () => Get.to(() => ProductDetails(
-        
-        productId: id,
-        productName: title,
-        productReference : reference,
-        productDiscount: discountText ?? '', 
-        productBrand: brandName,
-        productBrandId:brandId,
-        productImage: imageUrl,
-        productImageList: imageList,  
-        productStock : productStock,
+            productId: id,
+            productName: title,
+            productReference: reference,
+            productDiscount: discountText ?? '',
+            productBrand: brandName,
+            productBrandId: brandId,
+            productImage: imageUrl,
+            productImageList: imageList,
+            productStock: productStock,
 
-        productDescription : description,
-        productOldPrice: discountText != null ? displayPrice : '', 
-        productNewPrice: discountValue > 0
-            ? (double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)
-            : displayPrice,  // If no discount, keep normal price
+            productDescription: description,
+            productOldPrice: discountText != null ? displayPrice : '',
+            productNewPrice: discountValue > 0
+                ? (double.parse(displayPrice) * (1 - discountValue / 100))
+                    .toStringAsFixed(2)
+                : displayPrice, // If no discount, keep normal price
           )),
       child: Container(
         width: 180,
@@ -163,7 +175,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                       left: 1,
                       child: AlkRoundedContainer(
                         radius: AlkSize.sm,
-                        backgroundColor: AlkColors.secondary.withOpacity(0.8),
+                        backgroundColor:  Colors.purple.shade300,
                         padding: const EdgeInsets.symmetric(
                           horizontal: AlkSize.sm,
                           vertical: AlkSize.xs,
@@ -173,7 +185,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                           style: Theme.of(context)
                               .textTheme
                               .labelLarge!
-                              .apply(color: Colors.black),
+                              .apply(color: Colors.white),
                         ),
                       ),
                     ),
@@ -197,7 +209,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     Text(
-                      brandName == 'False' ?  'A L K I R T A S': brandName,
+                      brandName == 'False' ? 'A L K I R T A S' : brandName,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,

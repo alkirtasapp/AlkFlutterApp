@@ -16,7 +16,7 @@ class AlkRef extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Iconsax.document5, color: AlkColors.secondary, size: 25 ,),
+        Icon(Iconsax.document5, color: Colors.purple.shade300, size: 25 ,),
         SizedBox(width: AlkSize.spaceBtwItems/2,),
         Text.rich(
           TextSpan(
