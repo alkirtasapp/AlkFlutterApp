@@ -4,172 +4,184 @@ import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 
 class ProductControllerStore {
-  
   Future<Map<String, dynamic>?> fetchProductDataStore(
-    int productIndex, int categoryId) async {
-  try {
-    // ✅ Open Hive box for caching
-    var box = Hive.box('productCache');
-    String cacheKey = "store_product_${categoryId}_$productIndex";
+      int productIndex, int categoryId) async {
+    try {
+      // ✅ Open Hive box for caching
+      var box = Hive.box('productCache');
+      String cacheKey = "store_product_${categoryId}_$productIndex";
 
-    // ✅ Step 1: Check if the product is already in cache
-    if (box.containsKey(cacheKey)) {
-      print("⚡ Using cached store product data for Category $categoryId, Index $productIndex");
-      return Map<String, dynamic>.from(box.get(cacheKey));
+      // ✅ Step 1: Check if the product is already in cache
+      if (box.containsKey(cacheKey)) {
+        print(
+            "⚡ Using cached store product data for Category $categoryId, Index $productIndex");
+        return Map<String, dynamic>.from(box.get(cacheKey));
+      }
+
+      // ✅ Fetch product IDs from the category API first
+      final List<int> productIds =
+          await fetchProductIdsFromCategory(categoryId);
+
+      if (productIds.isEmpty) {
+        print("⚠️ No product IDs found for Category ID: $categoryId");
+        return null;
+      }
+
+      const int productsPerCategory = 100; // Keep max products logic intact
+      final List<Map<String, dynamic>> fetchedProducts = [];
+
+      for (int productId in productIds.take(productsPerCategory)) {
+        final productApi =
+            'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+        print("📡 Fetching products for Product ID: \$productId");
+
+        final response = await http.get(Uri.parse(productApi));
+
+        if (response.statusCode == 200) {
+          final productData = json.decode(utf8.decode(response.bodyBytes));
+
+          if (productData['products'] == null ||
+              productData['products'].isEmpty) {
+            print("⚠️ No product found for Product ID: \$productId");
+            continue;
+          }
+
+          final List<dynamic> productList = productData['products'];
+
+          // ✅ Filter out inactive products and add only active products
+          final List<Map<String, dynamic>> activeProducts = productList
+              .where((product) =>
+                  product.containsKey('active') &&
+                  product['active'].toString() == '1')
+              .map((product) => product as Map<String, dynamic>)
+              .toList();
+
+          fetchedProducts.addAll(activeProducts);
+        } else {
+          print(
+              "❌ API Error: ${response.statusCode} for Product ID: \$productId");
+        }
+      }
+
+      // ✅ Ensure fetchedProducts is not empty before accessing an index
+      if (fetchedProducts.isEmpty) {
+        print("⚠️ No products available for Category ID: $categoryId");
+        return null;
+      }
+
+      if (productIndex >= fetchedProducts.length) {
+        print(
+            "⚠️ Product Index $productIndex is out of range (Max: ${fetchedProducts.length - 1})");
+        return null;
+      }
+
+      final product = fetchedProducts[productIndex];
+
+      // ✅ Ensure all values are correctly formatted
+      product['id'] = int.tryParse(product['id'].toString()) ?? 0;
+      product['price'] = double.tryParse(product['price'].toString()) ?? 0.0;
+      product['quantity'] = int.tryParse(product['quantity'].toString()) ?? 0;
+
+      print("🛒 Selected Product: ${product['name']} (ID: ${product['id']})");
+
+      // Fetch discount data for the product
+      final discount = await fetchDiscount(product['id']);
+      if (discount != null && discount['reduction_type'] == 'percentage') {
+        final reduction = discount['reduction'];
+        product['discount'] = (reduction is String)
+            ? double.tryParse(reduction) ?? 0
+            : (reduction ?? 0);
+      } else {
+        product['discount'] = 0;
+      }
+
+      print(
+          '💲 Discount for product ${product['id']}: ${product['discount']}%');
+
+      // Fetch and apply tax calculation
+      final ttcPrice = await fetchTTCPrice(
+          product['id'], product['price'], product['id_tax_rules_group']);
+      if (ttcPrice != null) {
+        product['ttc_price'] = ttcPrice; // Attach calculated TTC price
+      }
+
+      // Fetch images from associations
+      if (product.containsKey('associations') &&
+          product['associations'].containsKey('images')) {
+        final images = product['associations']['images'] as List;
+        List<String> imageUrls = images.map((image) {
+          return constructImageUrl(image['id']);
+        }).toList();
+        product['image_urls'] = imageUrls;
+      } else {
+        product['image_urls'] = [];
+      }
+
+      print(
+          "🖼️ Images for product ${product['id']}: ${product['image_urls']}");
+
+      // Fetch Stock Quantity
+      int? stockQuantity = await fetchQuantity(product['id']);
+      product['quantity'] = stockQuantity ?? 0;
+
+      print(
+          "📦 Stock for product ${product['id']}: ${product['quantity']} units");
+
+      // ✅ Step 3: Save product to cache
+      box.put(cacheKey, product);
+      print(
+          "💾 Cached store product data for Category $categoryId, Index $productIndex");
+
+      return product;
+    } catch (e) {
+      print('❌ Error fetching products: $e');
+      return null;
     }
+  }
 
-    final List<int> categoryIds = [categoryId];
-    const int productsPerCategory = 10;
-    final List<Map<String, dynamic>> fetchedProducts = [];
+  Future<int?> fetchQuantity(int productId) async {
+    try {
+      final stockApi =
+          'https://www.alkirtas.com/api/stock_availables?display=full&limit=10&filter[id_product]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
-    for (int categoryId in categoryIds) {
-      final categoryApi =
-          'https://www.alkirtas.com/api/products?sort=[id_DESC]&display=full&filter[active]=1&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+      final response = await http.get(Uri.parse(stockApi));
 
-      print("📡 Fetching products for Category ID: $categoryId");
-      
-      final response = await http.get(Uri.parse(categoryApi));
+      print('🔍 Fetching stock for Product ID: $productId'); // ✅ Log Request
+      print('📥 API Raw Response: ${response.body}'); // ✅ Log Full API Response
 
       if (response.statusCode == 200) {
-        final categoryData = json.decode(utf8.decode(response.bodyBytes));
+        final stockData = json.decode(utf8.decode(response.bodyBytes));
 
-        // ✅ Log full API response
-        print("📡 API Response for Category $categoryId: ${categoryData.toString()}");
+        // Check if 'stock_availables' exists and is a list
+        if (stockData.containsKey('stock_availables') &&
+            stockData['stock_availables'] is List &&
+            stockData['stock_availables'].isNotEmpty) {
+          // Find the correct product entry based on 'id_product'
+          final stockEntries = stockData['stock_availables'] as List;
+          for (var stock in stockEntries) {
+            if (stock['id_product'].toString() == productId.toString()) {
+              int quantity = int.tryParse(stock['quantity'].toString()) ?? 0;
 
-        final List<dynamic> categoryProducts = categoryData['products'] ?? [];
+              print(
+                  '✅ Stock for Product ID $productId: $quantity units'); // ✅ Log Correct Quantity
+              return quantity;
+            }
+          }
 
-        // ✅ Ensure categoryProducts is not empty before proceeding
-        if (categoryProducts.isEmpty) {
-          print("⚠️ No products found for Category ID: $categoryId");
-          continue;
+          print('⚠️ Product ID $productId not found in stock_availables list');
+        } else {
+          print('⚠️ No stock data available for Product ID: $productId');
         }
-
-        final selectedProducts =
-            categoryProducts.take(productsPerCategory).toList();
-        fetchedProducts.addAll(selectedProducts.map((product) => product as Map<String, dynamic>));
-
-        if (fetchedProducts.length >= 10) break;
       } else {
-        print("❌ API Error: ${response.statusCode} for Category ID: $categoryId");
+        print('❌ API Request Failed. Status Code: ${response.statusCode}');
       }
+    } catch (e) {
+      print('🔥 Error fetching stock quantity for Product ID $productId: $e');
     }
 
-    // ✅ Ensure fetchedProducts is not empty before accessing an index
-    if (fetchedProducts.isEmpty) {
-      print("⚠️ No products available for Category ID: $categoryId");
-      return null;
-    }
-
-    if (productIndex >= fetchedProducts.length) {
-      print("⚠️ Product Index $productIndex is out of range (Max: ${fetchedProducts.length - 1})");
-      return null;
-    }
-
-    final product = fetchedProducts[productIndex];
-
-    // ✅ Ensure all values are correctly formatted
-    product['id'] = int.tryParse(product['id'].toString()) ?? 0;
-    product['price'] = double.tryParse(product['price'].toString()) ?? 0.0;
-    product['quantity'] = int.tryParse(product['quantity'].toString()) ?? 0;
-
-    print("🛒 Selected Product: ${product['name']} (ID: ${product['id']})");
-
-    // Fetch discount data for the product
-    final discount = await fetchDiscount(product['id']);
-    if (discount != null && discount['reduction_type'] == 'percentage') {
-      final reduction = discount['reduction'];
-      product['discount'] = (reduction is String)
-          ? double.tryParse(reduction) ?? 0
-          : (reduction ?? 0);
-    } else {
-      product['discount'] = 0;
-    }
-
-    print('💲 Discount for product ${product['id']}: ${product['discount']}%');
-
-    // Fetch and apply tax calculation
-    final ttcPrice = await fetchTTCPrice(
-        product['id'], product['price'], product['id_tax_rules_group']);
-    if (ttcPrice != null) {
-      product['ttc_price'] = ttcPrice; // Attach calculated TTC price
-    }
-
-    // Fetch images from associations
-    if (product.containsKey('associations') &&
-        product['associations'].containsKey('images')) {
-      final images = product['associations']['images'] as List;
-      List<String> imageUrls = images.map((image) {
-        return constructImageUrl(image['id']);
-      }).toList();
-      product['image_urls'] = imageUrls;
-    } else {
-      product['image_urls'] = [];
-    }
-
-    print("🖼️ Images for product ${product['id']}: ${product['image_urls']}");
-
-    // Fetch Stock Quantity
-    int? stockQuantity = await fetchQuantity(product['id']);
-    product['quantity'] = stockQuantity ?? 0;
-
-    print("📦 Stock for product ${product['id']}: ${product['quantity']} units");
-
-    // ✅ Step 3: Save product to cache
-    box.put(cacheKey, product);
-    print("💾 Cached store product data for Category $categoryId, Index $productIndex");
-
-    return product;
-  } catch (e) {
-    print('❌ Error fetching products: $e');
+    print('❌ Returning NULL for Product ID: $productId'); // ✅ Log Null Return
     return null;
   }
-}
-
-
-   Future<int?> fetchQuantity(int productId) async {
-  try {
-    final stockApi =
-        'https://www.alkirtas.com/api/stock_availables?display=full&limit=10&filter[id_product]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
-
-    final response = await http.get(Uri.parse(stockApi));
-
-    print('🔍 Fetching stock for Product ID: $productId'); // ✅ Log Request
-    print('📥 API Raw Response: ${response.body}'); // ✅ Log Full API Response
-
-    if (response.statusCode == 200) {
-      final stockData = json.decode(utf8.decode(response.bodyBytes));
-
-      // Check if 'stock_availables' exists and is a list
-      if (stockData.containsKey('stock_availables') &&
-          stockData['stock_availables'] is List &&
-          stockData['stock_availables'].isNotEmpty) {
-        
-        // Find the correct product entry based on 'id_product'
-        final stockEntries = stockData['stock_availables'] as List;
-        for (var stock in stockEntries) {
-          if (stock['id_product'].toString() == productId.toString()) {
-            int quantity = int.tryParse(stock['quantity'].toString()) ?? 0;
-            
-            print('✅ Stock for Product ID $productId: $quantity units'); // ✅ Log Correct Quantity
-            return quantity;
-          }
-        }
-
-        print('⚠️ Product ID $productId not found in stock_availables list');
-      } else {
-        print('⚠️ No stock data available for Product ID: $productId');
-      }
-    } else {
-      print('❌ API Request Failed. Status Code: ${response.statusCode}');
-    }
-  } catch (e) {
-    print('🔥 Error fetching stock quantity for Product ID $productId: $e');
-  }
-
-  print('❌ Returning NULL for Product ID: $productId'); // ✅ Log Null Return
-  return null;
-}
-
 
   Future<Map<String, dynamic>?> fetchDiscount(int productId) async {
     try {
@@ -330,4 +342,49 @@ class ProductControllerStore {
     final path = digits.join('/');
     return 'https://www.alkirtas.com/img/p/$path/$imageIdStr.jpg';
   }
+}
+
+Future<List<int>> fetchProductIdsFromCategory(int categoryId) async {
+  try {
+    final categoryApi =
+        'https://www.alkirtas.com/api/categories?display=full&filter[id]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+
+    print("📡 Fetching product IDs for Category ID: $categoryId");
+
+    final response = await http.get(Uri.parse(categoryApi));
+
+    if (response.statusCode == 200) {
+      final categoryData = json.decode(utf8.decode(response.bodyBytes));
+
+      if (categoryData['categories'] == null ||
+          categoryData['categories'].isEmpty) {
+        print("⚠️ No categories found for ID: $categoryId");
+        return [];
+      }
+
+      final category = categoryData['categories'][0];
+
+      if (category.containsKey('associations') &&
+          category['associations'].containsKey('products')) {
+        List<dynamic> productList = category['associations']['products'];
+
+        List<int> productIds = productList
+            .map((product) => int.parse(product['id'].toString()))
+            .toList();
+        productIds.sort((a, b) => b.compareTo(a)); // ✅ Sort by ID DESC
+
+        print("📦 Found ${productIds.length} products in category $categoryId");
+
+        return productIds;
+      } else {
+        print("⚠️ No products associated with Category ID: $categoryId");
+      }
+    } else {
+      print(
+          "❌ API Error: ${response.statusCode} while fetching Category $categoryId");
+    }
+  } catch (e) {
+    print("🔥 Error fetching product IDs: $e");
+  }
+  return [];
 }
