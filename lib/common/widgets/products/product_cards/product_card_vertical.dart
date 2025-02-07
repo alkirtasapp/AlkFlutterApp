@@ -147,7 +147,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                     child: Image.network(
                       imageUrl,
                       
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                       width: double.infinity,
                       height: double.infinity,
                       loadingBuilder: (context, child, progress) {

@@ -6,8 +6,9 @@ import 'package:flutter/material.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
-  await Hive.openBox('productCache');
   // Open product cache box
+  await Hive.openBox('productCache');
+  
   // add widget Binding
 
   // initial local storage
