@@ -137,7 +137,7 @@ class _StorePageState extends State<StoreDrawer> {
                     ? Center(child: CircularProgressIndicator())
                     : AlkStoreGridDrawer(
                         key: productListKey,
-                        itemCount: 10,
+                        itemCount: 20,
                         categoryId: selectedCategoryId,
                       ),
               ),
