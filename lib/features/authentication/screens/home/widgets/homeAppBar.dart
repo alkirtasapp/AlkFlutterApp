@@ -14,8 +14,9 @@ class AlkHomeAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlkAppBar(
+      showBackArrow: false,
       title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             AlkTexts.homeAppBarSubitle,
