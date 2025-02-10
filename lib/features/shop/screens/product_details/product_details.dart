@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:readmore/readmore.dart';
+import 'package:test/common/widgets/providers/product_provider.dart';
 import 'package:test/features/shop/screens/product_details/widgets/bottom_add_to_cart.dart';
 import '../../../../common/widgets/texts/section_heading.dart';
 import '../../../../utils/constants/size.dart';
@@ -41,12 +42,28 @@ class ProductDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
+final productPrice = productDiscount.isNotEmpty 
+   ? productNewPrice  
+   : (productOldPrice.isNotEmpty ? productOldPrice : productNewPrice); 
+
+
+
+   print("Product Price: $productPrice");
+  print("Product discount: $productDiscount");
+  print("Product OLD Price: $productOldPrice");
+  print("Product NEW  Price: $productNewPrice");
+
+      
+    
     return Scaffold(
       bottomNavigationBar: AlkBottomAddToCart(
         productName: productName,
         productBrand: productBrand,
         productImage: productImage,
-        productNewPrice : productNewPrice,
+        productPrice : productPrice,
+        
+        
       ),
       body: SingleChildScrollView(
         child: Column(

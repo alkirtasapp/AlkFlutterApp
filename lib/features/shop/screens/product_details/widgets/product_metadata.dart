@@ -22,6 +22,9 @@ class AlkProductMetadata extends StatelessWidget {
  
   final String productBrandId;
 
+  
+  
+
   const AlkProductMetadata({
     super.key,
     required this.productName,
@@ -31,7 +34,8 @@ class AlkProductMetadata extends StatelessWidget {
     required this.productNewPrice,
 
     required this.productBrandId,
-     required this.productStock,
+     required this.productStock, 
+   
   });
 
   @override
@@ -45,6 +49,7 @@ class AlkProductMetadata extends StatelessWidget {
 
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          
           
           children: [
             // Discount tag (only if there is a discount)
@@ -68,7 +73,9 @@ class AlkProductMetadata extends StatelessWidget {
 
             // Original price (strikethrough)
             if (productDiscount != null && productDiscount!.isNotEmpty)
+             
               Text(
+               // productPrice,
                 '$productOldPrice TND',
                 style: Theme.of(context).textTheme.titleSmall!.apply(
                       decoration: TextDecoration.lineThrough,

@@ -19,6 +19,7 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
+     
     return Scaffold(
       appBar: AlkAppBar(
         showBackArrow: true,
@@ -41,6 +42,7 @@ class _CartScreenState extends State<CartScreen> {
                 itemCount: productProvider.cartItems.length,
                 itemBuilder: (context, index) {
                   final product = productProvider.cartItems[index];
+                
 
                   return Column(
                     children: [
@@ -48,22 +50,23 @@ class _CartScreenState extends State<CartScreen> {
                         productName: product['productName']!,
                         productBrand: product['productBrand']!,
                         productImage: product['productImage']!,
+                        productPrice: product['productPrice']!,
                         onDelete: () {
                           // Trigger a rebuild when an item is deleted
                           setState(() {});
                         },
                       ),
-                      SizedBox(height: AlkSize.spaceBtwItems),
+                      //SizedBox(height: AlkSize.spaceBtwItems),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
                               const SizedBox(width: 70), // Extra space
-                              AlkProductQuantityAddRemove(),
+                             // AlkProductQuantityAddRemove(),
                             ],
                           ),
-                          Text('Prix: 10 TND'), // Replace with actual price if needed
+                          //Text('$productPrice TND' ), // Replace with actual price if needed
                         ],
                       ),
                     ],
