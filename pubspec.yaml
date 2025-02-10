@@ -31,6 +31,10 @@ dependencies:
   hive_flutter: ^1.1.0
 
 
+  #provider for pagination
+  provider: ^6.0.5  # ✅ Add this line
+
+
 
 # Development-only dependencies
 dev_dependencies:
