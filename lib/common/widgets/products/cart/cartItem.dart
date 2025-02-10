@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:test/features/shop/screens/cart/cart.dart';
 import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
 import 'package:test/common/widgets/images/AlkRoundedImages.dart';
@@ -12,12 +13,14 @@ class AlkCartItem extends StatelessWidget {
   final String productName;
   final String productBrand;
   final String productImage;
+  final VoidCallback? onDelete; // Callback for delete action
 
   const AlkCartItem({
     super.key,
     required this.productName,
     required this.productBrand,
     required this.productImage,
+    this.onDelete, // Add this parameter
   });
 
   @override
@@ -61,9 +64,16 @@ class AlkCartItem extends StatelessWidget {
             Get.snackbar(
               "Supprimé",
               "$productName a été retiré du panier",
-              snackPosition: SnackPosition.BOTTOM,
+              snackPosition: SnackPosition.TOP,
               duration: Duration(seconds: 2),
+              backgroundColor: Colors.purple.shade300,
+              colorText: Colors.white
             );
+
+            // Trigger the callback to notify the parent widget
+            if (onDelete != null) {
+              onDelete!();
+            }
           },
         ),
       ],

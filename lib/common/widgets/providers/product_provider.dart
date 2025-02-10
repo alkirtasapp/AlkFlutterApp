@@ -9,6 +9,8 @@ class ProductProvider extends ChangeNotifier { // ✅ Use ChangeNotifier
     required String productName,
     required String productBrand,
     required String productImage,
+    required String productNewPrice,
+    
   }) {
     _cartItems.add({
       'productName': productName,

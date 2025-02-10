@@ -46,6 +46,7 @@ class ProductDetails extends StatelessWidget {
         productName: productName,
         productBrand: productBrand,
         productImage: productImage,
+        productNewPrice : productNewPrice,
       ),
       body: SingleChildScrollView(
         child: Column(

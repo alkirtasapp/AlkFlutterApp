@@ -6,14 +6,19 @@ import 'package:test/common/widgets/products/cart/add_remove_button.dart';
 import 'package:test/utils/constants/size.dart';
 import 'package:test/common/widgets/providers/product_provider.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // ✅ Retrieve ProductProvider using GetX
-    final productProvider = Get.find<ProductProvider>();
+  State<CartScreen> createState() => _CartScreenState();
+}
 
+class _CartScreenState extends State<CartScreen> {
+  // Retrieve ProductProvider using GetX
+  final productProvider = Get.find<ProductProvider>();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AlkAppBar(
         showBackArrow: true,
@@ -23,7 +28,7 @@ class CartScreen extends StatelessWidget {
           ? Center(
               child: Text(
                 "Votre panier est vide",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.labelMedium,
               ),
             )
           : Padding(
@@ -43,6 +48,10 @@ class CartScreen extends StatelessWidget {
                         productName: product['productName']!,
                         productBrand: product['productBrand']!,
                         productImage: product['productImage']!,
+                        onDelete: () {
+                          // Trigger a rebuild when an item is deleted
+                          setState(() {});
+                        },
                       ),
                       SizedBox(height: AlkSize.spaceBtwItems),
                       Row(

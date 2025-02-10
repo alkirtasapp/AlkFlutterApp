@@ -10,12 +10,14 @@ class AlkBottomAddToCart extends StatelessWidget {
   final String productName;
   final String productBrand;
   final String productImage;
+  final String productNewPrice;
 
   const AlkBottomAddToCart({
     super.key,
     required this.productName,
     required this.productBrand,
-    required this.productImage,
+    required this.productImage, 
+    required this.productNewPrice,
   });
 
   @override
@@ -66,15 +68,17 @@ class AlkBottomAddToCart extends StatelessWidget {
                 productName: productName,
                 productBrand: productBrand,
                 productImage: productImage,
-               //productPrice: p
+                productNewPrice: productNewPrice,
               );
 
               // ✅ Show a GetX Snackbar
               Get.snackbar(
                 "Ajouté au Panier",
                 "$productName a été ajouté au panier",
-                snackPosition: SnackPosition.BOTTOM,
-                duration: Duration(seconds: 2),
+                snackPosition: SnackPosition.TOP,
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.purple.shade300,
+              colorText: Colors.white
               );
             },
             style: ElevatedButton.styleFrom(
