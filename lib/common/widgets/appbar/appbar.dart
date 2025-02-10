@@ -31,7 +31,7 @@ class AlkAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () => Get.back(),
                 icon: Icon(
                   Iconsax.arrow_left,
-                  color: Colors.white,
+                  color: Colors.black,
                 ))
             : leadingIcon != null
                 ? IconButton(

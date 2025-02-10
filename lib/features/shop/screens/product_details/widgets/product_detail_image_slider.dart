@@ -7,10 +7,11 @@ import '../../../../../utils/constants/size.dart';
 
 class AlkProductImageSlider extends StatefulWidget {
   final List<String> productImages;
+  final String productName;
 
   const AlkProductImageSlider({
     super.key,
-    required this.productImages,
+    required this.productImages, required this.productName,
   });
 
   @override
@@ -23,10 +24,13 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
   @override
   Widget build(BuildContext context) {
     return AlkCurvedEdgeswidget(
+      
       child: Container(
         color: AlkColors.white,
         child: Stack(
           children: [
+             AlkAppBar( showBackArrow: true,title:Text(widget.productName)),
+             const SizedBox(height: AlkSize.spaceBtwSections,),
             // **Main Large Image**
             SizedBox(
               height: 450,
@@ -84,7 +88,7 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
             ),
 
             // **App Bar Icon**
-            const AlkAppBar(showBackArrow: true),
+          const AlkAppBar( showBackArrow: true,),
           ],
         ),
       ),

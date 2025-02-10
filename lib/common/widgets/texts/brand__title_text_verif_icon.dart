@@ -33,6 +33,8 @@ class AlkBrandTitleTextVerifIcon extends StatelessWidget {
             textAlign: textAlign,
             brandTextSize: brandTextSize,
             
+            
+            
           
             ),
             ),

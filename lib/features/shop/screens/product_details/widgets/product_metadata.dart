@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:readmore/readmore.dart';
 import 'package:test/common/widgets/images/AlkCircularImage.dart';
 import 'package:test/common/widgets/roundedContainer.dart';
@@ -43,6 +44,7 @@ class AlkProductMetadata extends StatelessWidget {
         SizedBox(height: AlkSize.spaceBtwItems),
 
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           
           children: [
             // Discount tag (only if there is a discount)
@@ -75,13 +77,22 @@ class AlkProductMetadata extends StatelessWidget {
             SizedBox(width: AlkSize.spaceBtwItems),
 
             // New price
-            Text(
+            Row(
               
-              '$productNewPrice TND',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineMedium!
-                  .apply(color: AlkColors.darkerGrey),
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+               
+                Icon(Iconsax.coin_15 , color: Colors.purple.shade300, size: 25, ),
+                Text(
+                  
+                  '$productNewPrice ',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineMedium!
+                      .apply(color: AlkColors.darkerGrey),
+                ),
+                 
+              ],
             ),
           ],
         ),
@@ -154,6 +165,9 @@ class AlkProductMetadata extends StatelessWidget {
             AlkBrandTitleTextVerifIcon(
               title: productBrand == 'False' ? 'A L K I R T A S' : productBrand,
               brandTextSize: TextSizes.medium,
+            
+               
+              
             ),
             SizedBox(height: AlkSize.spaceBtwSections),
           ],

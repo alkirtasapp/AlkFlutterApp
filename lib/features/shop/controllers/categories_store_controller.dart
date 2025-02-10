@@ -1,23 +1,36 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 
 class CategoriesStoreController {
   final String apiKey = "Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
-  final String apiUrl = "https://www.alkirtas.com/api/categories";
+  final String apiUrl =
+      "https://www.alkirtas.com/api/categories?sort=[id_parent_ASC]&display=[id,id_parent,name,level_depth]&filter[active]=1&output_format=JSON&ws_key=";
 
-  /// ✅ Main categories dynamically fetched from the API
-  Map<String, int> categoryMap = {};
+  /// ✅ Store main categories dynamically (Level 2)
+  Map<String, int> mainCategories = {};
 
-  /// Store subcategories fetched from the API
-  Map<int, List<Map<String, dynamic>>> subcategories = {};
+  /// ✅ Store the full category tree (Levels 2, 3, and 4)
+  Map<int, List<Map<String, dynamic>>> categoryTree = {};
 
-  /// Fetch main categories dynamically from the API
-  Future<void> fetchMainCategories() async {
-    final url =
-        "$apiUrl?display=[id,name]&filter[level_depth]=2&output_format=JSON&ws_key=$apiKey";
+  /// ✅ Hive caching box for category data
+  final Box cacheBox = Hive.box('productCache');
 
-    _logInfo("📡 Fetching main categories...");
+  /// Fetch and process all categories from the API in one call
+  Future<void> fetchAllCategories() async {
+    const String cacheKey = "all_categories";
+
+    // ✅ Check cache first
+    if (cacheBox.containsKey(cacheKey)) {
+      var cachedData = cacheBox.get(cacheKey);
+      _processCategories(cachedData);
+      _logInfo("⚡ Using cached categories.");
+      return;
+    }
+
+    final url = "$apiUrl$apiKey";
+    _logInfo("📡 Fetching all categories in one request...");
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -26,52 +39,46 @@ class CategoriesStoreController {
         final data = json.decode(utf8.decode(response.bodyBytes));
         final List<dynamic> categories = data['categories'] ?? [];
 
-        categoryMap = {
-          for (var cat in categories) cat["name"]: cat["id"] as int
-        };
+        // ✅ Process categories into a structured format
+        _processCategories(categories);
 
-        _logSuccess("✅ Loaded ${categoryMap.length} main categories successfully.");
+        // ✅ Store in cache
+        cacheBox.put(cacheKey, categories);
+        _logSuccess("✅ Successfully loaded and cached all categories.");
       } else {
-        _logError("❌ Failed to fetch main categories. HTTP ${response.statusCode}");
+        _logError("❌ Failed to fetch categories. HTTP ${response.statusCode}");
       }
     } catch (e) {
-      _logError("🔥 Exception while fetching main categories: $e");
+      _logError("🔥 Exception while fetching categories: $e");
     }
   }
 
-  /// Fetch subcategories for all main categories after fetching main categories
-  Future<void> fetchAllSubcategories() async {
-    _logInfo("📡 Fetching subcategories for all main categories...");
-    for (var categoryId in categoryMap.values) {
-      await fetchSubcategories(categoryId);
-    }
-    _logSuccess("✅ Finished loading subcategories for all main categories.");
-  }
 
-  /// Fetch subcategories for a specific main category
-  Future<void> fetchSubcategories(int categoryId) async {
-    final url =
-        "$apiUrl?display=[id,name]&filter[level_depth]=3&filter[id_parent]=$categoryId&output_format=JSON&ws_key=$apiKey";
+    
+  /// Process the fetched categories and organize them into a tree
+  void _processCategories(List<dynamic> categories) {
+    mainCategories.clear();
+    categoryTree.clear();
 
-    _logInfo("📡 Requesting subcategories for category ID: $categoryId...");
-    try {
-      final response = await http.get(Uri.parse(url));
+    for (var category in categories) {
+      int id = category['id'];
+      int parentId = category['id_parent'];
+      String name = category['name'];
+      int level = category['level_depth'];
 
-      if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
-        final List<dynamic> categories = data['categories'] ?? [];
-
-        subcategories[categoryId] = categories
-            .map((cat) => {"id": cat["id"], "name": cat["name"]})
-            .toList();
-
-        _logSuccess("✅ Loaded ${categories.length} subcategories for Category ID: $categoryId");
-      } else {
-        _logError("❌ Failed to fetch subcategories for Category ID: $categoryId. HTTP ${response.statusCode}");
+      if (level == 2) {
+        // ✅ Level 2: Main Categories
+        mainCategories[name] = id;
       }
-    } catch (e) {
-      _logError("🔥 Exception while fetching subcategories for Category ID $categoryId: $e");
+
+      // ✅ Organize categories into a structured tree
+      if (!categoryTree.containsKey(parentId)) {
+        categoryTree[parentId] = [];
+      }
+      categoryTree[parentId]!.add({"id": id, "name": name});
     }
+
+    _logSuccess("✅ Processed ${categories.length} categories into a structured tree.");
   }
 
   /// Log info messages

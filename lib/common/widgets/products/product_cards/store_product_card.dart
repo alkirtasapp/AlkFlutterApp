@@ -259,7 +259,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                                 child: IconButton(
                                     color: AlkColors.white,
                                     onPressed: () {},
-                                    icon: const Icon(Iconsax.add))),
+                                    icon: const Icon(Iconsax.add,))),
                           ),
                         ),
                       ],

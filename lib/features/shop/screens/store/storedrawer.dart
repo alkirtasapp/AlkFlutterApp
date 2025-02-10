@@ -5,6 +5,7 @@ import 'package:test/utils/constants/size.dart';
 
 import '../../../../common/widgets/layout/store_grid_drawer.dart';
 import '../../controllers/categories_store_controller.dart';
+import '../../controllers/product_controller_store.dart';
 
 class StoreDrawer extends StatefulWidget {
   const StoreDrawer({super.key});
@@ -15,11 +16,11 @@ class StoreDrawer extends StatefulWidget {
 
 class _StorePageState extends State<StoreDrawer> {
   final CategoriesStoreController categoriesController = CategoriesStoreController();
-  
-  String selectedCategory = ""; // Default category name
-  int selectedCategoryId = -1; // Default category ID
-  Key productListKey = UniqueKey(); // Declare the key at the class level
-  bool isLoading = true; // Loading state
+  String selectedCategory = "";
+  int selectedCategoryId = -1;
+  Key productListKey = UniqueKey();
+  bool isLoading = true;
+  List<Map<String, dynamic>> products = []; // ✅ Store fetched products
 
   @override
   void initState() {
@@ -28,16 +29,42 @@ class _StorePageState extends State<StoreDrawer> {
   }
 
   Future<void> _initializeCategories() async {
-    await categoriesController.fetchMainCategories();
-    await categoriesController.fetchAllSubcategories();
-    
-    if (categoriesController.categoryMap.isNotEmpty) {
+    await categoriesController.fetchAllCategories();
+    if (categoriesController.mainCategories.isNotEmpty) {
       setState(() {
-        selectedCategory = categoriesController.categoryMap.keys.first;
-        selectedCategoryId = categoriesController.categoryMap.values.first;
-        isLoading = false;
+        selectedCategory = categoriesController.mainCategories.keys.first;
+        selectedCategoryId = categoriesController.mainCategories.values.first;
       });
+
+      _fetchProductsForCategory(selectedCategoryId); // ✅ Fetch products when category is set
     }
+  }
+
+  Future<void> _fetchProductsForCategory(int categoryId) async {
+    setState(() => isLoading = true);
+
+    final productController = ProductControllerStore();
+    List<Map<String, dynamic>> fetchedProducts = [];
+
+    // ✅ Fetch multiple products in parallel
+    List<Future<Map<String, dynamic>?>> fetchTasks = List.generate(8, (index) {
+      return productController.fetchProductDataStore(index, categoryId);
+    });
+
+    final results = await Future.wait(fetchTasks);
+
+    for (var product in results) {
+      if (product != null) {
+        fetchedProducts.add(product);
+      }
+    }
+
+    setState(() {
+      products = fetchedProducts;
+      isLoading = false;
+    });
+
+    print("✅ Preloaded ${products.length} products for Category ID: $categoryId");
   }
 
   @override
@@ -56,36 +83,71 @@ class _StorePageState extends State<StoreDrawer> {
         ),
         drawer: Drawer(
           child: isLoading
-              ? Center(child: CircularProgressIndicator()) // Show loading spinner
+              ? Center(child: CircularProgressIndicator())
               : ListView(
                   children: [
-                    for (var category in categoriesController.categoryMap.entries)
+                    for (var category in categoriesController.mainCategories.entries)
                       ExpansionTile(
-                        title: Text(category.key),
+                        title: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedCategory = category.key;
+                              selectedCategoryId = category.value;
+                              productListKey = UniqueKey();
+                              products.clear();
+                            });
+
+                            print("✅ Main Category selected: $selectedCategory with ID: $selectedCategoryId");
+
+                            _fetchProductsForCategory(selectedCategoryId);
+
+                            Navigator.pop(context);
+                          },
+                          child: Text(category.key, style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
                         children: [
-                          if (categoriesController.subcategories.containsKey(category.value))
-                            for (var subcategory in categoriesController.subcategories[category.value]!)
-                              ListTile(
-                                title: Text("• ${subcategory['name']}"),
-                                onTap: () {
-                                  print("🔍 Subcategory selected: ${subcategory['name']} - Raw ID: ${subcategory['id']} (${subcategory['id'].runtimeType})");
+                          if (categoriesController.categoryTree.containsKey(category.value))
+                            for (var subcategory in categoriesController.categoryTree[category.value]!)
+                              ExpansionTile(
+                                title: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      selectedCategory = subcategory['name'];
+                                      selectedCategoryId = subcategory['id'];
+                                      productListKey = UniqueKey();
+                                      products.clear();
+                                    });
 
-                                  setState(() {
-                                    selectedCategory = subcategory['name'];
-                                    selectedCategoryId = subcategory['id'] is int
-                                        ? subcategory['id']
-                                        : int.tryParse(subcategory['id'].toString()) ?? -1;
-                                    productListKey = UniqueKey(); // Force refresh
-                                  });
+                                    print("✅ Subcategory selected: $selectedCategory with ID: $selectedCategoryId");
 
-                                  print("✅ Changing category to: $selectedCategory with ID: $selectedCategoryId (${selectedCategoryId.runtimeType})");
-                                  Navigator.pop(context);
-                                },
+                                    _fetchProductsForCategory(selectedCategoryId);
+
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text("• ${subcategory['name']}", style: TextStyle(fontSize: 14)),
+                                ),
+                                children: [
+                                  if (categoriesController.categoryTree.containsKey(subcategory['id']))
+                                    for (var subSubcategory in categoriesController.categoryTree[subcategory['id']]!)
+                                      ListTile(
+                                        title: Text("→ ${subSubcategory['name']}"),
+                                        onTap: () {
+                                          setState(() {
+                                            selectedCategory = subSubcategory['name'];
+                                            selectedCategoryId = subSubcategory['id'];
+                                            productListKey = UniqueKey();
+                                            products.clear();
+                                          });
+
+                                          print("✅ Level 4 Subcategory selected: $selectedCategory with ID: $selectedCategoryId");
+
+                                          _fetchProductsForCategory(selectedCategoryId);
+
+                                          Navigator.pop(context);
+                                        },
+                                      )
+                                ],
                               )
-                          else
-                            ListTile(
-                              title: Text("Chargement..."),
-                            ),
                         ],
                       ),
                   ],
@@ -96,7 +158,6 @@ class _StorePageState extends State<StoreDrawer> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Search Container
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
                 child: Align(
@@ -108,19 +169,14 @@ class _StorePageState extends State<StoreDrawer> {
                   ),
                 ),
               ),
-
-              // ✅ Product Grid updates with the selected subcategory's products
               Expanded(
                 child: isLoading
-                    ? Center(child: CircularProgressIndicator()) // Show loading if categories are not loaded yet
-                    : Column(
-                        children: [
-                          AlkStoreGridDrawer(
-                            key: productListKey,
-                            itemCount: 10,
-                            categoryId: selectedCategoryId, // ✅ Uses dynamically fetched category ID
-                          ),
-                        ],
+                    ? Center(child: CircularProgressIndicator())
+                    : AlkStoreGridDrawer(
+                        key: productListKey,
+                        itemCount: products.length,
+                        categoryId: selectedCategoryId,
+                        preloadedProducts: products, // ✅ Pass preloaded products
                       ),
               ),
             ],
