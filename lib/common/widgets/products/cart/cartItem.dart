@@ -13,6 +13,7 @@ class AlkCartItem extends StatelessWidget {
   final String productName;
   final String productBrand;
   final String productImage;
+  final String productPrice;
   final VoidCallback? onDelete; // Callback for delete action
 
   const AlkCartItem({
@@ -20,11 +21,14 @@ class AlkCartItem extends StatelessWidget {
     required this.productName,
     required this.productBrand,
     required this.productImage,
-    this.onDelete, // Add this parameter
+    required this.productPrice,
+    this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
+  //  print("AlkCartItem - productPrice: $productPrice");
+
     final productProvider = Get.find<ProductProvider>();
 
     return Row(
@@ -38,7 +42,8 @@ class AlkCartItem extends StatelessWidget {
           backgroundColor: AlkColors.light,
         ),
         const SizedBox(width: AlkSize.spaceBtwItems),
-        // Product Title & Brand
+
+        // Product Details (Brand, Name, Price)
         Expanded(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -51,9 +56,19 @@ class AlkCartItem extends StatelessWidget {
                   maxLines: 1,
                 ),
               ),
+              const SizedBox(height: 5),
+              // Product Price
+              Text(
+                "${productPrice.toString()} TND",
+                style: TextStyle(
+                 
+                  color: AlkColors.dark,
+                ),
+              ),
             ],
           ),
         ),
+
         // Delete Button
         IconButton(
           icon: Icon(Icons.delete, color: Colors.purple.shade300),
@@ -67,7 +82,7 @@ class AlkCartItem extends StatelessWidget {
               snackPosition: SnackPosition.TOP,
               duration: Duration(seconds: 2),
               backgroundColor: Colors.purple.shade300,
-              colorText: Colors.white
+              colorText: Colors.white,
             );
 
             // Trigger the callback to notify the parent widget

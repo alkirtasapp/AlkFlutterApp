@@ -24,7 +24,6 @@ class AlkAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: AlkSize.md),
       child: AppBar(
-        
         automaticallyImplyLeading: false,
         leading: showBackArrow
             ? IconButton(
