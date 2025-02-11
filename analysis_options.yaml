@@ -15,6 +15,7 @@ analyzer:
     library_private_types_in_public_api: ignore
     non_constant_identifier_names: ignore
     unnecessary_brace_in_string_interps: ignore
+    unnecessary_import: ignore
     unused_import: ignore
     use_super_parameters: ignore
 include: package:flutter_lints/flutter.yaml

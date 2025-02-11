@@ -63,7 +63,7 @@ class AlkBottomAddToCart extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              // ✅ Use GetX to add product to cart
+              //  Use GetX to add product to cart
               productProvider.addToCart(
                 productName: productName,
                 productBrand: productBrand,
@@ -72,7 +72,7 @@ class AlkBottomAddToCart extends StatelessWidget {
                 
               );
 
-              // ✅ Show a GetX Snackbar
+              //  Show a GetX Snackbar
               Get.snackbar(
                 "Ajouté au Panier",
                 "$productName a été ajouté au panier, avec un prix de: $productPrice",
@@ -85,7 +85,7 @@ class AlkBottomAddToCart extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.all(AlkSize.md),
               backgroundColor: AlkColors.primaryColor,
-              side: const BorderSide(color: Colors.black),
+              side: const BorderSide(color: Colors.grey),
             ),
             child: const Text('Ajouter au Panier'),
           ),
