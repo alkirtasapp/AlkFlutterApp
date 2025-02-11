@@ -71,7 +71,7 @@ class AlkCartItem extends StatelessWidget {
 
         // Delete Button
         IconButton(
-          icon: Icon(Icons.delete, color: Colors.purple.shade300),
+          icon: Icon(Icons.delete_outlined, color: Colors.purple.shade300),
           onPressed: () {
             productProvider.removeFromCart(productName);
 
@@ -83,6 +83,8 @@ class AlkCartItem extends StatelessWidget {
               duration: Duration(seconds: 2),
               backgroundColor: Colors.purple.shade300,
               colorText: Colors.white,
+              isDismissible: true, 
+              
             );
 
             // Trigger the callback to notify the parent widget

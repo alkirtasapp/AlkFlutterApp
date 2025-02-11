@@ -102,8 +102,9 @@ print('Discount for product ${productData!['id']}: $discountText');
         controller.constructImageUrl(productData!['id_default_image']);
         
     final dark = Theme.of(context).brightness == Brightness.dark;
-
+        
     return GestureDetector(
+      
       onTap: () => Get.to(() => ProductDetails(
        
         productId: id,

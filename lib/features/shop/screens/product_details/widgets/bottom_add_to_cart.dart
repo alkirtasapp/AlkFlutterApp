@@ -6,6 +6,8 @@ import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
 import 'package:test/common/widgets/providers/product_provider.dart';
 
+import '../../cart/cart.dart';
+
 class AlkBottomAddToCart extends StatelessWidget {
   final String productName;
   final String productBrand;
@@ -62,6 +64,7 @@ class AlkBottomAddToCart extends StatelessWidget {
             ],
           ),
           ElevatedButton(
+            
             onPressed: () {
               //  Use GetX to add product to cart
               productProvider.addToCart(
@@ -79,7 +82,10 @@ class AlkBottomAddToCart extends StatelessWidget {
                 snackPosition: SnackPosition.TOP,
               duration: Duration(seconds: 2),
               backgroundColor: Colors.purple.shade300,
-              colorText: Colors.white
+              colorText: Colors.white,
+              onTap: (snack) => Get.to(CartScreen()),
+              isDismissible: true, 
+
               );
             },
             style: ElevatedButton.styleFrom(
