@@ -56,19 +56,7 @@ class _CartScreenState extends State<CartScreen> {
                           setState(() {});
                         },
                       ),
-                      //SizedBox(height: AlkSize.spaceBtwItems),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              const SizedBox(width: 70), // Extra space
-                             // AlkProductQuantityAddRemove(),
-                            ],
-                          ),
-                          //Text('$productPrice TND' ), // Replace with actual price if needed
-                        ],
-                      ),
+                                         
                     ],
                   );
                 },
