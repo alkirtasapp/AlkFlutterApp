@@ -162,7 +162,8 @@ class _StorePageState extends State<StoreDrawer> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: AlkSearchContainer(
+                  child:
+                   AlkSearchContainer(
                     text: 'Recherche',
                     icon: Iconsax.search_normal,
                     showBackground: true,

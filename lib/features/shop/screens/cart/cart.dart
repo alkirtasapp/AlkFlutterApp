@@ -5,6 +5,8 @@ import 'package:test/common/widgets/products/cart/cartItem.dart';
 import 'package:test/utils/constants/size.dart';
 import 'package:test/common/widgets/providers/product_provider.dart';
 
+import '../../../../utils/constants/colors.dart';
+
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
 
@@ -15,6 +17,14 @@ class CartScreen extends StatefulWidget {
 class _CartScreenState extends State<CartScreen> {
   // Retrieve ProductProvider using GetX
   final productProvider = Get.find<ProductProvider>();
+
+  // Function to calculate total price
+double getTotalPrice() {
+  return productProvider.cartItems.fold(0.0, (sum, product) {
+    return sum +8+ double.tryParse(product['productPrice'].toString())!;
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -66,23 +76,33 @@ class _CartScreenState extends State<CartScreen> {
                         // Implement order logic here
                       },
                       style: ElevatedButton.styleFrom(
+                        
                         backgroundColor: Colors.purple,
-                        padding: EdgeInsets.symmetric(vertical: AlkSize.buttonHeight),
+                        padding: EdgeInsets.symmetric(
+                            vertical: AlkSize.buttonHeight),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
                           
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                       child: Text(
-                        "Commander",
+                        "Commander ",
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               color: Colors.white,
-                             // fontWeight: FontWeight.bold,
+                              // fontWeight: FontWeight.bold,
                             ),
                       ),
                     ),
                   ),
                 ),
+                Text(
+                            " total: ${getTotalPrice().toStringAsFixed(3)} TND (Livraison 8.000 TND)",
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: AlkColors.darkGrey,
+                                  
+                                ),
+                          ),
+                
               ],
             ),
     );

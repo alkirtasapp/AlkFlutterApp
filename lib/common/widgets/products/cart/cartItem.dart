@@ -36,10 +36,13 @@ class AlkCartItem extends StatelessWidget {
         // Product Image
         AlkRoundedImage(
           imageUrl: productImage,
-          width: 65,
-          height: 65,
+          width: 75,
+          height: 75,
           padding: EdgeInsets.all(AlkSize.sm),
           backgroundColor: AlkColors.light,
+          applyImageRadius: true,
+         
+
         ),
         const SizedBox(width: AlkSize.spaceBtwItems),
 
