@@ -1,0 +1,103 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+
+class DiscountController {
+
+  Future<Map<String, dynamic>?> fetchDiscount(int productId) async {
+    try {
+      final discountApi =
+          'https://www.alkirtas.com/api/specific_prices?display=full&filter[id_product]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+
+      final response = await http.get(Uri.parse(discountApi));
+
+      print(
+          'Response for product $productId: ${response.body}'); // Debugging output
+
+      if (response.statusCode == 200) {
+        final discountData = json.decode(utf8.decode(response.bodyBytes));
+
+        if (!discountData.containsKey('specific_prices')) {
+          print('No specific_prices key in response for product $productId');
+          return null;
+        }
+
+        final discounts = discountData['specific_prices'] as List<dynamic>?;
+        if (discounts == null || discounts.isEmpty) {
+          print('No discounts found for product $productId');
+          return null;
+        }
+
+        DateTime now = DateTime.now();
+        Map<String, dynamic>? permanentDiscount;
+        Map<String, dynamic>? latestDiscount;
+
+        for (var discount in discounts) {
+          if (!discount.containsKey('reduction') ||
+              !discount.containsKey('reduction_type')) {
+            print(
+                'Skipping discount for product $productId: Incomplete data ${discount}');
+            continue;
+          }
+
+          String fromDateStr = discount['from'] ?? "";
+          String toDateStr = discount['to'] ?? "";
+
+          DateTime? fromDate = DateTime.tryParse(fromDateStr);
+          DateTime? toDate = DateTime.tryParse(toDateStr);
+
+          // Check for permanent discount (always valid)
+          if (fromDateStr == "0000-00-00 00:00:00" &&
+              toDateStr == "0000-00-00 00:00:00") {
+            print('Permanent discount found for product $productId');
+            permanentDiscount = discount;
+            continue; // Still check for other discounts
+          }
+
+          // Ensure the discount is within the valid period
+          if (fromDate != null &&
+              toDate != null &&
+              (now.isBefore(fromDate) || now.isAfter(toDate))) {
+            print(
+                'Skipping expired discount for product $productId: From $fromDate to $toDate');
+            continue;
+          }
+
+          // Select the latest valid discount (based on 'to' date)
+          if (latestDiscount == null ||
+              (toDate != null &&
+                  toDate.isAfter(DateTime.tryParse(latestDiscount['to']) ??
+                      DateTime(1900)))) {
+            latestDiscount = discount;
+          }
+        }
+
+        // Apply permanent discount if available; otherwise, use the latest valid discount
+        Map<String, dynamic>? selectedDiscount =
+            permanentDiscount ?? latestDiscount;
+
+        if (selectedDiscount != null) {
+          double parsedReduction =
+              double.tryParse(selectedDiscount['reduction']) ?? 0;
+          parsedReduction = parsedReduction * 100; // Convert to percentage
+
+          print(
+              'Final selected discount for product $productId: $parsedReduction%');
+
+          return {
+            'reduction': parsedReduction.toString(), // Ensure string format
+            'reduction_type': 'percentage',
+          };
+        }
+
+        print('No valid discount available for product $productId');
+      } else {
+        print(
+            'Failed to fetch discount for product $productId: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching discount for product $productId: $e');
+    }
+    return null;
+  }
+}
