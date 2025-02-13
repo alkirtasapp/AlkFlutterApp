@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:test/features/shop/screens/cart/cart.dart';
+import 'package:test/features/shop/screens/product_details/product_details.dart';
 import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
 import 'package:test/common/widgets/images/AlkRoundedImages.dart';
@@ -36,10 +37,14 @@ class AlkCartItem extends StatelessWidget {
         // Product Image
         AlkRoundedImage(
           imageUrl: productImage,
-          width: 65,
-          height: 65,
+          width: 75,
+          height: 75,
           padding: EdgeInsets.all(AlkSize.sm),
           backgroundColor: AlkColors.light,
+          applyImageRadius: true,
+          
+         
+
         ),
         const SizedBox(width: AlkSize.spaceBtwItems),
 
@@ -49,7 +54,7 @@ class AlkCartItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AlkBrandTitleTextVerifIcon(title: productBrand),
+              AlkBrandTitleTextVerifIcon(title: productBrand ),
               Flexible(
                 child: AlkProductTitleText(
                   title: productName,
@@ -71,7 +76,7 @@ class AlkCartItem extends StatelessWidget {
 
         // Delete Button
         IconButton(
-          icon: Icon(Icons.delete, color: Colors.purple.shade300),
+          icon: Icon(Icons.delete_outlined, color: Colors.purple.shade300),
           onPressed: () {
             productProvider.removeFromCart(productName);
 
@@ -83,6 +88,8 @@ class AlkCartItem extends StatelessWidget {
               duration: Duration(seconds: 2),
               backgroundColor: Colors.purple.shade300,
               colorText: Colors.white,
+              isDismissible: true, 
+              
             );
 
             // Trigger the callback to notify the parent widget

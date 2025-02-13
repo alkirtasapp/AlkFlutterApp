@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:readmore/readmore.dart';
 import 'package:test/common/widgets/providers/product_provider.dart';
 import 'package:test/features/shop/screens/product_details/widgets/bottom_add_to_cart.dart';
@@ -38,32 +39,36 @@ class ProductDetails extends StatelessWidget {
     required this.productId,
     required this.productImage,
     required this.productImageList,
+  
   });
 
   @override
   Widget build(BuildContext context) {
-    
-final productPrice = productDiscount.isNotEmpty 
-   ? productNewPrice  
-   : (productOldPrice.isNotEmpty ? productOldPrice : productNewPrice); 
+    final productPrice = productDiscount.isNotEmpty
+        ? productNewPrice
+        : (productOldPrice.isNotEmpty ? productOldPrice : productNewPrice);
 
+    print("Product Price: $productPrice");
+    print("Product discount: $productDiscount");
+    print("Product OLD Price: $productOldPrice");
+    print("Product NEW  Price: $productNewPrice");
 
-
-   print("Product Price: $productPrice");
-  print("Product discount: $productDiscount");
-  print("Product OLD Price: $productOldPrice");
-  print("Product NEW  Price: $productNewPrice");
-
-      
-    
     return Scaffold(
       bottomNavigationBar: AlkBottomAddToCart(
         productName: productName,
         productBrand: productBrand,
         productImage: productImage,
-        productPrice : productPrice,
-        
-        
+        productPrice: productPrice,
+        productDiscount: productDiscount,
+        productBrandId: productBrandId,
+        productOldPrice: productOldPrice,
+        productNewPrice: productNewPrice,
+        productStock: productStock,
+        productDescription : productDescription,
+        productReference: productReference,
+        productImageList: productImageList,
+
+       
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -79,7 +84,11 @@ final productPrice = productDiscount.isNotEmpty
                   bottom: AlkSize.defaultSpace),
               child: Column(
                 children: [
-                  AlkRef(productReference: productReference),
+                  AlkRef(
+                      title: 'Réference ',
+                      icon: Iconsax.component5,
+                      size: 15,
+                      productReference: productReference),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkProductMetadata(
                     productName: productName,
@@ -91,16 +100,69 @@ final productPrice = productDiscount.isNotEmpty
                     productStock: productStock,
                   ),
                   SizedBox(height: AlkSize.spaceBtwItems),
-                  AlkSectionHeading(title: 'Déscription', showActionButton: false),
-                  SizedBox(width: AlkSize.spaceBtwItems),
+                  AlkRef(
+                    title: 'Déscription',
+                    icon: Iconsax.document_text5,
+                    size: 25,
+                    productReference: '',
+                  ),
+                  SizedBox(height: AlkSize.spaceBtwItems),
                   ReadMoreText(
-                    ProductCardControllerTax.cleanDescription(productDescription),
+                    ProductCardControllerTax.cleanDescription(
+                        productDescription),
                     trimLines: 2,
                     trimMode: TrimMode.Line,
                     trimCollapsedText: 'voir plus',
                     trimExpandedText: '.. moins ',
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
+                  SizedBox(height: AlkSize.spaceBtwItems),
+                  AlkRef(
+                    title: 'Détails de produit',
+                    icon: Iconsax.receipt_text5,
+                    size: 25,
+                    productReference: '',
+                  ),
+                  DataTable(
+                    columns: <DataColumn>[
+                      DataColumn(
+                        label: Expanded(
+                          child: Text(
+                            'Name',
+                            style: TextStyle(fontStyle: FontStyle.italic),
+                          ),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Expanded(
+                          child: Text(
+                            'Age',
+                            style: TextStyle(fontStyle: FontStyle.italic),
+                          ),
+                        ),
+                      ),
+                    ],
+                    rows: const <DataRow>[
+                      DataRow(
+                        cells: <DataCell>[
+                          DataCell(Text('SArah')),
+                          DataCell(Text('19')),
+                        ],
+                      ),
+                      DataRow(
+                        cells: <DataCell>[
+                          DataCell(Text('Janine')),
+                          DataCell(Text('43')),
+                        ],
+                      ),
+                      DataRow(
+                        cells: <DataCell>[
+                          DataCell(Text('William')),
+                          DataCell(Text('27')),
+                        ],
+                      ),
+                    ],
+                  )
                 ],
               ),
             ),

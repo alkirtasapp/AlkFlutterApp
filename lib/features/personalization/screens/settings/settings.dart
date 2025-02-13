@@ -28,7 +28,6 @@ class SettingScreen extends StatelessWidget {
                   // App Bar
                   AlkAppBar(
                     showBackArrow: false,
-                    
                     title: Text(
                       ' Mon profile',
                       style: Theme.of(context)
@@ -58,28 +57,49 @@ class SettingScreen extends StatelessWidget {
               child: Column(
                 children: [
                   // Account Setting
-                  AlkSectionHeading(title: 'Paramètres du compte',
-                  showActionButton: false,),
+                  AlkSectionHeading(
+                    title: 'Paramètres du compte',
+                    showActionButton: false,
+                  ),
                   SizedBox(height: AlkSize.spaceBtwItems),
 
-                  AlkSettingMenuTile(icon: Iconsax.safe_home, title: 'Mes Adresses', subtitle: 'Définir l\'adresse de livraison'),
-                  AlkSettingMenuTile(icon: Iconsax.shopping_cart, title: 'Mon Panier', subtitle: 'Ajouter, supprimer des produits et passer à la caisse'),
-                  AlkSettingMenuTile(icon: Iconsax.bag_tick, title: 'Mes Commandes', subtitle: 'Commandes en cours et terminées'),
-                  AlkSettingMenuTile(icon: Iconsax.discount_shape, title: 'Mes Coupons', subtitle: 'Liste de tous les coupons de réduction'),
-                  AlkSettingMenuTile(icon: Iconsax.notification, title: 'Notifications', subtitle: 'Définir tout type de message de notification'),
+                  AlkSettingMenuTile(
+                      icon: Iconsax.safe_home,
+                      title: 'Mes Adresses',
+                      subtitle: 'Définir l\'adresse de livraison'),
+                  AlkSettingMenuTile(
+                      icon: Iconsax.shopping_cart,
+                      title: 'Mon Panier',
+                      subtitle:
+                          'Ajouter, supprimer des produits et passer à la caisse'),
+                  AlkSettingMenuTile(
+                      icon: Iconsax.bag_tick,
+                      title: 'Mes Commandes',
+                      subtitle: 'Commandes en cours et terminées'),
+                  AlkSettingMenuTile(
+                      icon: Iconsax.discount_shape,
+                      title: 'Mes Coupons',
+                      subtitle: 'Liste de tous les coupons de réduction'),
+                  AlkSettingMenuTile(
+                      icon: Iconsax.notification,
+                      title: 'Notifications',
+                      subtitle: 'Définir tout type de message de notification'),
                   SizedBox(height: AlkSize.spaceBtwSections),
                   // Log out
-                  SizedBox(width: double.infinity,
-                  child: OutlinedButton(onPressed: () => Get.back(), child: const Text('Déconnexion')),),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                    
+                        onPressed: () => Get.back(),
+                        child: const Text('Déconnexion')),
+                        
+                  ),
                 ],
-                
               ),
-              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-
