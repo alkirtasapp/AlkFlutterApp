@@ -35,7 +35,7 @@ class ProductControllerStore {
         return null;
       }
 
-      const int productsPerCategory = 50; // Keep max products logic intact
+      const int productsPerCategory = 100; // Keep max products logic intact
       String productIdsParam = productIds.take(productsPerCategory).join('|');
 
       // ✅ Optimized API call: Fetch all products at once

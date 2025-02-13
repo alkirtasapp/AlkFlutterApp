@@ -39,6 +39,7 @@ class ProductDetails extends StatelessWidget {
     required this.productId,
     required this.productImage,
     required this.productImageList,
+  
   });
 
   @override
@@ -58,6 +59,16 @@ class ProductDetails extends StatelessWidget {
         productBrand: productBrand,
         productImage: productImage,
         productPrice: productPrice,
+        productDiscount: productDiscount,
+        productBrandId: productBrandId,
+        productOldPrice: productOldPrice,
+        productNewPrice: productNewPrice,
+        productStock: productStock,
+        productDescription : productDescription,
+        productReference: productReference,
+        productImageList: productImageList,
+
+       
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -73,7 +84,11 @@ class ProductDetails extends StatelessWidget {
                   bottom: AlkSize.defaultSpace),
               child: Column(
                 children: [
-                  AlkRef(title: 'Réference ',icon: Iconsax.component5,productReference: productReference),
+                  AlkRef(
+                      title: 'Réference ',
+                      icon: Iconsax.component5,
+                      size: 15,
+                      productReference: productReference),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkProductMetadata(
                     productName: productName,
@@ -85,8 +100,12 @@ class ProductDetails extends StatelessWidget {
                     productStock: productStock,
                   ),
                   SizedBox(height: AlkSize.spaceBtwItems),
-            
-                      AlkRef(title: 'Déscription',icon: Iconsax.document_text5, productReference: '',),
+                  AlkRef(
+                    title: 'Déscription',
+                    icon: Iconsax.document_text5,
+                    size: 25,
+                    productReference: '',
+                  ),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   ReadMoreText(
                     ProductCardControllerTax.cleanDescription(
@@ -98,8 +117,12 @@ class ProductDetails extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                   SizedBox(height: AlkSize.spaceBtwItems),
-                  AlkRef(title: 'Détails de produit',icon: Iconsax.receipt_text5, productReference: '',),
-                
+                  AlkRef(
+                    title: 'Détails de produit',
+                    icon: Iconsax.receipt_text5,
+                    size: 25,
+                    productReference: '',
+                  ),
                   DataTable(
                     columns: <DataColumn>[
                       DataColumn(
@@ -122,7 +145,7 @@ class ProductDetails extends StatelessWidget {
                     rows: const <DataRow>[
                       DataRow(
                         cells: <DataCell>[
-                          DataCell(Text('Sarah')),
+                          DataCell(Text('SArah')),
                           DataCell(Text('19')),
                         ],
                       ),

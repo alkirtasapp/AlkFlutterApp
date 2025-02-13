@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:test/features/shop/screens/product_details/product_details.dart';
+
 
 class ProductProvider extends ChangeNotifier { // ✅ Use ChangeNotifier
   final List<Map<String, String>> _cartItems = [];
@@ -10,12 +12,31 @@ class ProductProvider extends ChangeNotifier { // ✅ Use ChangeNotifier
     required String productBrand,
     required String productImage,
     required String productPrice,
+    required String productDiscount,
+    required String  productBrandId,
+    required String  productOldPrice,
+    required String  productNewPrice,
+    required String  productStock,
+    required String  productDescription,
+    required String productReference,
+     required List<String> productImageList,
+  
   }) {
     _cartItems.add({
       'productName': productName,
       'productBrand': productBrand,
       'productImage': productImage,
       'productPrice': productPrice,
+      'productDiscount' : productDiscount,
+      'productBrandId' : productBrandId,
+      'productOldPrice': productOldPrice,
+      'productNewPrice': productNewPrice,
+      'productStock': productStock,
+      'productDescription': productDescription,
+      'productReference': productReference,
+      'productImageList': productImageList.join(','),
+   
+
     });
 
     notifyListeners(); // ✅ Notify the UI to update

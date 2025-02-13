@@ -6,6 +6,7 @@ import 'package:test/utils/constants/size.dart';
 import 'package:test/common/widgets/providers/product_provider.dart';
 
 import '../../../../utils/constants/colors.dart';
+import '../product_details/product_details.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -19,12 +20,11 @@ class _CartScreenState extends State<CartScreen> {
   final productProvider = Get.find<ProductProvider>();
 
   // Function to calculate total price
-double getTotalPrice() {
-  return productProvider.cartItems.fold(0.0, (sum, product) {
-    return sum +8+ double.tryParse(product['productPrice'].toString())!;
-  });
-}
-
+  double getTotalPrice() {
+    return productProvider.cartItems.fold(0.0, (sum, product) {
+      return sum + 8 + double.tryParse(product['productPrice'].toString())!;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,14 +54,37 @@ double getTotalPrice() {
                       itemBuilder: (context, index) {
                         final product = productProvider.cartItems[index];
 
-                        return AlkCartItem(
-                          productName: product['productName']!,
-                          productBrand: product['productBrand']!,
-                          productImage: product['productImage']!,
-                          productPrice: product['productPrice']!,
-                          onDelete: () {
-                            setState(() {}); // Trigger rebuild on delete
+                        return GestureDetector(
+                          onTap: () {
+                            print(
+                                "Raw productImageList: ${product['productImageList']}");
+
+                            Get.to(() => ProductDetails(
+                                  productBrand: product['productBrand']?? '',
+                                  productName: product['productName']?? '',
+                                  productImage: product['productImage']?? '',
+                                  
+                                  productDiscount: product['productDiscount']?? '',
+                                  productOldPrice: product['productOldPrice']?? '',
+                                  
+                                  productNewPrice: product['productNewPrice']?? '',
+                                  productReference: product['productReference']?? '',
+                                  productStock: product['productStock']?? '',
+                                  productDescription: product['productDescription']?? '',
+                                  productBrandId: product['productBrandId']?? '',
+                                  productId: product['productId']?? '',
+                                  productImageList: product['productImageList']?.split(',') ?? [],
+                                ));
                           },
+                          child: AlkCartItem(
+                            productName: product['productName']!,
+                            productBrand: product['productBrand']!,
+                            productImage: product['productImage']!,
+                            productPrice: product['productPrice']!,
+                            onDelete: () {
+                              setState(() {}); // Trigger rebuild on delete
+                            },
+                          ),
                         );
                       },
                     ),
@@ -76,12 +99,10 @@ double getTotalPrice() {
                         // Implement order logic here
                       },
                       style: ElevatedButton.styleFrom(
-                        
                         backgroundColor: Colors.purple,
                         padding: EdgeInsets.symmetric(
                             vertical: AlkSize.buttonHeight),
                         shape: RoundedRectangleBorder(
-                          
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
@@ -96,13 +117,11 @@ double getTotalPrice() {
                   ),
                 ),
                 Text(
-                            " total: ${getTotalPrice().toStringAsFixed(3)} TND (Livraison 8.000 TND)",
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: AlkColors.darkGrey,
-                                  
-                                ),
-                          ),
-                
+                  " total: ${getTotalPrice().toStringAsFixed(3)} TND (Livraison 8.000 TND)",
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AlkColors.darkGrey,
+                      ),
+                ),
               ],
             ),
     );

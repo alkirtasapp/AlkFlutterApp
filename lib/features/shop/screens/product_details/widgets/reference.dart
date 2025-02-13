@@ -8,17 +8,18 @@ class AlkRef extends StatelessWidget {
     final String productReference;
     final String title ;
     final IconData icon;
+    final double size;
     
 
   const AlkRef({
-    super.key, required this.productReference, required this.title, required this.icon , 
+    super.key, required this.productReference, required this.title, required this.icon, required this.size , 
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: Colors.purple.shade300, size: 25 ,),
+        Icon(icon, color: Colors.purple.shade300, size: size ,),
         SizedBox(width: AlkSize.spaceBtwItems/2,),
         Text.rich(
           TextSpan(

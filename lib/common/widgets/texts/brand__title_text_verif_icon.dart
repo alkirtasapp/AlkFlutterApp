@@ -27,7 +27,7 @@ class AlkBrandTitleTextVerifIcon extends StatelessWidget {
       children: [
         Flexible(
           child: AlkBrandTitleText(
-            title: title,
+            title:title,
             color:textColor,
             maxline: maxline,
             textAlign: textAlign,

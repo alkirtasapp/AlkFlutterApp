@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:test/features/shop/screens/cart/cart.dart';
+import 'package:test/features/shop/screens/product_details/product_details.dart';
 import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
 import 'package:test/common/widgets/images/AlkRoundedImages.dart';
@@ -41,6 +42,7 @@ class AlkCartItem extends StatelessWidget {
           padding: EdgeInsets.all(AlkSize.sm),
           backgroundColor: AlkColors.light,
           applyImageRadius: true,
+          
          
 
         ),
@@ -52,7 +54,7 @@ class AlkCartItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AlkBrandTitleTextVerifIcon(title: productBrand),
+              AlkBrandTitleTextVerifIcon(title: productBrand ),
               Flexible(
                 child: AlkProductTitleText(
                   title: productName,
