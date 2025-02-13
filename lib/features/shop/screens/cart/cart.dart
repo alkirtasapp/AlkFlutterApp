@@ -74,6 +74,8 @@ class _CartScreenState extends State<CartScreen> {
                                   productBrandId: product['productBrandId']?? '',
                                   productId: product['productId']?? '',
                                   productImageList: product['productImageList']?.split(',') ?? [],
+                                  //forced add 
+                                   productFeatures: [],
                                 ));
                           },
                           child: AlkCartItem(

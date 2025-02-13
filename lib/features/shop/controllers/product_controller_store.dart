@@ -1,16 +1,19 @@
 import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import 'package:test/data/controllers/details_controller.dart';
 import 'package:test/data/controllers/discount_controller.dart';
 import 'package:test/data/controllers/product_list_Category.dart';
 import 'package:test/data/controllers/tax_controller.dart';
-import '../../../data/controllers/quantity_controller.dart';
+import 'package:test/data/controllers/quantity_controller.dart';
+// ✅ Importing details controller
 
 class ProductControllerStore {
   final QuantityController quantityController = QuantityController();
   final DiscountController discountController = DiscountController();
   final TaxController taxController = TaxController();
   final ProductListCategory productListCategory = ProductListCategory();
+  final DetailsController detailsController = DetailsController();
 
   Future<Map<String, dynamic>?> fetchProductDataStore(
       int productIndex, int categoryId) async {
@@ -35,10 +38,9 @@ class ProductControllerStore {
         return null;
       }
 
-      const int productsPerCategory = 100; // Keep max products logic intact
+      const int productsPerCategory = 100;
       String productIdsParam = productIds.take(productsPerCategory).join('|');
 
-      // ✅ Optimized API call: Fetch all products at once
       final String productApi =
           'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsParam]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
@@ -56,7 +58,6 @@ class ProductControllerStore {
           return null;
         }
 
-        // Ensure products list is properly cast
         final List<dynamic> rawProducts = productData['products'];
         final List<Map<String, dynamic>> fetchedProducts = rawProducts
             .where((product) =>
@@ -129,6 +130,23 @@ class ProductControllerStore {
 
         print(
             "📦 Stock for product ${product['id']}: ${product['quantity']} units");
+
+        // ✅ Fetch product features using DetailsController
+        if (product.containsKey('associations') &&
+            product['associations'].containsKey('product_features')) {
+          final List<Map<String, dynamic>> featuresList =
+              (product['associations']['product_features'] as List)
+                  .map((feature) => feature as Map<String, dynamic>)
+                  .toList();
+
+          product['details_table'] =
+              await detailsController.fetchProductFeatures(featuresList);
+        } else {
+          product['details_table'] = {};
+        }
+
+        print(
+            "📜 Product Details for ${product['id']}: ${product['details_table']}");
 
         // Step 3: Save product to cache
         box.put(cacheKey, product);
