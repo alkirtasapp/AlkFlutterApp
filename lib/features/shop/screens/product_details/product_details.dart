@@ -4,6 +4,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:readmore/readmore.dart';
 import 'package:test/common/widgets/providers/product_provider.dart';
 import 'package:test/features/shop/screens/product_details/widgets/bottom_add_to_cart.dart';
+import 'package:test/features/shop/screens/product_details/widgets/product_features.dart';
 import '../../../../common/widgets/texts/section_heading.dart';
 import '../../../../utils/constants/size.dart';
 import '../../controllers/product_card_controller.dart';
@@ -24,6 +25,7 @@ class ProductDetails extends StatelessWidget {
   final String productImage;
   final List<String> productImageList;
   final String productStock;
+  final List<String>? productFeatures; // Allow null
 
   const ProductDetails({
     super.key,
@@ -39,7 +41,7 @@ class ProductDetails extends StatelessWidget {
     required this.productId,
     required this.productImage,
     required this.productImageList,
-  
+    this.productFeatures = const [], // ✅ Ensures default empty list
   });
 
   @override
@@ -64,11 +66,9 @@ class ProductDetails extends StatelessWidget {
         productOldPrice: productOldPrice,
         productNewPrice: productNewPrice,
         productStock: productStock,
-        productDescription : productDescription,
+        productDescription: productDescription,
         productReference: productReference,
         productImageList: productImageList,
-
-       
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -118,51 +118,21 @@ class ProductDetails extends StatelessWidget {
                   ),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkRef(
-                    title: 'Détails de produit',
+                    title: 'Détails du produit',
                     icon: Iconsax.receipt_text5,
                     size: 25,
                     productReference: '',
                   ),
-                  DataTable(
-                    columns: <DataColumn>[
-                      DataColumn(
-                        label: Expanded(
-                          child: Text(
-                            'Name',
-                            style: TextStyle(fontStyle: FontStyle.italic),
-                          ),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Expanded(
-                          child: Text(
-                            'Age',
-                            style: TextStyle(fontStyle: FontStyle.italic),
-                          ),
-                        ),
-                      ),
-                    ],
-                    rows: const <DataRow>[
-                      DataRow(
-                        cells: <DataCell>[
-                          DataCell(Text('SArah')),
-                          DataCell(Text('19')),
-                        ],
-                      ),
-                      DataRow(
-                        cells: <DataCell>[
-                          DataCell(Text('Janine')),
-                          DataCell(Text('43')),
-                        ],
-                      ),
-                      DataRow(
-                        cells: <DataCell>[
-                          DataCell(Text('William')),
-                          DataCell(Text('27')),
-                        ],
-                      ),
-                    ],
-                  )
+                    // Check if product features exist before displaying
+                  if (productFeatures != null && productFeatures!.isNotEmpty)
+                    AlkProductFeatures(productFeatures: productFeatures)
+                  else
+                    const Text(
+                      "Aucune information sur le produit disponible.",  
+                      textAlign: TextAlign.center,
+                      style:
+                          TextStyle(fontStyle: FontStyle.italic, fontSize: 14),
+                    ),
                 ],
               ),
             ),
@@ -172,3 +142,4 @@ class ProductDetails extends StatelessWidget {
     );
   }
 }
+

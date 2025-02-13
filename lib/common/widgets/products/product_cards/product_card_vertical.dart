@@ -73,6 +73,13 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
     final brandId = _safeConvertToString(productData!['id_manufacturer']);
     final productStock =_safeConvertToString(productData!['quantity']);
     final List<String> imageList = (productData!['image_urls'] as List<dynamic>).cast<String>();
+      //addding features details
+    final List<String> productFeatures = productData!['details_table'] != null
+    ? (productData!['details_table'] as Map<String, String>)
+        .entries
+        .map((entry) => "${entry.key}: ${entry.value}")
+        .toList()
+    : [];
     final rawTTCPrice =
         double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))
                 ?.toStringAsFixed(2) ??
@@ -116,6 +123,7 @@ print('Discount for product ${productData!['id']}: $discountText');
         productImage: imageUrl,
         productImageList: imageList,  // Now correctly passing as List<String>
         productStock : productStock,
+          productFeatures : productFeatures,
   
 
         productDescription : description,

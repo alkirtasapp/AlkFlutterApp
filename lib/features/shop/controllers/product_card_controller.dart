@@ -3,8 +3,10 @@ import 'dart:math';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as htmlParser;
+import 'package:test/data/controllers/details_controller.dart';
 
 class ProductCardControllerTax {
+  final DetailsController detailsController = DetailsController();
 Future<Map<String, dynamic>?> fetchProductData(int productIndex) async {
     try {
         //  Open Hive box for caching
@@ -94,6 +96,23 @@ Future<Map<String, dynamic>?> fetchProductData(int productIndex) async {
         product['quantity'] = stockQuantity ?? 0; // Add stock quantity to productData
 
         print("📦 Stock for product ${product['id']}: ${product['quantity']} units");
+         // ✅ Fetch product features using DetailsController
+        if (product.containsKey('associations') &&
+            product['associations'].containsKey('product_features')) {
+          final List<Map<String, dynamic>> featuresList =
+              (product['associations']['product_features'] as List)
+                  .map((feature) => feature as Map<String, dynamic>)
+                  .toList();
+
+          product['details_table'] =
+              await detailsController.fetchProductFeatures(featuresList);
+        } else {
+          product['details_table'] = {};
+        }
+
+        print(
+            "📜 Product Details for ${product['id']}: ${product['details_table']}");
+
 
         // ✅ Step 3: Save product to cache
         box.put(cacheKey, product);

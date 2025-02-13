@@ -80,6 +80,14 @@ class _ProductCardStoreState extends State<ProductCardStore> {
     final title = _safeConvertToString(productData!['name']);
     final List<String> imageList =
         (productData!['image_urls'] as List<dynamic>).cast<String>();
+        //addding features details
+    final List<String> productFeatures = productData!['details_table'] != null
+    ? (productData!['details_table'] as Map<String, String>)
+        .entries
+        .map((entry) => "${entry.key}: ${entry.value}")
+        .toList()
+    : [];
+
     final productStock = _safeConvertToString(productData!['quantity']);
 
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
@@ -124,7 +132,8 @@ class _ProductCardStoreState extends State<ProductCardStore> {
             productImage: imageUrl,
             productImageList: imageList,
             productStock: productStock,
-
+            //forced add
+           productFeatures : productFeatures,
             productDescription: description,
             productOldPrice: discountText != null ? displayPrice : '',
             productNewPrice: discountValue > 0
