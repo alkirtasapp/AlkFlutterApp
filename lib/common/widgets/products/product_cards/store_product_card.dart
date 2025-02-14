@@ -80,13 +80,16 @@ class _ProductCardStoreState extends State<ProductCardStore> {
     final title = _safeConvertToString(productData!['name']);
     final List<String> imageList =
         (productData!['image_urls'] as List<dynamic>).cast<String>();
-        //addding features details
+    //addding features details
     final List<String> productFeatures = productData!['details_table'] != null
-    ? (productData!['details_table'] as Map<String, String>)
-        .entries
-        .map((entry) => "${entry.key}: ${entry.value}")
-        .toList()
-    : [];
+        ? (productData!['details_table'] as Map<String, String>)
+            .entries
+            .map((entry) => "${entry.key}: ${entry.value}")
+            .toList()
+        : [];
+    print(
+        "Type of details_table: ${productData!['details_table'].runtimeType}");
+    print("Contents of details_table: ${productData!['details_table']}");
 
     final productStock = _safeConvertToString(productData!['quantity']);
 
@@ -133,7 +136,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
             productImageList: imageList,
             productStock: productStock,
             //forced add
-           productFeatures : productFeatures,
+            productFeatures: productFeatures,
             productDescription: description,
             productOldPrice: discountText != null ? displayPrice : '',
             productNewPrice: discountValue > 0
@@ -184,7 +187,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                       left: 1,
                       child: AlkRoundedContainer(
                         radius: AlkSize.sm,
-                        backgroundColor:  Colors.purple.shade300,
+                        backgroundColor: Colors.purple.shade300,
                         padding: const EdgeInsets.symmetric(
                           horizontal: AlkSize.sm,
                           vertical: AlkSize.xs,
@@ -268,7 +271,9 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                                 child: IconButton(
                                     color: AlkColors.white,
                                     onPressed: () {},
-                                    icon: const Icon(Iconsax.add,))),
+                                    icon: const Icon(
+                                      Iconsax.add,
+                                    ))),
                           ),
                         ),
                       ],

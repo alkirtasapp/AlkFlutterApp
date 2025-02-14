@@ -6,16 +6,14 @@ import 'package:flutter/material.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
-  // Open product cache box
-  await Hive.openBox('productCache');
   
-  // add widget Binding
+  // Open product cache box
+  var box = await Hive.openBox('productCache');
 
-  // initial local storage
-
-  // initilize firebase
-
-  // initilize authentication
+  // ✅ Clear cache on app restart
+  await box.clear();
+  print("🗑️ Product cache cleared on app reload");
 
   runApp(const App());
 }
+
