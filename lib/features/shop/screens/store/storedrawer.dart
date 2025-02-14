@@ -83,7 +83,7 @@ class _StorePageState extends State<StoreDrawer> {
         ),
         drawer: Drawer(
           child: isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator( ))
               : ListView(
                   children: [
                     for (var category in categoriesController.mainCategories.entries)
@@ -172,7 +172,9 @@ class _StorePageState extends State<StoreDrawer> {
               ),
               Expanded(
                 child: isLoading
-                    ? Center(child: CircularProgressIndicator())
+                    ? Center(child: CircularProgressIndicator(
+           
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),))
                     : AlkStoreGridDrawer(
                         key: productListKey,
                         itemCount: products.length,
