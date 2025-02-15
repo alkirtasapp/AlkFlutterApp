@@ -13,12 +13,15 @@ class AlkAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.leadingIcon,
     this.leadingOnPressed,
     this.showBackArrow = true,
+    
+
   });
   final Widget? title;
   final List<Widget>? actions;
   final IconData? leadingIcon;
   final bool showBackArrow;
   final VoidCallback? leadingOnPressed;
+  
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +31,7 @@ class AlkAppBar extends StatelessWidget implements PreferredSizeWidget {
         automaticallyImplyLeading: false,
         leading: showBackArrow
             ? IconButton(
-                onPressed: () => Get.to(NavigationMenu()),
+                onPressed: ()=> Get.to(NavigationMenu()), //() => Get.back(),
                 icon: Icon(
                   Iconsax.arrow_left,
                   color: Colors.black,

@@ -173,6 +173,7 @@ class _StorePageState extends State<StoreDrawer> {
               Expanded(
                 child: isLoading
                     ? Center(child: CircularProgressIndicator(
+                      
            
             valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),))
                     : AlkStoreGridDrawer(

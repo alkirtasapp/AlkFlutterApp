@@ -10,9 +10,9 @@ Future<void> main() async {
   // Open product cache box
   var box = await Hive.openBox('productCache');
 
-  // ✅ Clear cache on app restart
+  // fassa5 l cache every restart
   await box.clear();
-  print("🗑️ Product cache cleared on app reload");
+  print(" Product cache cleared on app reload");
 
   runApp(const App());
 }

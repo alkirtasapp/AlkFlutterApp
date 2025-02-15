@@ -30,7 +30,7 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AlkAppBar(
-        showBackArrow: true,
+        showBackArrow: false,
         title: Text('Panier', style: Theme.of(context).textTheme.headlineSmall),
       ),
       body: productProvider.cartItems.isEmpty
