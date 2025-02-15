@@ -38,7 +38,7 @@ class ProductControllerStore {
         return null;
       }
 
-      const int productsPerCategory = 30;
+      const int productsPerCategory = 50;
       String productIdsParam = productIds.take(productsPerCategory).join('|');
 
       final String productApi =
@@ -72,9 +72,9 @@ class ProductControllerStore {
           return null;
         }
 
-        if (productIndex >= fetchedProducts.length) {
+        if (productIndex >= fetchedProducts.length+10) {
           print(
-              "⚠️ Product Index $productIndex is out of range (Max: ${fetchedProducts.length - 1})");
+              "⚠️ Product Index $productIndex is out of range (Max: ${fetchedProducts.length /*- 1*/+10})");
           return null;
         }
 
