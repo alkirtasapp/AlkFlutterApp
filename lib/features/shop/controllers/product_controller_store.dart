@@ -38,7 +38,7 @@ class ProductControllerStore {
         return null;
       }
 
-      const int productsPerCategory = 100;
+      const int productsPerCategory = 30;
       String productIdsParam = productIds.take(productsPerCategory).join('|');
 
       final String productApi =

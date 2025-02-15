@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -81,12 +83,14 @@ class _ProductCardStoreState extends State<ProductCardStore> {
     final List<String> imageList =
         (productData!['image_urls'] as List<dynamic>).cast<String>();
     //addding features details
-    final List<String> productFeatures = productData!['details_table'] != null
-        ? (productData!['details_table'] as Map<String, String>)
-            .entries
-            .map((entry) => "${entry.key}: ${entry.value}")
-            .toList()
-        : [];
+ final Map<String, String> productFeatures = productData!['details_table'] != null
+    ? Map<String, String>.from(
+        (productData!['details_table'] as Map).map(
+          (key, value) => MapEntry(key.toString(), value.toString()),
+        ),
+      )
+    : {};
+
     print(
         "Type of details_table: ${productData!['details_table'].runtimeType}");
     print("Contents of details_table: ${productData!['details_table']}");
@@ -136,7 +140,11 @@ class _ProductCardStoreState extends State<ProductCardStore> {
             productImageList: imageList,
             productStock: productStock,
             //forced add
-            productFeatures: productFeatures,
+            productFeatures: productFeatures != null
+    ? productFeatures.entries.map((entry) => "${entry.key}: ${entry.value}").toList()
+    : [],
+
+
             productDescription: description,
             productOldPrice: discountText != null ? displayPrice : '',
             productNewPrice: discountValue > 0

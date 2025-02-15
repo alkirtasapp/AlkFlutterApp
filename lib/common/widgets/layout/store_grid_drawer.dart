@@ -6,7 +6,7 @@ class AlkStoreGridDrawer extends StatelessWidget {
   final int itemCount;
   final int categoryId;
   final double? mainAxisExtent;
-  final List<Map<String, dynamic>> preloadedProducts; // ✅ Accept paginated products
+  final List<Map<dynamic, dynamic>> preloadedProducts; // ✅ Accepts all key-value types
 
   const AlkStoreGridDrawer({
     super.key,
@@ -32,7 +32,11 @@ class AlkStoreGridDrawer extends StatelessWidget {
           mainAxisExtent: mainAxisExtent,
         ),
         itemBuilder: (_, index) {
-          print("🛍️ Rendering Product: ${preloadedProducts[index]['name']} (ID: ${preloadedProducts[index]['id']})");
+          final productData = preloadedProducts[index];
+
+          // Ensure compatibility with various map types
+          final safeProductData = productData.map((key, value) => MapEntry(key.toString(), value));
+          print("🛍️ Rendering Product: ${safeProductData['name']} (ID: ${safeProductData['id']})");
 
           return ProductCardStore(
             categoryId: categoryId,
