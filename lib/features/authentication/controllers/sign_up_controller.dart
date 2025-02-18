@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -17,32 +16,49 @@ class SignUpController {
 
   bool isLoading = false;
 
-  // Function to check if the email is already used
-  Future<bool> isEmailUnique(String email) async {
-    final String apiUrl =
-        "https://www.alkirtas.com/api/customers?display=full&filter[email]=$email&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU&output_format=JSON";
+  // Function to check if the email is unique
+Future<bool> isEmailUnique(String email) async {
+  final String apiUrl =
+      "https://www.alkirtas.com/api/customers?display=full&filter[email]=$email&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU&output_format=JSON";
 
-    try {
-      log("Checking if email exists: $email");
+  try {
+    log("Checking if email exists: $email");
 
-      final response = await http.get(Uri.parse(apiUrl));
+    final response = await http.get(Uri.parse(apiUrl));
 
-      log("Email Check Response Status: ${response.statusCode}");
-      log("Email Check Response Body: ${response.body}");
+    log("Email Check Response Status: ${response.statusCode}");
+    log("Email Check Response Body: ${response.body}");
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data["customers"] == null || data["customers"].isEmpty;
+    if (response.statusCode == 200) {
+      final dynamic decodedData = json.decode(response.body);
+
+      // Case 1: API returns an empty list `[]` directly (email is unique)
+      if (decodedData is List && decodedData.isEmpty) {
+        return true; // ✅ Email is unique
       }
-    } catch (e) {
-      log("Email Check Error: $e");
+
+      // Case 2: API returns a dictionary `{ "customers": [...] }`
+      if (decodedData is Map<String, dynamic> && decodedData.containsKey("customers")) {
+        final customers = decodedData["customers"];
+
+        if (customers is List) {
+          return customers.isEmpty; // ✅ True if no customers found
+        }
+      }
     }
-    return false;
+  } catch (e) {
+    log("Email Check Error: $e");
   }
+
+  return false; // Assume email exists if API fails
+}
+
+
+
 
   // Function to create XML request for PrestaShop API
   String generateXmlData() {
-    return '''
+    final xmlData = '''
     <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
         <customer>
             <passwd><![CDATA[${passwordController.text}]]></passwd>
@@ -55,6 +71,9 @@ class SignUpController {
         </customer>
     </prestashop>
     ''';
+
+    log("Generated XML Data: \n$xmlData");
+    return xmlData;
   }
 
   // Function to send API request

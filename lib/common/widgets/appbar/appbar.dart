@@ -31,7 +31,7 @@ class AlkAppBar extends StatelessWidget implements PreferredSizeWidget {
         automaticallyImplyLeading: false,
         leading: showBackArrow
             ? IconButton(
-                onPressed: ()=> Get.to(NavigationMenu()), //() => Get.back(),
+                onPressed: ()=>  Get.back(),
                 icon: Icon(
                   Iconsax.arrow_left,
                   color: Colors.black,

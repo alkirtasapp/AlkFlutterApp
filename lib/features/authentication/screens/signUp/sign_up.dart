@@ -13,7 +13,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final SignUpController _controller = SignUpController();
-  bool _isChecked = false; // Checkbox state
+  bool _isChecked = false; // Terms of Use checkbox state
 
   void _handleSignUp() async {
     setState(() => _controller.isLoading = true);
@@ -168,16 +168,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         setState(() => _isChecked = newValue!);
                       },
                     ),
-                    Expanded(child: const Text("J'accepte les conditions générales et la politique de confidentialité")),
+                    const Expanded(
+                      child: Text("J'accepte les termes et conditions."),
+                    ),
                   ],
                 ),
                 const SizedBox(height: AlkSize.spaceBtwInputFields),
 
-                /// Button
+                /// Button (Disabled if terms are not accepted)
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-
                     onPressed: (_controller.isLoading || !_isChecked) ? null : _handleSignUp,
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.resolveWith<Color>(
