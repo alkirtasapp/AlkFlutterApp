@@ -38,7 +38,7 @@ class ProductControllerStore {
         return null;
       }
 
-      const int productsPerCategory = 50;
+      const int productsPerCategory = 10;
       String productIdsParam = productIds.take(productsPerCategory).join('|');
 
       final String productApi =
@@ -59,6 +59,9 @@ class ProductControllerStore {
         }
 
         final List<dynamic> rawProducts = productData['products'];
+        print("📡 API returned ${rawProducts.length} products before filtering.");
+        print("🔍 Raw Product IDs: ${rawProducts.map((p) => p['id']).toList()}");
+
         final List<Map<String, dynamic>> fetchedProducts = rawProducts
             .where((product) =>
                 product is Map<String, dynamic> &&
@@ -66,15 +69,28 @@ class ProductControllerStore {
                 product['active'].toString() == '1')
             .cast<Map<String, dynamic>>()
             .toList();
+            
+
+        print("✅ Active Products After Filtering: ${fetchedProducts.length}");
+
+        for (var product in rawProducts) {
+            if (!(product is Map<String, dynamic>)) {
+                print("⚠️ Skipping product: Invalid format ${product}");
+            } else if (!product.containsKey('active')) {
+                print("⚠️ Skipping product ${product['id'] ?? 'Unknown ID'}: Missing 'active' key.");
+            } else if (product['active'].toString() != '1') {
+                print("⚠️ Skipping product ${product['id']}: Inactive product.");
+            }
+        }
 
         if (fetchedProducts.isEmpty) {
           print("⚠️ No active products available for Category ID: $categoryId");
           return null;
         }
 
-        if (productIndex >= fetchedProducts.length+10) {
+        if (productIndex >= fetchedProducts.length) {
           print(
-              "⚠️ Product Index $productIndex is out of range (Max: ${fetchedProducts.length /*- 1*/+10})");
+              "❌ Error: Product Index $productIndex is out of range! Valid range: 0 to ${fetchedProducts.length - 1}");
           return null;
         }
 

@@ -22,6 +22,7 @@ class AlkBottomAddToCart extends StatelessWidget {
   final String productDescription;
   final String productReference;
    final List<String> productImageList;
+   final List<String>? productFeatures;
 
   const AlkBottomAddToCart({
     super.key,
@@ -36,7 +37,8 @@ class AlkBottomAddToCart extends StatelessWidget {
     required this.productStock,
     required this.productDescription, 
     required this.productReference,
-     required this.productImageList,
+     required this.productImageList, 
+     required this.productFeatures,
   });
 
   @override
@@ -96,6 +98,7 @@ class AlkBottomAddToCart extends StatelessWidget {
                 productDescription: productDescription,
                 productReference: productReference,
                  productImageList: productImageList,
+                 productFeatures : productFeatures,
               );
 
               //  Show a GetX Snackbar

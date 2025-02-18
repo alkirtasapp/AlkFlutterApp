@@ -31,6 +31,8 @@ class ProductListCategory {
             .map((product) => int.parse(product['id'].toString()))
             .toList();
         productIds.sort((a, b) => b.compareTo(a)); //  Sort by ID DESC
+         // ✅ Reverse the list correctly
+
         
 
         print("📦 Found ${productIds.length} products in category $categoryId");

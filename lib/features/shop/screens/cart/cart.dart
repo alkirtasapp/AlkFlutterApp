@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:test/common/widgets/appbar/appbar.dart';
 import 'package:test/common/widgets/products/cart/cartItem.dart';
+import 'package:test/features/shop/screens/product_details/widgets/product_features.dart';
 import 'package:test/utils/constants/size.dart';
 import 'package:test/common/widgets/providers/product_provider.dart';
 
@@ -75,8 +76,10 @@ class _CartScreenState extends State<CartScreen> {
                                   productId: product['productId']?? '',
                                   productImageList: product['productImageList']?.split(',') ?? [],
                                   //forced add 
-                                   productFeatures: [],
+                                   productFeatures: product['productFeatures']?.split(',') ?? [],
+                                  
                                 ));
+                                print("product Features : ");
                           },
                           child: AlkCartItem(
                             productName: product['productName']!,

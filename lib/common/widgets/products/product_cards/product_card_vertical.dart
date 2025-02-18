@@ -123,7 +123,7 @@ print('Discount for product ${productData!['id']}: $discountText');
         productImage: imageUrl,
         productImageList: imageList,  // Now correctly passing as List<String>
         productStock : productStock,
-          productFeatures : productFeatures,
+        productFeatures : productFeatures,
   
 
         productDescription : description,
