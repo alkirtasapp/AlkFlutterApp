@@ -20,6 +20,7 @@ class ProductProvider extends ChangeNotifier { // ✅ Use ChangeNotifier
     required String  productDescription,
     required String productReference,
      required List<String> productImageList,
+     required List<String>? productFeatures,
   
   }) {
     _cartItems.add({
@@ -35,6 +36,7 @@ class ProductProvider extends ChangeNotifier { // ✅ Use ChangeNotifier
       'productDescription': productDescription,
       'productReference': productReference,
       'productImageList': productImageList.join(','),
+      'productFeatures' : productFeatures?.join(',') ?? '',
    
 
     });

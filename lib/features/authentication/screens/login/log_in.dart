@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:test/features/authentication/screens/signUp/sign_up.dart';
 import 'package:test/navigation_menu.dart';
 import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/images_strings.dart';
@@ -244,14 +247,15 @@ class AlkLoginForm extends StatelessWidget {
             const SizedBox(height: AlkSize.spaceBtwInputFields / 2),
             // Remember Me and Forgot Password
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Row(
+                
+               /* Row(
                   children: [
                     Checkbox(value: true, onChanged: (value) {}),
                     const Text('Remember me'),
                   ],
-                ),
+                ),*/
                 TextButton(
                   onPressed: () {},
                   child: const Text('Mot de passe oublié?'),
@@ -272,7 +276,7 @@ class AlkLoginForm extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: () => Get.to(()=> const SignUpScreen()),
                 child: const Text('Créer un compte'),
               ),
             ),

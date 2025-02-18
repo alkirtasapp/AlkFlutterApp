@@ -178,7 +178,7 @@ class _StorePageState extends State<StoreDrawer> {
             valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),))
                     : AlkStoreGridDrawer(
                         key: productListKey,
-                        itemCount: products.length,
+                        itemCount:10 /*products.length*/,
                         categoryId: selectedCategoryId,
                         preloadedProducts: products, // ✅ Pass preloaded products
                       ),
