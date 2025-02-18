@@ -78,6 +78,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Text('Créons votre compte...', style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: AlkSize.spaceBtwSections),
 
+                /// Titre (Sexe)
+                Text("Titre", style: Theme.of(context).textTheme.titleMedium),
+                Row(
+                  children: [
+                    Radio<String>(
+                      value: "M.",
+                      groupValue: _controller.selectedTitle,
+                      onChanged: (value) {
+                        setState(() {
+                          _controller.updateTitle(value!);
+                        });
+                      },
+                    ),
+                    const Text("M."),
+                    SizedBox(width: AlkSize.spaceBtwInputFields),
+                    Radio<String>(
+                      value: "Mme",
+                      groupValue: _controller.selectedTitle,
+                      onChanged: (value) {
+                        setState(() {
+                          _controller.updateTitle(value!);
+                        });
+                      },
+                    ),
+                    const Text("Mme"),
+                  ],
+                ),
+                const SizedBox(height: AlkSize.spaceBtwInputFields),
+
+
                 /// Nom et Prénom
                 Row(
                   children: [
@@ -103,6 +133,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ],
                 ),
                 const SizedBox(height: AlkSize.spaceBtwInputFields),
+               
 
                 /// Phone Number
                 TextFormField(
