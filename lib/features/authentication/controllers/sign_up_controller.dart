@@ -49,7 +49,7 @@ class SignUpController {
         if (decodedData is Map<String, dynamic> && decodedData.containsKey("customers")) {
           final customers = decodedData["customers"];
           if (customers is List) {
-            return customers.isEmpty; // ✅ True if no customers found
+            return customers.isEmpty; //  True if no customers found
           }
         }
       }
@@ -57,7 +57,7 @@ class SignUpController {
       log("Email Check Error: $e");
     }
 
-    return false; // Assume email exists if API fails
+    return false; 
   }
 
   // Function to create XML request for PrestaShop API

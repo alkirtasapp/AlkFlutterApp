@@ -47,7 +47,7 @@ class _StorePageState extends State<StoreDrawer> {
     List<Map<String, dynamic>> fetchedProducts = [];
 
     // ✅ Fetch multiple products in parallel
-    List<Future<Map<String, dynamic>?>> fetchTasks = List.generate(8, (index) {
+    List<Future<Map<String, dynamic>?>> fetchTasks = List.generate(10, (index) {
       return productController.fetchProductDataStore(index, categoryId);
     });
 
