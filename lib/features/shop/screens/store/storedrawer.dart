@@ -20,6 +20,7 @@ class _StorePageState extends State<StoreDrawer> {
   int selectedCategoryId = -1;
   Key productListKey = UniqueKey();
   bool isLoading = true;
+  bool isSearchVisible = false; // ✅ Track search bar visibility
   List<Map<String, dynamic>> products = []; // ✅ Store fetched products
 
   @override
@@ -47,7 +48,7 @@ class _StorePageState extends State<StoreDrawer> {
     List<Map<String, dynamic>> fetchedProducts = [];
 
     // ✅ Fetch multiple products in parallel
-    List<Future<Map<String, dynamic>?>> fetchTasks = List.generate(10, (index) {
+    List<Future<Map<String, dynamic>?>> fetchTasks = List.generate(12, (index) {
       return productController.fetchProductDataStore(index, categoryId);
     });
 
@@ -71,6 +72,16 @@ class _StorePageState extends State<StoreDrawer> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          actions: [
+            IconButton(
+              icon: const Icon(Iconsax.search_favorite),
+              onPressed: () {
+                setState(() {
+                  isSearchVisible = !isSearchVisible; // ✅ Toggle search bar visibility
+                });
+              },
+            ),
+          ],
           title: Text(selectedCategory.isNotEmpty ? selectedCategory : "Chargement..."),
           leading: Builder(builder: (context) {
             return IconButton(
@@ -83,7 +94,7 @@ class _StorePageState extends State<StoreDrawer> {
         ),
         drawer: Drawer(
           child: isLoading
-              ? Center(child: CircularProgressIndicator( ))
+              ? Center(child: CircularProgressIndicator())
               : ListView(
                   children: [
                     for (var category in categoriesController.mainCategories.entries)
@@ -158,27 +169,31 @@ class _StorePageState extends State<StoreDrawer> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child:
-                   AlkSearchContainer(
-                    text: 'Recherche',
-                    icon: Iconsax.search_normal,
-                    showBackground: true,
+              // ✅ Toggle search bar visibility
+              Visibility(
+                visible: isSearchVisible,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: AlkSearchContainer(
+                      text: 'Recherche',
+                      icon: Iconsax.search_normal,
+                      showBackground: true,
+                    ),
                   ),
                 ),
               ),
               Expanded(
                 child: isLoading
-                    ? Center(child: CircularProgressIndicator(
-                      
-           
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),))
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
+                        ),
+                      )
                     : AlkStoreGridDrawer(
                         key: productListKey,
-                        itemCount:10 /*products.length*/,
+                        itemCount: 10 /*products.length*/,
                         categoryId: selectedCategoryId,
                         preloadedProducts: products, // ✅ Pass preloaded products
                       ),
