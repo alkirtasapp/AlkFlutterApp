@@ -37,26 +37,36 @@ class _ProductCardStoreState extends State<ProductCardStore> {
   }
 
   Future<void> _loadProductData() async {
-    print(
-        "📡 Fetching product for Category ID: ${widget.categoryId}, Product Index: ${widget.productIndex}");
+  print(
+      "📡 Fetching product for Category ID: ${widget.categoryId}, Product Index: ${widget.productIndex}");
 
-    try {
-      final data = await controller.fetchProductDataStore(
-          widget.productIndex, widget.categoryId);
+  try {
+    // Fetch enough products for pagination
+    final List<Map<String, dynamic>>? data = 
+        await controller.fetchProductDataStore(widget.categoryId, widget.productIndex, 1);
 
-      print("✅ Received product data: $data");
+    if (data != null && data.isNotEmpty) {
+      print("✅ Received product data: ${data.first}");
 
       setState(() {
-        productData = data;
+        productData = data.first; // ✅ Fetch only the specific product at index
         isLoading = false;
       });
-    } catch (e) {
-      print("❌ Error fetching product data: $e");
+    } else {
+      print("⚠️ No product found at index ${widget.productIndex}");
       setState(() {
         isLoading = false;
       });
     }
+  } catch (e) {
+    print("❌ Error fetching product data: $e");
+    setState(() {
+      isLoading = false;
+    });
   }
+}
+
+
 
   String _safeConvertToString(dynamic value, [String fallback = 'Unknown']) {
     if (value is String) return value;
