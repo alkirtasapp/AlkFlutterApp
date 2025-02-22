@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:test/common/widgets/appbar/appbar.dart';
 import 'package:test/common/widgets/products/cart/cartItem.dart';
-import 'package:test/features/shop/screens/product_details/widgets/product_features.dart';
+import 'package:test/features/shop/screens/checkout/checkout.dart';
 import 'package:test/utils/constants/size.dart';
 import 'package:test/common/widgets/providers/product_provider.dart';
-
 import '../../../../utils/constants/colors.dart';
 import '../product_details/product_details.dart';
 
@@ -20,11 +19,13 @@ class _CartScreenState extends State<CartScreen> {
   // Retrieve ProductProvider using GetX
   final productProvider = Get.find<ProductProvider>();
 
-  // Function to calculate total price
+  // ✅ Updated: Function to calculate total price with quantity consideration
   double getTotalPrice() {
     return productProvider.cartItems.fold(0.0, (sum, product) {
-      return sum + 8 + double.tryParse(product['productPrice'].toString())!;
-    });
+      final price = double.tryParse(product['productPrice'].toString()) ?? 0.0;
+      final quantity = int.tryParse(product['productQuantity'].toString()) ?? 1; // ✅ Ensure quantity is considered
+      return sum + (price * quantity);
+    }) + 8.0; // ✅ Add delivery charge (8.000 TND)
   }
 
   @override
@@ -57,35 +58,28 @@ class _CartScreenState extends State<CartScreen> {
 
                         return GestureDetector(
                           onTap: () {
-                            print(
-                                "Raw productImageList: ${product['productImageList']}");
-
                             Get.to(() => ProductDetails(
-                                  productBrand: product['productBrand']?? '',
-                                  productName: product['productName']?? '',
-                                  productImage: product['productImage']?? '',
-                                  
-                                  productDiscount: product['productDiscount']?? '',
-                                  productOldPrice: product['productOldPrice']?? '',
-                                  
-                                  productNewPrice: product['productNewPrice']?? '',
-                                  productReference: product['productReference']?? '',
-                                  productStock: product['productStock']?? '',
-                                  productDescription: product['productDescription']?? '',
-                                  productBrandId: product['productBrandId']?? '',
-                                  productId: product['productId']?? '',
+                                  productBrand: product['productBrand'] ?? '',
+                                  productName: product['productName'] ?? '',
+                                  productImage: product['productImage'] ?? '',
+                                  productDiscount: product['productDiscount'] ?? '',
+                                  productOldPrice: product['productOldPrice'] ?? '',
+                                  productNewPrice: product['productNewPrice'] ?? '',
+                                  productReference: product['productReference'] ?? '',
+                                  productStock: product['productStock'] ?? '',
+                                  productDescription: product['productDescription'] ?? '',
+                                  productBrandId: product['productBrandId'] ?? '',
+                                  productId: product['productId'] ?? '',
                                   productImageList: product['productImageList']?.split(',') ?? [],
-                                  //forced add 
-                                   productFeatures: product['productFeatures']?.split(',') ?? [],
-                                  
+                                  productFeatures: product['productFeatures']?.split(',') ?? [],
                                 ));
-                                print("product Features : ");
                           },
                           child: AlkCartItem(
                             productName: product['productName']!,
                             productBrand: product['productBrand']!,
                             productImage: product['productImage']!,
                             productPrice: product['productPrice']!,
+                            productQuantity: product['productQuantity']!, // ✅ Display correct quantity
                             onDelete: () {
                               setState(() {}); // Trigger rebuild on delete
                             },
@@ -101,7 +95,7 @@ class _CartScreenState extends State<CartScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Implement order logic here
+                        Get.to(() => CheckoutScreen());
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.purple,
@@ -115,18 +109,18 @@ class _CartScreenState extends State<CartScreen> {
                         "Commander ",
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               color: Colors.white,
-                              // fontWeight: FontWeight.bold,
                             ),
                       ),
                     ),
                   ),
                 ),
                 Text(
-                  " total: ${getTotalPrice().toStringAsFixed(3)} TND (Livraison 8.000 TND)",
+                  "Total: ${getTotalPrice().toStringAsFixed(3)} TND (Livraison 8.000 TND)",
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: AlkColors.darkGrey,
                       ),
                 ),
+                const SizedBox(height: AlkSize.spaceBtwSections),
               ],
             ),
     );

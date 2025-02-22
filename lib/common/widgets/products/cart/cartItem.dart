@@ -16,6 +16,7 @@ class AlkCartItem extends StatelessWidget {
   final String productImage;
   final String productPrice;
   final VoidCallback? onDelete; // Callback for delete action
+  final String productQuantity;
 
   const AlkCartItem({
     super.key,
@@ -23,7 +24,8 @@ class AlkCartItem extends StatelessWidget {
     required this.productBrand,
     required this.productImage,
     required this.productPrice,
-    this.onDelete,
+    this.onDelete, 
+    required this.productQuantity,
   });
 
   @override
@@ -64,13 +66,20 @@ class AlkCartItem extends StatelessWidget {
               const SizedBox(height: 5),
               // Product Price
               Text(
-                "${productPrice.toString()} TND",
+                "${productPrice.toString()} TND      x$productQuantity",
                 style: TextStyle(
                  
                   color: AlkColors.dark,
                 ),
               ),
-            ],
+            /*  //const SizedBox(width: 10),
+                  Text(
+                    "x$productQuantity", // ✅ Show quantity next to price
+                   style: TextStyle(
+                 
+                  color: AlkColors.dark,
+                ),
+            )*/  ],
           ),
         ),
 
