@@ -21,6 +21,7 @@ class ProductProvider extends ChangeNotifier { // ✅ Use ChangeNotifier
     required String productReference,
      required List<String> productImageList,
      required List<String>? productFeatures,
+     required int quantity
   
   }) {
     _cartItems.add({
@@ -37,6 +38,8 @@ class ProductProvider extends ChangeNotifier { // ✅ Use ChangeNotifier
       'productReference': productReference,
       'productImageList': productImageList.join(','),
       'productFeatures' : productFeatures?.join(',') ?? '',
+      'productQuantity': quantity.toString(),
+
    
 
     });

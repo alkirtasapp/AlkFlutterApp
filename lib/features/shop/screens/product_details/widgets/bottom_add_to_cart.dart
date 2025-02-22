@@ -9,7 +9,7 @@ import 'package:test/common/widgets/providers/product_provider.dart';
 
 import '../../cart/cart.dart';
 
-class AlkBottomAddToCart extends StatelessWidget {
+class AlkBottomAddToCart extends StatefulWidget {
   final String productName;
   final String productBrand;
   final String productImage;
@@ -21,8 +21,8 @@ class AlkBottomAddToCart extends StatelessWidget {
   final String productStock;
   final String productDescription;
   final String productReference;
-   final List<String> productImageList;
-   final List<String>? productFeatures;
+  final List<String> productImageList;
+  final List<String>? productFeatures;
 
   const AlkBottomAddToCart({
     super.key,
@@ -37,13 +37,33 @@ class AlkBottomAddToCart extends StatelessWidget {
     required this.productStock,
     required this.productDescription, 
     required this.productReference,
-     required this.productImageList, 
-     required this.productFeatures,
+    required this.productImageList, 
+    required this.productFeatures,
   });
 
   @override
+  _AlkBottomAddToCartState createState() => _AlkBottomAddToCartState();
+}
+
+class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
+  int quantity = 1; // Initial quantity
+
+  void _increaseQuantity() {
+    setState(() {
+      quantity++;
+    });
+  }
+
+  void _decreaseQuantity() {
+    if (quantity > 1) {
+      setState(() {
+        quantity--;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // ✅ Use GetX to retrieve ProductProvider
     final productProvider = Get.find<ProductProvider>();
 
     return Container(
@@ -68,9 +88,10 @@ class AlkBottomAddToCart extends StatelessWidget {
                 height: 40,
                 width: 40,
                 color: Colors.white,
+                onPressed: _decreaseQuantity, // ✅ Dynamically update quantity
               ),
               const SizedBox(width: AlkSize.spaceBtwItems),
-              Text('1', style: Theme.of(context).textTheme.titleMedium),
+              Text('$quantity', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(width: AlkSize.spaceBtwItems),
               AlkCircularIcon(
                 icon: Iconsax.add,
@@ -79,32 +100,32 @@ class AlkBottomAddToCart extends StatelessWidget {
                 height: 40,
                 width: 40,
                 color: Colors.white,
+                onPressed: _increaseQuantity, // ✅ Dynamically update quantity
               ),
             ],
           ),
           ElevatedButton(
             onPressed: () {
-              //  Use GetX to add product to cart
               productProvider.addToCart(
-                productName: productName,
-                productBrand: productBrand,
-                productImage: productImage,
-                productPrice: productPrice,
-                productDiscount: productDiscount,
-                productBrandId: productBrandId,
-                productOldPrice: productOldPrice,
-                productNewPrice: productNewPrice,
-                productStock: productStock,
-                productDescription: productDescription,
-                productReference: productReference,
-                 productImageList: productImageList,
-                 productFeatures : productFeatures,
+                productName: widget.productName,
+                productBrand: widget.productBrand,
+                productImage: widget.productImage,
+                productPrice: widget.productPrice,
+                productDiscount: widget.productDiscount,
+                productBrandId: widget.productBrandId,
+                productOldPrice: widget.productOldPrice,
+                productNewPrice: widget.productNewPrice,
+                productStock: widget.productStock,
+                productDescription: widget.productDescription,
+                productReference: widget.productReference,
+                productImageList: widget.productImageList,
+                productFeatures: widget.productFeatures,
+                quantity: quantity, // ✅ Pass quantity to cart
               );
 
-              //  Show a GetX Snackbar
               Get.snackbar(
                 "Ajouté au Panier",
-                "$productName a été ajouté au panier, avec un prix de: $productPrice",
+                "${widget.productName} a été ajouté au panier en quantité: $quantity",
                 snackPosition: SnackPosition.TOP,
                 duration: Duration(seconds: 2),
                 backgroundColor: Colors.purple.shade300,
