@@ -16,12 +16,17 @@ class StoreDrawer extends StatefulWidget {
 
 class _StorePageState extends State<StoreDrawer> {
   final CategoriesStoreController categoriesController = CategoriesStoreController();
+  final ProductControllerStore productController = ProductControllerStore();
+
   String selectedCategory = "";
   int selectedCategoryId = -1;
   Key productListKey = UniqueKey();
   bool isLoading = true;
-  bool isSearchVisible = false; // ✅ Track search bar visibility
-  List<Map<String, dynamic>> products = []; // ✅ Store fetched products
+  bool isFetchingMore = false;
+  bool isSearchVisible = false;
+  List<Map<String, dynamic>> products = [];
+  int offset = 0;
+  final int limit = 12;
 
   @override
   void initState() {
@@ -37,35 +42,46 @@ class _StorePageState extends State<StoreDrawer> {
         selectedCategoryId = categoriesController.mainCategories.values.first;
       });
 
-      _fetchProductsForCategory(selectedCategoryId); // ✅ Fetch products when category is set
+      _fetchProductsForCategory(selectedCategoryId);
     }
   }
 
   Future<void> _fetchProductsForCategory(int categoryId) async {
-    setState(() => isLoading = true);
-
-    final productController = ProductControllerStore();
-    List<Map<String, dynamic>> fetchedProducts = [];
-
-    // ✅ Fetch multiple products in parallel
-    List<Future<Map<String, dynamic>?>> fetchTasks = List.generate(12, (index) {
-      return productController.fetchProductDataStore(index, categoryId);
+    setState(() {
+      isLoading = true;
+      products.clear();
+      offset = 0;
     });
 
-    final results = await Future.wait(fetchTasks);
+    final List<Map<String, dynamic>>? newProducts =
+        await productController.fetchProductDataStore(categoryId, offset, limit);
 
-    for (var product in results) {
-      if (product != null) {
-        fetchedProducts.add(product);
-      }
+    if (newProducts != null && newProducts.isNotEmpty) {
+      setState(() {
+        products.addAll(newProducts);
+        offset += newProducts.length;
+      });
     }
 
-    setState(() {
-      products = fetchedProducts;
-      isLoading = false;
-    });
+    setState(() => isLoading = false);
+  }
 
-    print("✅ Preloaded ${products.length} products for Category ID: $categoryId");
+  Future<void> _loadMoreProducts() async {
+    if (isFetchingMore) return;
+
+    setState(() => isFetchingMore = true);
+
+    final List<Map<String, dynamic>>? moreProducts =
+        await productController.fetchProductDataStore(selectedCategoryId, offset, limit);
+
+    if (moreProducts != null && moreProducts.isNotEmpty) {
+      setState(() {
+        products.addAll(moreProducts);
+        offset += moreProducts.length;
+      });
+    }
+
+    setState(() => isFetchingMore = false);
   }
 
   @override
@@ -77,7 +93,7 @@ class _StorePageState extends State<StoreDrawer> {
               icon: const Icon(Iconsax.search_favorite),
               onPressed: () {
                 setState(() {
-                  isSearchVisible = !isSearchVisible; // ✅ Toggle search bar visibility
+                  isSearchVisible = !isSearchVisible;
                 });
               },
             ),
@@ -111,7 +127,6 @@ class _StorePageState extends State<StoreDrawer> {
                             print("✅ Main Category selected: $selectedCategory with ID: $selectedCategoryId");
 
                             _fetchProductsForCategory(selectedCategoryId);
-
                             Navigator.pop(context);
                           },
                           child: Text(category.key, style: TextStyle(fontWeight: FontWeight.bold)),
@@ -132,7 +147,6 @@ class _StorePageState extends State<StoreDrawer> {
                                     print("✅ Subcategory selected: $selectedCategory with ID: $selectedCategoryId");
 
                                     _fetchProductsForCategory(selectedCategoryId);
-
                                     Navigator.pop(context);
                                   },
                                   child: Text("• ${subcategory['name']}", style: TextStyle(fontSize: 14)),
@@ -153,7 +167,6 @@ class _StorePageState extends State<StoreDrawer> {
                                           print("✅ Level 4 Subcategory selected: $selectedCategory with ID: $selectedCategoryId");
 
                                           _fetchProductsForCategory(selectedCategoryId);
-
                                           Navigator.pop(context);
                                         },
                                       )
@@ -169,7 +182,6 @@ class _StorePageState extends State<StoreDrawer> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ✅ Toggle search bar visibility
               Visibility(
                 visible: isSearchVisible,
                 child: Padding(
@@ -191,11 +203,19 @@ class _StorePageState extends State<StoreDrawer> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
                         ),
                       )
-                    : AlkStoreGridDrawer(
-                        key: productListKey,
-                        itemCount: 10 /*products.length*/,
-                        categoryId: selectedCategoryId,
-                        preloadedProducts: products, // ✅ Pass preloaded products
+                    : NotificationListener<ScrollNotification>(
+                        onNotification: (ScrollNotification scrollInfo) {
+                          if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent && !isFetchingMore) {
+                            _loadMoreProducts();
+                          }
+                          return false;
+                        },
+                        child: AlkStoreGridDrawer(
+                          key: productListKey,
+                          itemCount: products.length,
+                          categoryId: selectedCategoryId,
+                          preloadedProducts: products,
+                        ),
                       ),
               ),
             ],
