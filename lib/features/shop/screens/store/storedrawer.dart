@@ -26,7 +26,7 @@ class _StorePageState extends State<StoreDrawer> {
   bool isSearchVisible = false;
   List<Map<String, dynamic>> products = [];
   int offset = 0;
-  final int limit = 12;
+  final int limit = 8;
 
   @override
   void initState() {

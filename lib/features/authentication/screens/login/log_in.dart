@@ -58,15 +58,15 @@ void signInUser(BuildContext context) async {
           );
           return;
         } else {
-          showErrorDialog(context, 'Invalid password.');
+          showErrorDialog(context, 'Mott de passe invalide');
           return;
         }
       }
     } else {
-      showErrorDialog(context, 'No user found with this email.');
+      showErrorDialog(context, 'Aucun utilisateur trouvé avec cet e-mail.');
     }
   } else {
-    showErrorDialog(context, 'Connection error.');
+    showErrorDialog(context, 'Erreur de connexion.');
   }
 }
 

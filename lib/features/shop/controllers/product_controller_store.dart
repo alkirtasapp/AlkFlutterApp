@@ -88,6 +88,22 @@ class ProductControllerStore {
 
         fetchedProducts.add(product);
       }
+       // ✅ Fetch product features using DetailsController
+        if (product.containsKey('associations') &&
+            product['associations'].containsKey('product_features')) {
+          final List<Map<String, dynamic>> featuresList =
+              (product['associations']['product_features'] as List)
+                  .map((feature) => feature as Map<String, dynamic>)
+                  .toList();
+
+          product['details_table'] =
+              await detailsController.fetchProductFeatures(featuresList);
+        } else {
+          product['details_table'] = {};
+        }
+
+        print(
+            "📜 Product Details for ${product['id']}: ${product['details_table']}");
     }
 
     // Cache the results
