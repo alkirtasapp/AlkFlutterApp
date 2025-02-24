@@ -20,30 +20,28 @@ class AlkStoreGridDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     print("🛒 Building Grid for Category ID: $categoryId with ${preloadedProducts.length} products on current page");
 
-    return Expanded(
-      child: GridView.builder(
-        itemCount: preloadedProducts.length,
-        padding: EdgeInsets.all(6.0),
-        physics: AlwaysScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: AlkSize.gridViewSpacing,
-          crossAxisSpacing: AlkSize.gridViewSpacing,
-          mainAxisExtent: mainAxisExtent,
-        ),
-        itemBuilder: (_, index) {
-          final productData = preloadedProducts[index];
-
-          // Ensure compatibility with various map types
-          final safeProductData = productData.map((key, value) => MapEntry(key.toString(), value));
-          print("🛍️ Rendering Product: ${safeProductData['name']} (ID: ${safeProductData['id']})");
-
-          return ProductCardStore(
-            categoryId: categoryId,
-            productIndex: index,
-          );
-        },
+    return GridView.builder(
+      itemCount: preloadedProducts.length,
+      padding: EdgeInsets.all(6.0),
+      physics: AlwaysScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: AlkSize.gridViewSpacing,
+        crossAxisSpacing: AlkSize.gridViewSpacing,
+        mainAxisExtent: mainAxisExtent,
       ),
+      itemBuilder: (_, index) {
+        final productData = preloadedProducts[index];
+
+        // Ensure compatibility with various map types
+        final safeProductData = productData.map((key, value) => MapEntry(key.toString(), value));
+        print("🛍️ Rendering Product: ${safeProductData['name']} (ID: ${safeProductData['id']})");
+
+        return ProductCardStore(
+          categoryId: categoryId,
+          productIndex: index,
+        );
+      },
     );
   }
 }

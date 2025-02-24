@@ -14,81 +14,114 @@ class ProductControllerStore {
   final ProductListCategory productListCategory = ProductListCategory();
   final DetailsController detailsController = DetailsController();
 
- Future<List<Map<String, dynamic>>?> fetchProductDataStore(int categoryId, int offset, int limit) async {
-  try {
-    var box = Hive.box('productCache');
-    String cacheKey = "store_product_${categoryId}_$offset";
+  Future<List<Map<String, dynamic>>?> fetchProductDataStore(
+      int categoryId, int offset, int limit) async {
+    try {
+      var box = Hive.box('productCache');
+      String cacheKey = "store_product_${categoryId}_$offset";
 
-    // Check Cache First
-    if (box.containsKey(cacheKey)) {
-      print("⚡ Using cached products for Category $categoryId, Offset $offset");
-      return List<Map<String, dynamic>>.from(box.get(cacheKey));
-    }
+      // Check Cache First
+      if (box.containsKey(cacheKey)) {
+        print(
+            "⚡ Using cached products for Category $categoryId, Offset $offset");
+        return List<Map<String, dynamic>>.from(box.get(cacheKey));
+      }
 
-    // Get Product IDs from the category
-    final List<int> productIds = await productListCategory.fetchProductIdsFromCategory(categoryId);
-    if (productIds.isEmpty) {
-      print("⚠️ No product IDs found for Category ID: $categoryId");
-      return null;
-    }
+      // Get Product IDs from the category
+      final List<int> productIds =
+          await productListCategory.fetchProductIdsFromCategory(categoryId);
+      if (productIds.isEmpty) {
+        print("⚠️ No product IDs found for Category ID: $categoryId");
+        return null;
+      }
 
-    // Ensure we start from the correct offset
-    if (offset >= productIds.length) {
-      print("❌ No more products to fetch for Category ID: $categoryId");
-      return [];
-    }
+      // Ensure we start from the correct offset
+      if (offset >= productIds.length) {
+        print(
+            "❌ Offset ($offset) is beyond available products (${productIds.length}) for Category ID: $categoryId");
+        return [];
+      }
 
-    // Fetch Products from API
-    String productIdsParam = productIds.skip(offset).take(limit).join('|');
-    final String productApi =
-        'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsParam]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+      List<Map<String, dynamic>> fetchedProducts = [];
+      int fetchedCount = 0;
+      int currentOffset = offset;
 
-    print("📡 Fetching products for Category ID: $categoryId, Offset: $offset");
+      while (fetchedCount < limit && currentOffset < productIds.length) {
+        int productId = productIds[currentOffset];
+        currentOffset++;
 
-    final response = await http.get(Uri.parse(productApi));
-    if (response.statusCode != 200) {
-      print("❌ API Error: ${response.statusCode}");
-      return null;
-    }
-
-    final productData = json.decode(utf8.decode(response.bodyBytes));
-    if (productData['products'] == null || productData['products'].isEmpty) {
-      print("⚠️ No products found for Category ID: $categoryId");
-      return null;
-    }
-
-    List<Map<String, dynamic>> fetchedProducts = [];
-
-    for (var product in productData['products']) {
-      if (product is Map<String, dynamic> &&
-          product.containsKey('active') &&
-          product['active'].toString() == '1') {
-
-        // Fetch details, images, stock, and discounts
-        product['id'] = int.tryParse(product['id'].toString()) ?? 0;
-        product['price'] = double.tryParse(product['price'].toString()) ?? 0.0;
-        product['quantity'] = int.tryParse(product['quantity'].toString()) ?? 0;
-
-        final discount = await discountController.fetchDiscount(product['id']);
-        product['discount'] = discount != null && discount['reduction_type'] == 'percentage'
-            ? double.tryParse(discount['reduction'].toString()) ?? 0
-            : 0;
-
-        product['ttc_price'] = await taxController.fetchTTCPrice(
-            product['id'], product['price'], product['id_tax_rules_group']) ?? product['price'];
-
-        if (product.containsKey('associations') && product['associations'].containsKey('images')) {
-          final images = product['associations']['images'] as List;
-          product['image_urls'] = images.map((image) => constructImageUrl(image['id'])).toList();
-        } else {
-          product['image_urls'] = [];
+        if (productId == null || productId <= 0) {
+          print("⚠️ Invalid product ID at index $currentOffset");
+          continue;
         }
 
-        product['quantity'] = await quantityController.fetchQuantity(product['id']) ?? 0;
+        // Fetch Product from API
+        final String productApi =
+            'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
-        fetchedProducts.add(product);
-      }
-       // ✅ Fetch product features using DetailsController
+        print("📡 Fetching product ID: $productId");
+
+        final response = await http.get(Uri.parse(productApi));
+        if (response.statusCode != 200) {
+          print("❌ API Error: ${response.statusCode}");
+          continue;
+        }
+
+        final productData = json.decode(utf8.decode(response.bodyBytes));
+        if (productData['products'] == null || productData['products'].isEmpty) {
+          print("⚠️ No product found for ID: $productId");
+          continue;
+        }
+
+        var product = productData['products'][0];
+        if (product is Map<String, dynamic> &&
+            product.containsKey('active') &&
+            product['active'].toString() == '1') {
+          // Ensure product has stock
+
+          // Fetch details, images, stock, and discounts
+          product['id'] = int.tryParse(product['id'].toString()) ?? 0;
+          product['price'] =
+              double.tryParse(product['price'].toString()) ?? 0.0;
+          product['quantity'] =
+              int.tryParse(product['quantity'].toString()) ?? 0;
+
+          final discount =
+              await discountController.fetchDiscount(product['id']);
+
+          if (discount != null &&
+              discount is Map<String, dynamic> &&
+              discount.containsKey('reduction_type')) {
+            product['discount'] = discount['reduction_type'] == 'percentage'
+                ? double.tryParse(discount['reduction'].toString()) ?? 0
+                : 0;
+          } else {
+            product['discount'] = 0;
+          }
+
+          product['ttc_price'] = await taxController.fetchTTCPrice(
+                  product['id'],
+                  product['price'],
+                  product['id_tax_rules_group']) ??
+              product['price'];
+
+          if (product.containsKey('associations') &&
+              product['associations'].containsKey('images')) {
+            final images = product['associations']['images'] as List;
+            product['image_urls'] =
+                images.map((image) => constructImageUrl(image['id'])).toList();
+          } else {
+            product['image_urls'] = [];
+          }
+
+          product['quantity'] =
+              await quantityController.fetchQuantity(product['id']) ?? 0;
+
+          fetchedProducts.add(product);
+          fetchedCount++;
+        }
+
+        // ✅ Fetch product features using DetailsController
         if (product.containsKey('associations') &&
             product['associations'].containsKey('product_features')) {
           final List<Map<String, dynamic>> featuresList =
@@ -104,17 +137,17 @@ class ProductControllerStore {
 
         print(
             "📜 Product Details for ${product['id']}: ${product['details_table']}");
+      }
+
+      // Cache the results
+      box.put(cacheKey, fetchedProducts);
+      print("✅ Cached products for Category $categoryId, Offset $offset");
+      return fetchedProducts;
+    } catch (e) {
+      print('❌ Error fetching products: $e');
+      return null;
     }
-
-    // Cache the results
-    box.put(cacheKey, fetchedProducts);
-    return fetchedProducts;
-  } catch (e) {
-    print('❌ Error fetching products: $e');
-    return null;
   }
-}
-
 
   String constructImageUrl(dynamic imageId) {
     if (imageId == null) return 'placeholder_image_url';
