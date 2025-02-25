@@ -1,5 +1,3 @@
-// ignore_for_file: unnecessary_null_comparison
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -11,62 +9,17 @@ import '../../../../utils/constants/size.dart';
 import '../../../styles/shadows.dart';
 import '../../roundedContainer.dart';
 
-class ProductCardStore extends StatefulWidget {
-  final int categoryId; // Category ID to fetch products from
-  final int productIndex; // Index of the product to fetch
+class ProductCardStore extends StatelessWidget {
+  final int categoryId;
+  final int productIndex;
+  final Map<dynamic, dynamic> productData; // Accepts all key-value types
 
   const ProductCardStore({
     super.key,
     required this.categoryId,
     required this.productIndex,
+    required this.productData,
   });
-
-  @override
-  State<ProductCardStore> createState() => _ProductCardStoreState();
-}
-
-class _ProductCardStoreState extends State<ProductCardStore> {
-  final ProductControllerStore controller = ProductControllerStore();
-  Map<String, dynamic>? productData;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProductData();
-  }
-
-  Future<void> _loadProductData() async {
-  print(
-      "📡 Fetching product for Category ID: ${widget.categoryId}, Product Index: ${widget.productIndex}");
-
-  try {
-    // Fetch enough products for pagination
-    final List<Map<String, dynamic>>? data = 
-        await controller.fetchProductDataStore(widget.categoryId, widget.productIndex, 1);
-
-    if (data != null && data.isNotEmpty) {
-     
-
-      setState(() {
-        productData = data.first; // ✅ Fetch only the specific product at index
-        isLoading = false;
-      });
-    } else {
-      print("⚠️ No product found at index ${widget.productIndex}");
-      setState(() {
-        isLoading = false;
-      });
-    }
-  } catch (e) {
-    print("❌ Error fetching product data: $e");
-    setState(() {
-      isLoading = false;
-    });
-  }
-}
-
-
 
   String _safeConvertToString(dynamic value, [String fallback = 'Unknown']) {
     if (value is String) return value;
@@ -76,66 +29,51 @@ class _ProductCardStoreState extends State<ProductCardStore> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    final productName = productData['name'] ?? 'Unknown Product';
+    final productId = productData['id'] ?? 'Unknown ID';
 
-    if (productData == null) {
-      return const Center(child: Text('Failed to load product'));
-    }
-    // nchoufou l content mtaa l product data gbal kol chy
-    print("Product Data mta3 l Store mel Service  : $productData");
-    print("Keys in productData: ${productData!.keys}");
+    print("🛍️ Rendering Product Card: $productName (ID: $productId)");
 
-    final id = _safeConvertToString(productData!['id']);
-    final reference = _safeConvertToString(productData!['reference']);
-    final title = _safeConvertToString(productData!['name']);
+    final id = _safeConvertToString(productData['id']);
+    final reference = _safeConvertToString(productData['reference']);
+    final title = _safeConvertToString(productData['name']);
     final List<String> imageList =
-        (productData!['image_urls'] as List<dynamic>).cast<String>();
-    //addding features details
- final Map<String, String> productFeatures = productData!['details_table'] != null
-    ? Map<String, String>.from(
-        (productData!['details_table'] as Map).map(
-          (key, value) => MapEntry(key.toString(), value.toString()),
-        ),
-      )
-    : {};
+        (productData['image_urls'] as List<dynamic>?)?.cast<String>() ?? [];
+    final Map<String, String> productFeatures = productData['details_table'] != null
+        ? Map<String, String>.from(
+            (productData['details_table'] as Map).map(
+              (key, value) => MapEntry(key.toString(), value.toString()),
+            ),
+          )
+        : {};
 
-    print(
-        "Type of details_table: ${productData!['details_table'].runtimeType}");
-    print("Contents of details_table: ${productData!['details_table']}");
-
-    final productStock = _safeConvertToString(productData!['quantity']);
-
-    final brandName = _safeConvertToString(productData!['manufacturer_name']);
-    final brandId = _safeConvertToString(productData!['id_manufacturer']);
-    final description = _safeConvertToString(productData!['description_short']);
+    final productStock = _safeConvertToString(productData['quantity']);
+    final brandName = _safeConvertToString(productData['manufacturer_name']);
+    final brandId = _safeConvertToString(productData['id_manufacturer']);
+    final description = _safeConvertToString(productData['description_short']);
     final rawTTCPrice =
-        double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))
-                ?.toStringAsFixed(2) ??
-            '0.00';
-    final taxRulesGroupId = productData!['id_tax_rules_group'] ?? 0;
+        double.tryParse(_safeConvertToString(productData['ttc_price'], '0.00'))
+                ?.toStringAsFixed(2) ?? '0.00';
+    final taxRulesGroupId = productData['id_tax_rules_group'] ?? 0;
     final rawPriceHT =
-        double.tryParse(_safeConvertToString(productData!['price'], '0.00'))
-                ?.toStringAsFixed(2) ??
-            '0.00';
+        double.tryParse(_safeConvertToString(productData['price'], '0.00'))
+                ?.toStringAsFixed(2) ?? '0.00';
     final displayPrice = (taxRulesGroupId == 0) ? rawPriceHT : rawTTCPrice;
 
-    // Ensure the discount is always a double
     final double discountValue =
-        (productData!['discount'] as num?)?.toDouble() ?? 0;
+        (productData['discount'] as num?)?.toDouble() ?? 0;
 
     String? discountText;
     if (discountValue > 0) {
       discountText = '${discountValue.toStringAsFixed(0)}%';
       print(
-          'Displaying discount for product ${productData!['id']}: $discountText');
+          'Displaying discount for product ${productData['id']}: $discountText');
     } else {
-      print('No discount to display for product ${productData!['id']}');
+      print('No discount to display for product ${productData['id']}');
     }
-    print('Discount for product ${productData!['id']}: $discountText');
+    print('Discount for product ${productData['id']}: $discountText');
     final imageUrl =
-        controller.constructImageUrl(productData!['id_default_image']);
+        ProductControllerStore().constructImageUrl(productData['id_default_image']);
     final dark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
@@ -149,18 +87,15 @@ class _ProductCardStoreState extends State<ProductCardStore> {
             productImage: imageUrl,
             productImageList: imageList,
             productStock: productStock,
-            //forced add
-            productFeatures: productFeatures != null
-    ? productFeatures.entries.map((entry) => "${entry.key}: ${entry.value}").toList()
-    : [],
-
-
+            productFeatures: productFeatures.entries
+                .map((entry) => "${entry.key}: ${entry.value}")
+                .toList(),
             productDescription: description,
             productOldPrice: discountText != null ? displayPrice : '',
             productNewPrice: discountValue > 0
                 ? (double.parse(displayPrice) * (1 - discountValue / 100))
                     .toStringAsFixed(2)
-                : displayPrice, // If no discount, keep normal price
+                : displayPrice,
           )),
       child: Container(
         width: 180,
@@ -171,9 +106,8 @@ class _ProductCardStoreState extends State<ProductCardStore> {
           color: dark ? AlkColors.darkerGrey : AlkColors.white,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Prevent column overflow
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Product Thumbnail
             AlkRoundedContainer(
               height: 180,
               padding: const EdgeInsets.all(AlkSize.sm),
@@ -198,7 +132,6 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                       },
                     ),
                   ),
-                  // Discount Tag
                   if (discountText != null)
                     Positioned(
                       top: 1,
@@ -222,14 +155,11 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                 ],
               ),
             ),
-
-            // Product Details
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(left: AlkSize.sm),
                 child: Column(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center, // Center the content
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -244,7 +174,6 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
-                    //original price mfassa5
                     Text(
                       discountText != null ? '$displayPrice TND' : '',
                       overflow: TextOverflow.ellipsis,
@@ -258,7 +187,6 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                       children: [
                         Padding(
                           padding: EdgeInsets.only(left: AlkSize.sm),
-                          // prix ken fama discount
                           child: Text(
                             discountValue > 0
                                 ? '${(double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)} TND'
@@ -282,6 +210,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
                                   Radius.circular(AlkSize.productImageRadius),
                             ),
                           ),
+                          
                           child: SizedBox(
                             width: AlkSize.iconLg * 1.2,
                             height: AlkSize.iconLg * 1.2,

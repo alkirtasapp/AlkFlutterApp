@@ -7,7 +7,6 @@ import '../../../../common/widgets/layout/store_grid_drawer.dart';
 import '../../controllers/categories_store_controller.dart';
 import '../../controllers/product_controller_store.dart';
 
-
 class StoreDrawer extends StatefulWidget {
   const StoreDrawer({super.key});
 
@@ -270,7 +269,7 @@ class _StorePageState extends State<StoreDrawer> {
                       child: AlkStoreGridDrawer(
                         key: productListKey,
                         itemCount: products.length,
-                        categoryId: selectedCategoryId,
+                        categoryId: isSearching ? -1 : selectedCategoryId, // Use -1 for search results
                         preloadedProducts: products,
                       ),
                     ),

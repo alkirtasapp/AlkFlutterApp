@@ -38,6 +38,7 @@ class AlkStoreGridDrawer extends StatelessWidget {
         return ProductCardStore(
           categoryId: categoryId,
           productIndex: index,
+          productData: productData, // Pass product data to the card
         );
       },
     );
