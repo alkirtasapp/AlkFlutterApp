@@ -107,15 +107,21 @@ class _StorePageState extends State<StoreDrawer> {
       isSearching = true;
     });
 
-    final List<Map<String, dynamic>>? searchedProducts = await searchController.searchProducts(query);
+    final List<int>? productIds = await searchController.searchProducts(query);
 
-    if (searchedProducts != null && searchedProducts.isNotEmpty) {
-      setState(() {
-        products.addAll(searchedProducts);
-      });
-      print("✅ Found ${searchedProducts.length} products for query: $query");
+    if (productIds != null && productIds.isNotEmpty) {
+      final List<Map<String, dynamic>>? searchedProducts = await productController.fetchProductsByIds(productIds);
+
+      if (searchedProducts != null && searchedProducts.isNotEmpty) {
+        setState(() {
+          products.addAll(searchedProducts);
+        });
+        print("✅ Found ${searchedProducts.length} products for query: $query");
+      } else {
+        print("⚠️ No products found for query: $query");
+      }
     } else {
-      print("⚠️ No products found for query: $query");
+      print("⚠️ No product IDs found for query: $query");
     }
 
     setState(() => isLoading = false);

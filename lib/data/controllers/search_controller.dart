@@ -5,7 +5,7 @@ class AlkSearchController {
   final String apiKey = 'Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
   final String baseUrl = 'https://www.alkirtas.com/api/search';
 
-  Future<List<Map<String, dynamic>>?> searchProducts(String query) async {
+  Future<List<int>?> searchProducts(String query) async {
     try {
       final String searchApi = '$baseUrl?query=$query&language=1&display=full&output_format=JSON&ws_key=$apiKey';
 
@@ -20,18 +20,15 @@ class AlkSearchController {
       final searchData = json.decode(utf8.decode(response.bodyBytes));
       if (searchData['products'] == null || searchData['products'].isEmpty) {
         print("⚠️ No products found for query: $query");
-        return [];
+        return null;
       }
 
-      List<Map<String, dynamic>> searchedProducts = [];
+      final List<int> productIds = (searchData['products'] as List)
+          .map((product) => int.parse(product['id'].toString()))
+          .toList();
 
-      for (var product in searchData['products']) {
-        if (product is Map<String, dynamic>) {
-          searchedProducts.add(product);
-        }
-      }
-
-      return searchedProducts;
+      print("✅ Found ${productIds.length} products for query: $query");
+      return productIds;
     } catch (e) {
       print('❌ Error searching products: $e');
       return null;
