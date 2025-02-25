@@ -46,7 +46,7 @@ class _ProductCardStoreState extends State<ProductCardStore> {
         await controller.fetchProductDataStore(widget.categoryId, widget.productIndex, 1);
 
     if (data != null && data.isNotEmpty) {
-      print("✅ Received product data: ${data.first}");
+     
 
       setState(() {
         productData = data.first; // ✅ Fetch only the specific product at index

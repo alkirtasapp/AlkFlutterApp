@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:test/common/widgets/custom_shapes/containers/searchContainer.dart';
+import 'package:test/data/controllers/search_controller.dart';
 import 'package:test/utils/constants/size.dart';
 import '../../../../common/widgets/layout/store_grid_drawer.dart';
 import '../../controllers/categories_store_controller.dart';
 import '../../controllers/product_controller_store.dart';
+
 
 class StoreDrawer extends StatefulWidget {
   const StoreDrawer({super.key});
@@ -17,6 +19,7 @@ class _StorePageState extends State<StoreDrawer> {
   final CategoriesStoreController categoriesController =
       CategoriesStoreController();
   final ProductControllerStore productController = ProductControllerStore();
+  final AlkSearchController searchController = AlkSearchController();
 
   String selectedCategory = "";
   int selectedCategoryId = -1;
@@ -24,9 +27,11 @@ class _StorePageState extends State<StoreDrawer> {
   bool isLoading = true;
   bool isFetchingMore = false;
   bool isSearchVisible = false;
+  bool isSearching = false;
   List<Map<String, dynamic>> products = [];
   int offset = 0;
   final int limit = 10; // Ensuring fixed product fetch limit
+  TextEditingController searchTextController = TextEditingController();
 
   @override
   void initState() {
@@ -51,6 +56,7 @@ class _StorePageState extends State<StoreDrawer> {
       isLoading = true;
       products.clear();
       offset = 0;
+      isSearching = false;
     });
 
     print("📡 Fetching products for Category ID: $categoryId, Offset: $offset");
@@ -93,6 +99,27 @@ class _StorePageState extends State<StoreDrawer> {
     }
 
     setState(() => isFetchingMore = false);
+  }
+
+  Future<void> _searchProducts(String query) async {
+    setState(() {
+      isLoading = true;
+      products.clear();
+      isSearching = true;
+    });
+
+    final List<Map<String, dynamic>>? searchedProducts = await searchController.searchProducts(query);
+
+    if (searchedProducts != null && searchedProducts.isNotEmpty) {
+      setState(() {
+        products.addAll(searchedProducts);
+      });
+      print("✅ Found ${searchedProducts.length} products for query: $query");
+    } else {
+      print("⚠️ No products found for query: $query");
+    }
+
+    setState(() => isLoading = false);
   }
 
   @override
@@ -207,10 +234,18 @@ class _StorePageState extends State<StoreDrawer> {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: AlkSearchContainer(
-                    text: 'Recherche',
-                    icon: Iconsax.search_normal,
-                    showBackground: true,
+                  child: TextField(
+                    controller: searchTextController,
+                    decoration: InputDecoration(
+                      hintText: 'Recherche',
+                      prefixIcon: Icon(Iconsax.search_normal),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    onSubmitted: (query) {
+                      _searchProducts(query);
+                    },
                   ),
                 ),
               ),
@@ -227,7 +262,7 @@ class _StorePageState extends State<StoreDrawer> {
                       onNotification: (ScrollNotification scrollInfo) {
                         if (scrollInfo.metrics.pixels ==
                                 scrollInfo.metrics.maxScrollExtent &&
-                            !isFetchingMore) {
+                            !isFetchingMore && !isSearching) {
                           _loadMoreProducts();
                         }
                         return false;

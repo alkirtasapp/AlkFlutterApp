@@ -45,21 +45,35 @@ class ProductControllerStore {
       List<Map<String, dynamic>> fetchedProducts = [];
       int fetchedCount = 0;
       int currentOffset = offset;
+      Set<int> processedProductIds = {};
 
       while (fetchedCount < limit && currentOffset < productIds.length) {
-        int productId = productIds[currentOffset];
-        currentOffset++;
+        List<int> batchProductIds = [];
 
-        if (productId == null || productId <= 0) {
-          print("⚠️ Invalid product ID at index $currentOffset");
-          continue;
+        // Collect product IDs for the batch
+        while (batchProductIds.length < limit && currentOffset < productIds.length) {
+          int productId = productIds[currentOffset];
+          currentOffset++;
+
+          if (productId == null || productId <= 0 || processedProductIds.contains(productId)) {
+            print("⚠️ Invalid or duplicate product ID at index $currentOffset");
+            continue;
+          }
+
+          processedProductIds.add(productId);
+          batchProductIds.add(productId);
         }
 
-        // Fetch Product from API
-        final String productApi =
-            'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+        if (batchProductIds.isEmpty) {
+          break;
+        }
 
-        print("📡 Fetching product ID: $productId");
+        // Fetch Products from API
+        String productIdsParam = batchProductIds.join('|');
+        final String productApi =
+            'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsParam]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+
+        print("📡 Fetching products for IDs: $productIdsParam");
 
         final response = await http.get(Uri.parse(productApi));
         if (response.statusCode != 200) {
@@ -69,74 +83,75 @@ class ProductControllerStore {
 
         final productData = json.decode(utf8.decode(response.bodyBytes));
         if (productData['products'] == null || productData['products'].isEmpty) {
-          print("⚠️ No product found for ID: $productId");
+          print("⚠️ No products found for IDs: $productIdsParam");
           continue;
         }
 
-        var product = productData['products'][0];
-        if (product is Map<String, dynamic> &&
-            product.containsKey('active') &&
-            product['active'].toString() == '1') {
-          // Ensure product has stock
+        for (var product in productData['products']) {
+          if (product is Map<String, dynamic> &&
+              product.containsKey('active') &&
+              product['active'].toString() == '1') {
+            // Ensure product has stock
 
-          // Fetch details, images, stock, and discounts
-          product['id'] = int.tryParse(product['id'].toString()) ?? 0;
-          product['price'] =
-              double.tryParse(product['price'].toString()) ?? 0.0;
-          product['quantity'] =
-              int.tryParse(product['quantity'].toString()) ?? 0;
+            // Fetch details, images, stock, and discounts
+            product['id'] = int.tryParse(product['id'].toString()) ?? 0;
+            product['price'] =
+                double.tryParse(product['price'].toString()) ?? 0.0;
+            product['quantity'] =
+                int.tryParse(product['quantity'].toString()) ?? 0;
 
-          final discount =
-              await discountController.fetchDiscount(product['id']);
+            final discount =
+                await discountController.fetchDiscount(product['id']);
 
-          if (discount != null &&
-              discount is Map<String, dynamic> &&
-              discount.containsKey('reduction_type')) {
-            product['discount'] = discount['reduction_type'] == 'percentage'
-                ? double.tryParse(discount['reduction'].toString()) ?? 0
-                : 0;
-          } else {
-            product['discount'] = 0;
+            if (discount != null &&
+                discount is Map<String, dynamic> &&
+                discount.containsKey('reduction_type')) {
+              product['discount'] = discount['reduction_type'] == 'percentage'
+                  ? double.tryParse(discount['reduction'].toString()) ?? 0
+                  : 0;
+            } else {
+              product['discount'] = 0;
+            }
+
+            product['ttc_price'] = await taxController.fetchTTCPrice(
+                    product['id'],
+                    product['price'],
+                    product['id_tax_rules_group']) ??
+                product['price'];
+
+            if (product.containsKey('associations') &&
+                product['associations'].containsKey('images')) {
+              final images = product['associations']['images'] as List;
+              product['image_urls'] =
+                  images.map((image) => constructImageUrl(image['id'])).toList();
+            } else {
+              product['image_urls'] = [];
+            }
+
+            product['quantity'] =
+                await quantityController.fetchQuantity(product['id']) ?? 0;
+
+            fetchedProducts.add(product);
+            fetchedCount++;
           }
 
-          product['ttc_price'] = await taxController.fetchTTCPrice(
-                  product['id'],
-                  product['price'],
-                  product['id_tax_rules_group']) ??
-              product['price'];
-
+          // ✅ Fetch product features using DetailsController
           if (product.containsKey('associations') &&
-              product['associations'].containsKey('images')) {
-            final images = product['associations']['images'] as List;
-            product['image_urls'] =
-                images.map((image) => constructImageUrl(image['id'])).toList();
+              product['associations'].containsKey('product_features')) {
+            final List<Map<String, dynamic>> featuresList =
+                (product['associations']['product_features'] as List)
+                    .map((feature) => feature as Map<String, dynamic>)
+                    .toList();
+
+            product['details_table'] =
+                await detailsController.fetchProductFeatures(featuresList);
           } else {
-            product['image_urls'] = [];
+            product['details_table'] = {};
           }
 
-          product['quantity'] =
-              await quantityController.fetchQuantity(product['id']) ?? 0;
-
-          fetchedProducts.add(product);
-          fetchedCount++;
+          print(
+              "📜 Product Details for ${product['id']}: ${product['details_table']}");
         }
-
-        // ✅ Fetch product features using DetailsController
-        if (product.containsKey('associations') &&
-            product['associations'].containsKey('product_features')) {
-          final List<Map<String, dynamic>> featuresList =
-              (product['associations']['product_features'] as List)
-                  .map((feature) => feature as Map<String, dynamic>)
-                  .toList();
-
-          product['details_table'] =
-              await detailsController.fetchProductFeatures(featuresList);
-        } else {
-          product['details_table'] = {};
-        }
-
-        print(
-            "📜 Product Details for ${product['id']}: ${product['details_table']}");
       }
 
       // Cache the results

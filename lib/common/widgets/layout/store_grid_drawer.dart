@@ -32,10 +32,8 @@ class AlkStoreGridDrawer extends StatelessWidget {
       ),
       itemBuilder: (_, index) {
         final productData = preloadedProducts[index];
-
-        // Ensure compatibility with various map types
-        final safeProductData = productData.map((key, value) => MapEntry(key.toString(), value));
-        print("🛍️ Rendering Product: ${safeProductData['name']} (ID: ${safeProductData['id']})");
+        final productName = productData['name'] ?? 'Unknown Product';
+        print("🛍️ Displaying Product: $productName (ID: ${productData['id']})");
 
         return ProductCardStore(
           categoryId: categoryId,
