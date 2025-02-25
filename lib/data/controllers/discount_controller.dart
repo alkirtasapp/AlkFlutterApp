@@ -11,8 +11,8 @@ class DiscountController {
 
       final response = await http.get(Uri.parse(discountApi));
 
-      print(
-          'Response for product $productId: ${response.body}'); // Debugging output
+     /* print(
+          'Response for product $productId: ${response.body}'); // Debugging output*/
 
       if (response.statusCode == 200) {
         final discountData = json.decode(utf8.decode(response.bodyBytes));
