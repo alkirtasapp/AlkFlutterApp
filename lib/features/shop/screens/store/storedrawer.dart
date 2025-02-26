@@ -107,15 +107,21 @@ class _StorePageState extends State<StoreDrawer> {
       isSearching = true;
     });
 
-    final List<Map<String, dynamic>>? searchedProducts = await searchController.searchProducts(query);
+    final List<int>? productIds = await searchController.searchProducts(query);
 
-    if (searchedProducts != null && searchedProducts.isNotEmpty) {
-      setState(() {
-        products.addAll(searchedProducts);
-      });
-      print("✅ Found ${searchedProducts.length} products for query: $query");
+    if (productIds != null && productIds.isNotEmpty) {
+      final List<Map<String, dynamic>>? searchedProducts = await productController.fetchProductsByIds(productIds);
+
+      if (searchedProducts != null && searchedProducts.isNotEmpty) {
+        setState(() {
+          products.addAll(searchedProducts);
+        });
+        print("✅ Found ${searchedProducts.length} products for query: $query");
+      } else {
+        print("⚠️ No products found for query: $query");
+      }
     } else {
-      print("⚠️ No products found for query: $query");
+      print("⚠️ No product IDs found for query: $query");
     }
 
     setState(() => isLoading = false);
@@ -266,11 +272,36 @@ class _StorePageState extends State<StoreDrawer> {
                         }
                         return false;
                       },
-                      child: AlkStoreGridDrawer(
-                        key: productListKey,
-                        itemCount: products.length,
-                        categoryId: isSearching ? -1 : selectedCategoryId, // Use -1 for search results
-                        preloadedProducts: products,
+                      child: Stack(
+                        children: [
+                          AlkStoreGridDrawer(
+                            key: productListKey,
+                            itemCount: products.length,
+                            categoryId: isSearching ? -1 : selectedCategoryId, // Use -1 for search results
+                            preloadedProducts: products,
+                          ),
+                     if (isFetchingMore)
+  Positioned(
+    left: 0,
+    right: 0,
+    bottom: 0,
+    child: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SizedBox(
+          width: 10, // Ensures full width
+          child: LinearProgressIndicator(
+            borderRadius: BorderRadius.circular(10),
+            minHeight: 10, // Adjust height as needed
+            backgroundColor: Colors.grey[300], // Optional: Background color
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.purple), // Customize color
+          ),
+        ),
+      ),
+    ),
+  ),
+
+                        ],
                       ),
                     ),
             ),
