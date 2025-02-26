@@ -46,7 +46,7 @@ class ProductControllerStore {
       int currentOffset = offset;
       Set<int> processedProductIds = {};
 
-      const int batchSize = 10; // Adjust the batch size as needed
+      const int batchSize = 14; // Adjust the batch size as needed
 
       while (fetchedProducts.length < limit && currentOffset < productIds.length) {
         List<int> batchProductIds = [];
@@ -183,7 +183,7 @@ class ProductControllerStore {
       List<Map<String, dynamic>> fetchedProducts = [];
       Set<int> processedProductIds = {};
 
-      const int batchSize = 10; // Adjust the batch size as needed
+      const int batchSize = 14; // Adjust the batch size as needed
 
       for (int i = 0; i < productIds.length; i += batchSize) {
         List<int> batchProductIds = productIds.skip(i).take(batchSize).toList();

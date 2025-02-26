@@ -29,7 +29,7 @@ class _StorePageState extends State<StoreDrawer> {
   bool isSearching = false;
   List<Map<String, dynamic>> products = [];
   int offset = 0;
-  final int limit = 10; // Ensuring fixed product fetch limit
+  final int limit = 8; // Ensuring fixed product fetch limit
   TextEditingController searchTextController = TextEditingController();
 
   @override
@@ -259,6 +259,7 @@ class _StorePageState extends State<StoreDrawer> {
               child: isLoading
                   ? Center(
                       child: CircularProgressIndicator(
+                        semanticsLabel: 'Chargement...',
                         valueColor:
                             AlwaysStoppedAnimation<Color>(Colors.purple),
                       ),
@@ -291,6 +292,7 @@ class _StorePageState extends State<StoreDrawer> {
         child: SizedBox(
           width: 10, // Ensures full width
           child: LinearProgressIndicator(
+
             borderRadius: BorderRadius.circular(10),
             minHeight: 10, // Adjust height as needed
             backgroundColor: Colors.grey[300], // Optional: Background color
