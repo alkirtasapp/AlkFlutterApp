@@ -29,7 +29,7 @@ class _StorePageState extends State<StoreDrawer> {
   bool isSearching = false;
   List<Map<String, dynamic>> products = [];
   int offset = 0;
-  final int limit = 10; // Ensuring fixed product fetch limit
+  final int limit = 8; // Ensuring fixed product fetch limit
   TextEditingController searchTextController = TextEditingController();
 
   @override
