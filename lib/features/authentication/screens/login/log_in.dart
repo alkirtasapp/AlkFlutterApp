@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:test/features/authentication/screens/signUp/sign_up.dart';
 import 'package:test/navigation_menu.dart';
@@ -14,61 +13,56 @@ import 'package:http/http.dart' as http;
 
 import '../../../../utils/backendData/userData.dart';
 
-
-
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-void signInUser(BuildContext context) async {
-  final email = emailController.text;
-  final password = passwordController.text;
+  void signInUser(BuildContext context) async {
+    final email = emailController.text;
+    final password = passwordController.text;
 
-  if (email.isEmpty || password.isEmpty) {
-    showErrorDialog(context, 'Please fill in both fields.');
-    return;
-  }
+    if (email.isEmpty || password.isEmpty) {
+      showErrorDialog(context, 'Please fill in both fields.');
+      return;
+    }
 
-  final response = await http.get(
-    Uri.parse(
-      'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU',
-    ),
-  );
+    final response = await http.get(
+      Uri.parse(
+        'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU',
+      ),
+    );
 
-  if (response.statusCode == 200) {
-    var data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body);
 
-    if (data['customers'] != null && data['customers'].isNotEmpty) {
-      var customer = data['customers'][0];
+      if (data['customers'] != null && data['customers'].isNotEmpty) {
+        var customer = data['customers'][0];
 
-      if (customer['email'] == email) {
-        bool passwordMatch = BCrypt.checkpw(password, customer['passwd']);
-        if (passwordMatch) {
-         
-          UserData.email = customer['email'];
-          UserData.firstname = customer['firstname'];
-          UserData.lastname = customer['lastname'];
-          UserData.id = customer['id'].toString();
+        if (customer['email'] == email) {
+          bool passwordMatch = BCrypt.checkpw(password, customer['passwd']);
+          if (passwordMatch) {
+            UserData.email = customer['email'];
+            UserData.firstname = customer['firstname'];
+            UserData.lastname = customer['lastname'];
+            UserData.id = customer['id'].toString();
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => NavigationMenu()),
-          );
-          return;
-        } else {
-          showErrorDialog(context, 'Mott de passe invalide');
-          return;
+            // Navigate to NavigationMenu and clear the navigation stack
+            Get.offAll(() => NavigationMenu());
+            return;
+          } else {
+            showErrorDialog(context, 'Mott de passe invalide');
+            return;
+          }
         }
+      } else {
+        showErrorDialog(context, 'Aucun utilisateur trouvé avec cet e-mail.');
       }
     } else {
-      showErrorDialog(context, 'Aucun utilisateur trouvé avec cet e-mail.');
+      showErrorDialog(context, 'Erreur de connexion.');
     }
-  } else {
-    showErrorDialog(context, 'Erreur de connexion.');
   }
-}
 
   // Show error dialog
   void showErrorDialog(BuildContext context, String message) {
@@ -249,13 +243,6 @@ class AlkLoginForm extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                
-               /* Row(
-                  children: [
-                    Checkbox(value: true, onChanged: (value) {}),
-                    const Text('Remember me'),
-                  ],
-                ),*/
                 TextButton(
                   onPressed: () {},
                   child: const Text('Mot de passe oublié?'),
@@ -276,7 +263,7 @@ class AlkLoginForm extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () => Get.to(()=> const SignUpScreen()),
+                onPressed: () => Get.to(() => const SignUpScreen()),
                 child: const Text('Créer un compte'),
               ),
             ),
@@ -302,10 +289,6 @@ class AlkLoginHeader extends StatelessWidget {
           image: AssetImage(
               dark ? AlkImages.darkAppLogo : AlkImages.lighAppLogo),
         ),
-        /*Text(
-          'Bienvenue',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),*/
         const SizedBox(height: AlkSize.lg),
         Text(
           'Connectez-vous à Votre Compte',

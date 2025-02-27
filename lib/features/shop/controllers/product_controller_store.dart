@@ -183,7 +183,7 @@ class ProductControllerStore {
       List<Map<String, dynamic>> fetchedProducts = [];
       Set<int> processedProductIds = {};
 
-      const int batchSize = 14; // Adjust the batch size as needed
+      const int batchSize = 15; // Adjust the batch size as needed
 
       for (int i = 0; i < productIds.length; i += batchSize) {
         List<int> batchProductIds = productIds.skip(i).take(batchSize).toList();

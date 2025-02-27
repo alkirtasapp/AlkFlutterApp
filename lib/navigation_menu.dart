@@ -22,24 +22,48 @@ class NavigationMenu extends StatelessWidget {
     final controller = Get.put(NavigationController());
     final darkMode = AlkHelperFunctions.isDarkMode(context);
 
-    return Scaffold(
-      bottomNavigationBar: Obx(
-        () => NavigationBar(
-          height: 80,
-          elevation: 0,
-          selectedIndex: controller.selectedIndex.value,
-          onDestinationSelected: (index) => controller.selectedIndex.value = index,
-          backgroundColor: darkMode ? AlkColors.black : Colors.white,
-          indicatorColor: darkMode ? AlkColors.white.withOpacity(0.1) : AlkColors.black.withOpacity(0.1),
-          destinations: [
-            const NavigationDestination(icon: Icon(Iconsax.home), label: 'Acceuil'),
-            const NavigationDestination(icon: Icon(Iconsax.shop), label: 'Boutique'),
-            const NavigationDestination(icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
-            const NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
-          ],
+    return WillPopScope(
+      onWillPop: () async {
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text('Quitter l\'application'),
+              content: Text('Voulez-vous vraiment quitter l\'application?'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text('Non'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text('Oui'),
+                ),
+              ],
+            );
+          },
+        );
+        return shouldPop ?? false;
+      },
+      child: Scaffold(
+        bottomNavigationBar: Obx(
+          () => NavigationBar(
+            height: 80,
+            elevation: 0,
+            selectedIndex: controller.selectedIndex.value,
+            onDestinationSelected: (index) => controller.selectedIndex.value = index,
+            backgroundColor: darkMode ? AlkColors.black : Colors.white,
+            indicatorColor: darkMode ? AlkColors.white.withOpacity(0.1) : AlkColors.black.withOpacity(0.1),
+            destinations: [
+              const NavigationDestination(icon: Icon(Iconsax.home), label: 'Acceuil'),
+              const NavigationDestination(icon: Icon(Iconsax.shop), label: 'Boutique'),
+              const NavigationDestination(icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
+              const NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
+            ],
+          ),
         ),
+        body: Obx(() => controller.screens[controller.selectedIndex.value]),
       ),
-      body: Obx(() => controller.screens[controller.selectedIndex.value]),
     );
   }
 }
