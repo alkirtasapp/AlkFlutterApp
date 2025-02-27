@@ -28,9 +28,11 @@ class _StorePageState extends State<StoreDrawer> {
   bool isSearchVisible = false;
   bool isSearching = false;
   List<Map<String, dynamic>> products = [];
+  Set<int> fetchedProductIds = {}; // Track fetched product IDs
   int offset = 0;
-  final int limit = 8; // Ensuring fixed product fetch limit
+  final int limit = 10; // Ensuring fixed product fetch limit
   TextEditingController searchTextController = TextEditingController();
+  String currentSearchQuery = "";
 
   @override
   void initState() {
@@ -54,6 +56,7 @@ class _StorePageState extends State<StoreDrawer> {
     setState(() {
       isLoading = true;
       products.clear();
+      fetchedProductIds.clear(); // Clear fetched product IDs
       offset = 0;
       isSearching = false;
     });
@@ -61,15 +64,21 @@ class _StorePageState extends State<StoreDrawer> {
     print("📡 Fetching products for Category ID: $categoryId, Offset: $offset");
 
     final List<Map<String, dynamic>> validProducts = await productController
-            .fetchProductDataStore(categoryId, offset, limit) ?? 
+            .fetchProductDataStore(categoryId, offset, limit) ??
         [];
 
     if (validProducts.isNotEmpty) {
       setState(() {
-        products.addAll(validProducts);
+        for (var product in validProducts) {
+          if (!fetchedProductIds.contains(product['id'])) {
+            products.add(product);
+            fetchedProductIds.add(product['id']);
+          }
+        }
         offset += validProducts.length;
       });
-      print("✅ Fetched ${validProducts.length} products for Category ID: $categoryId");
+      print(
+          "✅ Fetched ${validProducts.length} products for Category ID: $categoryId");
     } else {
       print("⚠️ No valid products found for Category ID: $categoryId");
     }
@@ -82,17 +91,24 @@ class _StorePageState extends State<StoreDrawer> {
 
     setState(() => isFetchingMore = true);
 
-    print("📡 Loading more products for Category ID: $selectedCategoryId, Offset: $offset");
+    print(
+        "📡 Loading more products for Category ID: $selectedCategoryId, Offset: $offset");
 
     final List<Map<String, dynamic>>? moreProducts = await productController
         .fetchProductDataStore(selectedCategoryId, offset, limit);
 
     if (moreProducts != null && moreProducts.isNotEmpty) {
       setState(() {
-        products.addAll(moreProducts);
+        for (var product in moreProducts) {
+          if (!fetchedProductIds.contains(product['id'])) {
+            products.add(product);
+            fetchedProductIds.add(product['id']);
+          }
+        }
         offset += moreProducts.length;
       });
-      print("✅ Loaded ${moreProducts.length} more products for Category ID: $selectedCategoryId");
+      print(
+          "✅ Loaded ${moreProducts.length} more products for Category ID: $selectedCategoryId");
     } else {
       print("⚠️ No more products found for Category ID: $selectedCategoryId");
     }
@@ -104,17 +120,28 @@ class _StorePageState extends State<StoreDrawer> {
     setState(() {
       isLoading = true;
       products.clear();
+      fetchedProductIds.clear(); // Clear fetched product IDs
       isSearching = true;
+      offset = 0;
+      currentSearchQuery = query;
     });
 
-    final List<int>? productIds = await searchController.searchProducts(query);
+    final List<int>? productIds = await searchController.searchProducts(query,
+        offset: offset, limit: limit);
 
     if (productIds != null && productIds.isNotEmpty) {
-      final List<Map<String, dynamic>>? searchedProducts = await productController.fetchProductsByIds(productIds);
+      final List<Map<String, dynamic>>? searchedProducts =
+          await productController.fetchProductsByIds(productIds);
 
       if (searchedProducts != null && searchedProducts.isNotEmpty) {
         setState(() {
-          products.addAll(searchedProducts);
+          for (var product in searchedProducts) {
+            if (!fetchedProductIds.contains(product['id'])) {
+              products.add(product);
+              fetchedProductIds.add(product['id']);
+            }
+          }
+          offset += productIds.length;
         });
         print("✅ Found ${searchedProducts.length} products for query: $query");
       } else {
@@ -125,6 +152,43 @@ class _StorePageState extends State<StoreDrawer> {
     }
 
     setState(() => isLoading = false);
+  }
+
+  Future<void> _loadMoreSearchResults() async {
+    if (isFetchingMore) return;
+
+    setState(() => isFetchingMore = true);
+
+    print(
+        "📡 Loading more search results for query: $currentSearchQuery, Offset: $offset");
+
+    final List<int>? productIds = await searchController
+        .searchProducts(currentSearchQuery, offset: offset, limit: limit);
+
+    if (productIds != null && productIds.isNotEmpty) {
+      final List<Map<String, dynamic>>? moreSearchedProducts =
+          await productController.fetchProductsByIds(productIds);
+
+      if (moreSearchedProducts != null && moreSearchedProducts.isNotEmpty) {
+        setState(() {
+          for (var product in moreSearchedProducts) {
+            if (!fetchedProductIds.contains(product['id'])) {
+              products.add(product);
+              fetchedProductIds.add(product['id']);
+            }
+          }
+          offset += productIds.length;
+        });
+        print(
+            "✅ Loaded ${moreSearchedProducts.length} more products for query: $currentSearchQuery");
+      } else {
+        print("⚠️ No more products found for query: $currentSearchQuery");
+      }
+    } else {
+      print("⚠️ No more product IDs found for query: $currentSearchQuery");
+    }
+
+    setState(() => isFetchingMore = false);
   }
 
   @override
@@ -154,10 +218,17 @@ class _StorePageState extends State<StoreDrawer> {
       ),
       drawer: Drawer(
         child: isLoading
-            ? Center(child: CircularProgressIndicator())
+            ? Center(child: LinearProgressIndicator(
+                                      borderRadius: BorderRadius.circular(10),
+                                      minHeight:10, // Adjust height as needed
+                                     
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.purple), // Customize color
+                                    ),)
             : ListView(
                 children: [
-                  for (var category in categoriesController.mainCategories.entries)
+                  for (var category
+                      in categoriesController.mainCategories.entries)
                     ExpansionTile(
                       title: GestureDetector(
                         onTap: () {
@@ -189,8 +260,7 @@ class _StorePageState extends State<StoreDrawer> {
                                     products.clear();
                                   });
 
-                                  _fetchProductsForCategory(
-                                      selectedCategoryId);
+                                  _fetchProductsForCategory(selectedCategoryId);
                                   Navigator.pop(context);
                                 },
                                 child: Text("• ${subcategory['name']}",
@@ -257,19 +327,36 @@ class _StorePageState extends State<StoreDrawer> {
             ),
             Flexible(
               child: isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        semanticsLabel: 'Chargement...',
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.purple),
-                      ),
-                    )
-                  : NotificationListener<ScrollNotification>(
+                  ?Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: SizedBox(
+                                    width:
+                                        10, // Ensures full width
+                                    child: LinearProgressIndicator(
+                                      borderRadius: BorderRadius.circular(10),
+                                      minHeight:10, // Adjust height as needed
+                                     
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.purple), // Customize color
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ): NotificationListener<ScrollNotification>(
                       onNotification: (ScrollNotification scrollInfo) {
                         if (scrollInfo.metrics.pixels ==
                                 scrollInfo.metrics.maxScrollExtent &&
-                            !isFetchingMore && !isSearching) {
-                          _loadMoreProducts();
+                            !isFetchingMore) {
+                          if (isSearching) {
+                            _loadMoreSearchResults();
+                          } else {
+                            _loadMoreProducts();
+                          }
                         }
                         return false;
                       },
@@ -278,31 +365,33 @@ class _StorePageState extends State<StoreDrawer> {
                           AlkStoreGridDrawer(
                             key: productListKey,
                             itemCount: products.length,
-                            categoryId: isSearching ? -1 : selectedCategoryId, // Use -1 for search results
+                            categoryId: isSearching
+                                ? -1
+                                : selectedCategoryId, // Use -1 for search results
                             preloadedProducts: products,
                           ),
-                     if (isFetchingMore)
-  Positioned(
-    left: 0,
-    right: 0,
-    bottom: 0,
-    child: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SizedBox(
-          width: 10, // Ensures full width
-          child: LinearProgressIndicator(
-
-            borderRadius: BorderRadius.circular(10),
-            minHeight: 10, // Adjust height as needed
-            backgroundColor: Colors.grey[300], // Optional: Background color
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.purple), // Customize color
-          ),
-        ),
-      ),
-    ),
-  ),
-
+                          if (isFetchingMore)
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: SizedBox(
+                                    width:
+                                        10, // Ensures full width
+                                    child: LinearProgressIndicator(
+                                      borderRadius: BorderRadius.circular(10),
+                                      minHeight:10, // Adjust height as needed
+                                     
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.purple), // Customize color
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
