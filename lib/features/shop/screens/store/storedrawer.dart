@@ -218,13 +218,7 @@ class _StorePageState extends State<StoreDrawer> {
       ),
       drawer: Drawer(
         child: isLoading
-            ? Center(child: LinearProgressIndicator(
-                                      borderRadius: BorderRadius.circular(10),
-                                      minHeight:10, // Adjust height as needed
-                                     
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.purple), // Customize color
-                                    ),)
+            ? Center(child:CircularProgressIndicator())
             : ListView(
                 children: [
                   for (var category
@@ -334,17 +328,7 @@ class _StorePageState extends State<StoreDrawer> {
                               child: Center(
                                 child: Padding(
                                   padding: const EdgeInsets.all(8.0),
-                                  child: SizedBox(
-                                    width:
-                                        10, // Ensures full width
-                                    child: LinearProgressIndicator(
-                                      borderRadius: BorderRadius.circular(10),
-                                      minHeight:10, // Adjust height as needed
-                                     
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.purple), // Customize color
-                                    ),
-                                  ),
+                                  child: CircularProgressIndicator(),
                                 ),
                               ),
                             ): NotificationListener<ScrollNotification>(
