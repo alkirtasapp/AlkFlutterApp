@@ -46,7 +46,7 @@ class ProductControllerStore {
       int currentOffset = offset;
       Set<int> processedProductIds = {};
 
-      const int batchSize = 14; // Adjust the batch size as needed
+      const int batchSize = 15; // Adjust the batch size as needed
 
       while (fetchedProducts.length < limit && currentOffset < productIds.length) {
         List<int> batchProductIds = [];

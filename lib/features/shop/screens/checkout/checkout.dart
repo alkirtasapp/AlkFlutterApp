@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:test/common/widgets/signIn/AlkTOU.dart';
+import 'package:test/utils/backendData/addressData.dart';
+import 'package:test/utils/backendData/userData.dart';
 import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
 
@@ -27,9 +29,11 @@ class CheckoutScreen extends StatelessWidget {
                         Expanded(
                           child: TextFormField(
                             expands: false,
-                            decoration: const InputDecoration(
-                              labelText: 'Nom',labelStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(Iconsax.user) ,
+                            decoration: InputDecoration(
+                              //labelText: '',
+                              labelText: UserData.firstname,
+                              labelStyle: const TextStyle(color: Colors.grey),
+                              prefixIcon: const Icon(Iconsax.user) ,
                             ),
                           ),
                         ),
@@ -37,9 +41,12 @@ class CheckoutScreen extends StatelessWidget {
                            Expanded(
                           child: TextFormField(
                             expands: false,
-                            decoration: const InputDecoration(
-                              labelText: 'Prénom',labelStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(Iconsax.user) 
+                            decoration: InputDecoration(
+                              //labelText: 'Prénom',
+                              labelText: UserData.lastname,
+                              labelStyle: const TextStyle(color: Colors.grey),
+                              prefixIcon: const Icon(Iconsax.user) ,
+                              
                             ),
                           ),
                         ),
