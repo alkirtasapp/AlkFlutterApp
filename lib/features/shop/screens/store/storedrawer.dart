@@ -191,6 +191,15 @@ class _StorePageState extends State<StoreDrawer> {
     setState(() => isFetchingMore = false);
   }
 
+  void performSearch(String query) async {
+    List<int>? productIds = await searchController.searchProducts(query, limit: 20);
+    if (productIds != null) {
+      print("Found ${productIds.length} products");
+    } else {
+      print("No products found");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -314,6 +323,7 @@ class _StorePageState extends State<StoreDrawer> {
                     ),
                     onSubmitted: (query) {
                       _searchProducts(query);
+                      performSearch(query); // Call performSearch on search submission
                     },
                   ),
                 ),

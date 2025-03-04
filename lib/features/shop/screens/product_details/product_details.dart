@@ -57,6 +57,7 @@ class ProductDetails extends StatelessWidget {
 
     return Scaffold(
       bottomNavigationBar: AlkBottomAddToCart(
+        productId: productId,
         productName: productName,
         productBrand: productBrand,
         productImage: productImage,

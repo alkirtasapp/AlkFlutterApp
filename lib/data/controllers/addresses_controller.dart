@@ -1,8 +1,9 @@
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../utils/backendData/userData.dart';
-import '../utils/backendData/addressData.dart';
+
+import 'package:test/utils/backendData/addressData.dart';
+import 'package:test/utils/backendData/userData.dart';
 
 class AddressController extends GetxController {
   var isLoading = false.obs;
@@ -58,5 +59,6 @@ class AddressController extends GetxController {
     AddressData.id_state = '';
     AddressData.phone = '';
     AddressData.phone_mobile = '';
+    AddressData.id = '';
   }
 }

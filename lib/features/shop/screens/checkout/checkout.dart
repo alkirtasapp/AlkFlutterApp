@@ -98,7 +98,7 @@ class CheckoutScreen extends StatelessWidget {
                       expands: false,
                       decoration: const InputDecoration(
                               labelText: 'Pays',labelStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(Iconsax.map_1) ,
+                              prefixIcon: Icon(Iconsax.map_1),
                               
                             ),
                     ),
