@@ -134,13 +134,14 @@ class _ProductDetailsState extends State<ProductDetails> {
                       productReference: widget.productReference),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkProductMetadata(
+                    productId: widget.productId,
                     productName: widget.productName,
                     productDiscount: widget.productDiscount,
                     productBrand: widget.productBrand,
                     productBrandId: widget.productBrandId,
                     productOldPrice: widget.productOldPrice,
                     productNewPrice: widget.productNewPrice,
-                    productStock: widget.productStock,
+                    //productStock: widget.productStock,
                   ),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkRef(
