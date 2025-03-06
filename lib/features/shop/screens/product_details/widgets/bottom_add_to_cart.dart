@@ -10,6 +10,7 @@ import 'package:test/common/widgets/providers/product_provider.dart';
 import '../../cart/cart.dart';
 
 class AlkBottomAddToCart extends StatefulWidget {
+  final String productId;
   final String productName;
   final String productBrand;
   final String productImage;
@@ -38,7 +39,7 @@ class AlkBottomAddToCart extends StatefulWidget {
     required this.productDescription, 
     required this.productReference,
     required this.productImageList, 
-    required this.productFeatures,
+    required this.productFeatures, required this.productId,
   });
 
   @override
@@ -107,6 +108,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
           ElevatedButton(
             onPressed: () {
               productProvider.addToCart(
+                productId: widget.productId,
                 productName: widget.productName,
                 productBrand: widget.productBrand,
                 productImage: widget.productImage,

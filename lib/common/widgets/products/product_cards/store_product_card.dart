@@ -87,9 +87,7 @@ class ProductCardStore extends StatelessWidget {
             productImage: imageUrl,
             productImageList: imageList,
             productStock: productStock,
-            productFeatures: productFeatures.entries
-                .map((entry) => "${entry.key}: ${entry.value}")
-                .toList(),
+           
             productDescription: description,
             productOldPrice: discountText != null ? displayPrice : '',
             productNewPrice: discountValue > 0
