@@ -46,7 +46,7 @@ class ProductControllerStore {
       int currentOffset = offset;
       Set<int> processedProductIds = {};
 
-      const int batchSize = 15; // Adjust the batch size as needed
+      const int batchSize = 10; // Adjust the batch size as needed
 
       while (fetchedProducts.length < limit && currentOffset < productIds.length) {
         List<int> batchProductIds = [];
@@ -114,6 +114,65 @@ class ProductControllerStore {
     await Future.wait(processingTasks);
   }
 
+
+ Future<List<String>> fetchProductFeatures(String productId) async {
+  try {
+    final DetailsController detailsController = DetailsController();
+    final String apiUrl =
+        'https://www.alkirtas.com/api/products?display=full&filter[id]=$productId&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+
+    print("🟡 Fetching product features for ID: $productId");
+
+    final response = await http.get(Uri.parse(apiUrl));
+
+    if (response.statusCode != 200) {
+      print("❌ API Error: ${response.statusCode} for Product ID: $productId");
+      return [];
+    }
+
+    final productData = json.decode(utf8.decode(response.bodyBytes));
+
+    if (productData == null ||
+        !productData.containsKey('products') ||
+        productData['products'].isEmpty) {
+      print("❌ No product data found for ID: $productId");
+      return [];
+    }
+
+    final product = productData['products'][0]; // Fix: Extract first product object
+
+    if (!product.containsKey('associations') ||
+        !product['associations'].containsKey('product_features')) {
+      print("⚠️ No features found for Product ID: $productId");
+      return [];
+    }
+
+    // ✅ Extract product feature IDs
+    final List<Map<String, dynamic>> featuresList =
+        List<Map<String, dynamic>>.from(product['associations']['product_features']);
+
+    print("🔍 Found ${featuresList.length} features for Product ID: $productId");
+
+    // 🔹 Use DetailsController to fetch feature names & values
+    Map<String, String> featureMap =
+        await detailsController.fetchProductFeatures(featuresList);
+
+    if (featureMap.isEmpty) {
+      print("⚠️ No mapped features for Product ID: $productId");
+    } else {
+      print("✅ Features Fetched: ${featureMap.entries.map((e) => "${e.key}: ${e.value}").toList()}");
+    }
+
+    return featureMap.entries.map((e) => "${e.key}: ${e.value}").toList();
+  } catch (e) {
+    print("❌ Exception fetching features for product $productId: $e");
+    return [];
+  }
+}
+
+
+
+
   Future<void> _processProductDetails(Map<String, dynamic> product, List<Map<String, dynamic>> fetchedProducts) async {
     try {
       // Ensure product has stock
@@ -148,22 +207,22 @@ class ProductControllerStore {
         product['image_urls'] = [];
       }
 
-      product['quantity'] =
-          await quantityController.fetchQuantity(product['id']) ?? 0;
+      //product['quantity'] =
+      //    await quantityController.fetchQuantity(product['id']) ?? 0;
 
       // ✅ Fetch product features using DetailsController
-      if (product.containsKey('associations') &&
-          product['associations'].containsKey('product_features')) {
-        final List<Map<String, dynamic>> featuresList =
-            (product['associations']['product_features'] as List)
-                .map((feature) => feature as Map<String, dynamic>)
-                .toList();
+     // if (product.containsKey('associations') &&
+     //     product['associations'].containsKey('product_features')) {
+     //   final List<Map<String, dynamic>> featuresList =
+       //     (product['associations']['product_features'] as List)
+       //         .map((feature) => feature as Map<String, dynamic>)
+         //       .toList();
 
-        product['details_table'] =
-            await detailsController.fetchProductFeatures(featuresList);
-      } else {
-        product['details_table'] = {};
-      }
+      //  product['details_table'] =
+      //      await detailsController.fetchProductFeatures(featuresList);
+     // } else {
+     //   product['details_table'] = {};
+    //  //}
 
       fetchedProducts.add(product);
 

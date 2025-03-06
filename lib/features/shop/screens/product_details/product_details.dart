@@ -8,11 +8,12 @@ import 'package:test/features/shop/screens/product_details/widgets/product_featu
 import '../../../../common/widgets/texts/section_heading.dart';
 import '../../../../utils/constants/size.dart';
 import '../../controllers/product_card_controller.dart';
+import '../../controllers/product_controller_store.dart'; // Added to fetch product features
 import 'widgets/product_detail_image_slider.dart';
 import 'widgets/product_metadata.dart';
 import 'widgets/reference.dart';
 
-class ProductDetails extends StatelessWidget {
+class ProductDetails extends StatefulWidget {
   final String productName;
   final String productReference;
   final String productDiscount;
@@ -26,6 +27,8 @@ class ProductDetails extends StatelessWidget {
   final List<String> productImageList;
   final String productStock;
   final List<String>? productFeatures; // Allow null
+  
+  
 
   const ProductDetails({
     super.key,
@@ -41,43 +44,81 @@ class ProductDetails extends StatelessWidget {
     required this.productId,
     required this.productImage,
     required this.productImageList,
-    this.productFeatures = const [], // ✅ Ensures default empty list
+     this.productFeatures = const [],
   });
 
   @override
+  State<ProductDetails> createState() => _ProductDetailsState();
+}
+
+class _ProductDetailsState extends State<ProductDetails> {
+  List<String> productFeatures = [];
+  bool isLoadingFeatures = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProductFeatures();
+  }
+
+  Future<void> _fetchProductFeatures() async {
+  try {
+    print("🟡 Fetching product features for ID: ${widget.productId}");
+    
+    final ProductControllerStore productController = ProductControllerStore();
+    List<String> fetchedFeatures = await productController.fetchProductFeatures(widget.productId);
+
+    print("✅ Features Fetched: $fetchedFeatures");
+
+    setState(() {
+      productFeatures = fetchedFeatures;
+      isLoadingFeatures = false;
+    });
+  } catch (e) {
+    print("❌ Error fetching product features: $e");
+    setState(() {
+      isLoadingFeatures = false;
+    });
+  }
+}
+
+
+  @override
   Widget build(BuildContext context) {
-    final productPrice = productDiscount.isNotEmpty
-        ? productNewPrice
-        : (productOldPrice.isNotEmpty ? productOldPrice : productNewPrice);
+    final productPrice = widget.productDiscount.isNotEmpty
+        ? widget.productNewPrice
+        : (widget.productOldPrice.isNotEmpty ? widget.productOldPrice : widget.productNewPrice);
 
     print("Product Price: $productPrice");
-    print("Product discount: $productDiscount");
-    print("Product OLD Price: $productOldPrice");
-    print("Product NEW  Price: $productNewPrice");
+    print("Product discount: ${widget.productDiscount}");
+    print("Product OLD Price: ${widget.productOldPrice}");
+    print("Product NEW Price: ${widget.productNewPrice}");
+    print("product features: $productFeatures");
+   
 
     return Scaffold(
       bottomNavigationBar: AlkBottomAddToCart(
-        productId: productId,
-        productName: productName,
-        productBrand: productBrand,
-        productImage: productImage,
+        productId: widget.productId,
+        productName: widget.productName,
+        productBrand: widget.productBrand,
+        productImage: widget.productImage,
         productPrice: productPrice,
-        productDiscount: productDiscount,
-        productBrandId: productBrandId,
-        productOldPrice: productOldPrice,
-        productNewPrice: productNewPrice,
-        productStock: productStock,
-        productDescription: productDescription,
-        productReference: productReference,
-        productImageList: productImageList,
-        productFeatures : productFeatures,
+        productDiscount: widget.productDiscount,
+        productBrandId: widget.productBrandId,
+        productOldPrice: widget.productOldPrice,
+        productNewPrice: widget.productNewPrice,
+        productStock: widget.productStock,
+        productDescription: widget.productDescription,
+        productReference: widget.productReference,
+        productImageList: widget.productImageList,
+        productFeatures: productFeatures,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             AlkProductImageSlider(
-              productImages: productImageList,
-              productName: productName,
+              productImages: widget.productImageList,
+              productName: widget.productName,
             ),
             Padding(
               padding: EdgeInsets.only(
@@ -90,16 +131,16 @@ class ProductDetails extends StatelessWidget {
                       title: 'Réference ',
                       icon: Iconsax.component5,
                       size: 15,
-                      productReference: productReference),
+                      productReference: widget.productReference),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkProductMetadata(
-                    productName: productName,
-                    productDiscount: productDiscount,
-                    productBrand: productBrand,
-                    productBrandId: productBrandId,
-                    productOldPrice: productOldPrice,
-                    productNewPrice: productNewPrice,
-                    productStock: productStock,
+                    productName: widget.productName,
+                    productDiscount: widget.productDiscount,
+                    productBrand: widget.productBrand,
+                    productBrandId: widget.productBrandId,
+                    productOldPrice: widget.productOldPrice,
+                    productNewPrice: widget.productNewPrice,
+                    productStock: widget.productStock,
                   ),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkRef(
@@ -111,7 +152,7 @@ class ProductDetails extends StatelessWidget {
                   SizedBox(height: AlkSize.spaceBtwItems),
                   ReadMoreText(
                     ProductCardControllerTax.cleanDescription(
-                        productDescription),
+                        widget.productDescription),
                     trimLines: 2,
                     trimMode: TrimMode.Line,
                     trimCollapsedText: 'voir plus',
@@ -125,16 +166,21 @@ class ProductDetails extends StatelessWidget {
                     size: 25,
                     productReference: '',
                   ),
-                    // Check if product features exist before displaying
-                  if (productFeatures != null && productFeatures!.isNotEmpty)
-                    AlkProductFeatures(productFeatures: productFeatures)
-                  else
-                    const Text(
-                      "Aucune information sur le produit disponible.",  
-                      textAlign: TextAlign.center,
-                      style:
-                          TextStyle(fontStyle: FontStyle.italic, fontSize: 14),
-                    ),
+                  SizedBox(height: AlkSize.spaceBtwItems),
+
+                  // Show loading indicator while fetching product features
+                  
+                  isLoadingFeatures
+                      ? const CircularProgressIndicator()
+                      
+                      : (productFeatures.isNotEmpty
+                          ? AlkProductFeatures(productFeatures: productFeatures)
+                          : const Text(
+                              "Aucune information sur le produit disponible.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontStyle: FontStyle.italic, fontSize: 14),
+                            )),
                 ],
               ),
             ),
@@ -144,4 +190,3 @@ class ProductDetails extends StatelessWidget {
     );
   }
 }
-

@@ -30,7 +30,7 @@ class _StorePageState extends State<StoreDrawer> {
   List<Map<String, dynamic>> products = [];
   Set<int> fetchedProductIds = {}; // Track fetched product IDs
   int offset = 0;
-  final int limit = 10; // Ensuring fixed product fetch limit
+  final int limit = 12; // Ensuring fixed product fetch limit
   TextEditingController searchTextController = TextEditingController();
   String currentSearchQuery = "";
 
@@ -64,8 +64,7 @@ class _StorePageState extends State<StoreDrawer> {
     print("📡 Fetching products for Category ID: $categoryId, Offset: $offset");
 
     final List<Map<String, dynamic>> validProducts = await productController
-            .fetchProductDataStore(categoryId, offset, limit) ??
-        [];
+            .fetchProductDataStore(categoryId, offset, limit) ?? [];
 
     if (validProducts.isNotEmpty) {
       setState(() {
@@ -116,89 +115,76 @@ class _StorePageState extends State<StoreDrawer> {
     setState(() => isFetchingMore = false);
   }
 
-  Future<void> _searchProducts(String query) async {
-    setState(() {
-      isLoading = true;
-      products.clear();
-      fetchedProductIds.clear(); // Clear fetched product IDs
-      isSearching = true;
-      offset = 0;
-      currentSearchQuery = query;
-    });
+ Future<void> _searchProducts(String query) async {
+  setState(() {
+    isLoading = true;
+    products.clear(); // Clear previous search results
+    fetchedProductIds.clear();
+    isSearching = true;
+    offset = 0;
+    currentSearchQuery = query;
+  });
 
-    final List<int>? productIds = await searchController.searchProducts(query,
-        offset: offset, limit: limit);
+  final List<int>? productIds = await searchController.searchProducts(query, offset: offset, limit: 10);
 
-    if (productIds != null && productIds.isNotEmpty) {
-      final List<Map<String, dynamic>>? searchedProducts =
-          await productController.fetchProductsByIds(productIds);
+  if (productIds != null && productIds.isNotEmpty) {
+    final List<Map<String, dynamic>>? searchedProducts = await productController.fetchProductsByIds(productIds);
 
-      if (searchedProducts != null && searchedProducts.isNotEmpty) {
-        setState(() {
-          for (var product in searchedProducts) {
-            if (!fetchedProductIds.contains(product['id'])) {
-              products.add(product);
-              fetchedProductIds.add(product['id']);
-            }
+    if (searchedProducts != null && searchedProducts.isNotEmpty) {
+      setState(() {
+        for (var product in searchedProducts) {
+          if (!fetchedProductIds.contains(product['id'])) {  // Prevent duplicates
+            products.add(product);
+            fetchedProductIds.add(product['id']);
           }
-          offset += productIds.length;
-        });
-        print("✅ Found ${searchedProducts.length} products for query: $query");
-      } else {
-        print("⚠️ No products found for query: $query");
-      }
+        }
+        offset += searchedProducts.length; // Move offset forward correctly
+      });
+      print("✅ Displaying first ${searchedProducts.length} search results.");
     } else {
-      print("⚠️ No product IDs found for query: $query");
+      print("⚠️ No valid product details found.");
     }
-
-    setState(() => isLoading = false);
+  } else {
+    print("⚠️ No product IDs returned from search.");
   }
 
-  Future<void> _loadMoreSearchResults() async {
-    if (isFetchingMore) return;
+  setState(() => isLoading = false);
+}
 
-    setState(() => isFetchingMore = true);
+ Future<void> _loadMoreSearchResults() async {
+  if (isFetchingMore) return;
 
-    print(
-        "📡 Loading more search results for query: $currentSearchQuery, Offset: $offset");
+  setState(() => isFetchingMore = true);
 
-    final List<int>? productIds = await searchController
-        .searchProducts(currentSearchQuery, offset: offset, limit: limit);
+  print("📡 Loading more search results for query: $currentSearchQuery, Offset: $offset");
 
-    if (productIds != null && productIds.isNotEmpty) {
-      final List<Map<String, dynamic>>? moreSearchedProducts =
-          await productController.fetchProductsByIds(productIds);
+  final List<int>? productIds = await searchController.searchProducts(currentSearchQuery, offset: offset, limit: 10);
 
-      if (moreSearchedProducts != null && moreSearchedProducts.isNotEmpty) {
-        setState(() {
-          for (var product in moreSearchedProducts) {
-            if (!fetchedProductIds.contains(product['id'])) {
-              products.add(product);
-              fetchedProductIds.add(product['id']);
-            }
+  if (productIds != null && productIds.isNotEmpty) {
+    final List<Map<String, dynamic>>? moreSearchedProducts =
+        await productController.fetchProductsByIds(productIds);
+
+    if (moreSearchedProducts != null && moreSearchedProducts.isNotEmpty) {
+      setState(() {
+        for (var product in moreSearchedProducts) {
+          if (!fetchedProductIds.contains(product['id'])) {
+            products.add(product);
+            fetchedProductIds.add(product['id']);
           }
-          offset += productIds.length;
-        });
-        print(
-            "✅ Loaded ${moreSearchedProducts.length} more products for query: $currentSearchQuery");
-      } else {
-        print("⚠️ No more products found for query: $currentSearchQuery");
-      }
+        }
+        offset += productIds.length;
+      });
+      print("✅ Loaded ${moreSearchedProducts.length} more products for query: $currentSearchQuery");
     } else {
-      print("⚠️ No more product IDs found for query: $currentSearchQuery");
+      print("⚠️ No more products found for query: $currentSearchQuery");
     }
-
-    setState(() => isFetchingMore = false);
+  } else {
+    print("⚠️ No more product IDs found for query: $currentSearchQuery");
   }
 
-  void performSearch(String query) async {
-    List<int>? productIds = await searchController.searchProducts(query, limit: 20);
-    if (productIds != null) {
-      print("Found ${productIds.length} products");
-    } else {
-      print("No products found");
-    }
-  }
+  setState(() => isFetchingMore = false);
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -322,74 +308,59 @@ class _StorePageState extends State<StoreDrawer> {
                       ),
                     ),
                     onSubmitted: (query) {
-                      _searchProducts(query);
-                      performSearch(query); // Call performSearch on search submission
+                      _searchProducts(query); // Call _searchProducts on search submission
                     },
                   ),
                 ),
               ),
             ),
-            Flexible(
-              child: isLoading
-                  ?Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              child: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
-                            ): NotificationListener<ScrollNotification>(
-                      onNotification: (ScrollNotification scrollInfo) {
-                        if (scrollInfo.metrics.pixels ==
-                                scrollInfo.metrics.maxScrollExtent &&
-                            !isFetchingMore) {
-                          if (isSearching) {
-                            _loadMoreSearchResults();
-                          } else {
-                            _loadMoreProducts();
-                          }
-                        }
-                        return false;
-                      },
-                      child: Stack(
-                        children: [
-                          AlkStoreGridDrawer(
-                            key: productListKey,
-                            itemCount: products.length,
-                            categoryId: isSearching
-                                ? -1
-                                : selectedCategoryId, // Use -1 for search results
-                            preloadedProducts: products,
-                          ),
-                          if (isFetchingMore)
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              child: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: SizedBox(
-                                    width:
-                                        10, // Ensures full width
-                                    child: LinearProgressIndicator(
-                                      borderRadius: BorderRadius.circular(10),
-                                      minHeight:10, // Adjust height as needed
-                                     
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.purple), // Customize color
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
+           Flexible(
+  child: isLoading
+      ? Center(child: CircularProgressIndicator())
+      : NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification scrollInfo) {
+            if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+                !isFetchingMore) {
+              if (isSearching) {
+                _loadMoreSearchResults();
+              } else {
+                _loadMoreProducts();
+              }
+            }
+            return false;
+          },
+          child: Stack(
+            children: [
+              AlkStoreGridDrawer(
+                key: productListKey,
+                itemCount: products.length,
+                categoryId: isSearching ? -1 : selectedCategoryId,
+                preloadedProducts: products,
+              ),
+              if (isFetchingMore)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: 10,
+                        child: LinearProgressIndicator(
+                          borderRadius: BorderRadius.circular(10),
+                          minHeight: 10,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
+                        ),
                       ),
                     ),
-            ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+)
+
           ],
         ),
       ),
