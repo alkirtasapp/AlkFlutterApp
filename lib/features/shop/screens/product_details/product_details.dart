@@ -65,6 +65,7 @@ class _ProductDetailsState extends State<ProductDetails> {
   try {
     print("🟡 Fetching product features for ID: ${widget.productId}");
     
+    
     final ProductControllerStore productController = ProductControllerStore();
     List<String> fetchedFeatures = await productController.fetchProductFeatures(widget.productId);
 
@@ -94,6 +95,7 @@ class _ProductDetailsState extends State<ProductDetails> {
     print("Product OLD Price: ${widget.productOldPrice}");
     print("Product NEW Price: ${widget.productNewPrice}");
     print("product features: $productFeatures");
+  
    
 
     return Scaffold(

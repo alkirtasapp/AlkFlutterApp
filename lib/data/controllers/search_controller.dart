@@ -5,12 +5,12 @@ class AlkSearchController {
   final String apiKey = 'Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
   final String baseUrl = 'https://www.alkirtas.com/api/products';
 
-Future<List<int>?> searchProducts(String query, {int offset = 0, int limit = 10}) async {
+Future<List<int>?> searchProducts(String query, {int offset = 0, int limit = 100}) async {
   try {
     final String lowerCaseQuery = query.toLowerCase();
     final String searchApi = '$baseUrl?filter[name]=%[$lowerCaseQuery%]&language=1'
         '&sort=[id_DESC]&filter[active]=1&display=full&output_format=JSON'
-        '&ws_key=$apiKey&limit=$limit&offset=$offset'; // Added pagination
+        '&ws_key=$apiKey&limit=$limit'; // Added pagination
 
     print("📡 Searching products with query: $query, Offset: $offset, Limit: $limit");
     print("🔗 API Request URL: $searchApi");
