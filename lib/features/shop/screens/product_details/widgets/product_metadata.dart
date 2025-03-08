@@ -1,42 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:readmore/readmore.dart';
 import 'package:test/common/widgets/images/AlkCircularImage.dart';
 import 'package:test/common/widgets/roundedContainer.dart';
 import 'package:test/common/widgets/texts/brand__title_text_verif_icon.dart';
 import 'package:test/common/widgets/texts/product_title_text.dart';
+import 'package:test/data/controllers/quantity_controller.dart';
 import 'package:test/utils/constants/enums.dart';
 import 'package:test/utils/constants/images_strings.dart';
 import 'package:test/utils/constants/size.dart';
-
 import '../../../../../common/widgets/texts/section_heading.dart';
 import '../../../../../utils/constants/colors.dart';
 
-class AlkProductMetadata extends StatelessWidget {
+class AlkProductMetadata extends StatefulWidget {
+  final String productId;
   final String productName;
   final String? productDiscount;
   final String productBrand;
   final String productOldPrice;
   final String productNewPrice;
-  final String productStock;
- 
   final String productBrandId;
-
-  
-  
 
   const AlkProductMetadata({
     super.key,
+    required this.productId,
     required this.productName,
     this.productDiscount,
     required this.productBrand,
     required this.productOldPrice,
     required this.productNewPrice,
-
     required this.productBrandId,
-     required this.productStock, 
-   
   });
+
+  @override
+  State<AlkProductMetadata> createState() => _AlkProductMetadataState();
+}
+
+class _AlkProductMetadataState extends State<AlkProductMetadata> {
+  int? productStock;
+  bool isLoadingStock = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStock();
+  }
+
+  Future<void> _fetchStock() async {
+    final QuantityController quantityController = QuantityController();
+    int? stock = await quantityController.fetchQuantity(int.parse(widget.productId));
+
+    setState(() {
+      productStock = stock;
+      isLoadingStock = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,16 +61,13 @@ class AlkProductMetadata extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title
-        AlkProductTitleText(title: productName, smallSize: false),
+        AlkProductTitleText(title: widget.productName, smallSize: false),
         SizedBox(height: AlkSize.spaceBtwItems),
 
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          
-          
           children: [
-            // Discount tag (only if there is a discount)
-            if (productDiscount != null && productDiscount!.isNotEmpty)
+            if (widget.productDiscount != null && widget.productDiscount!.isNotEmpty)
               AlkRoundedContainer(
                 radius: AlkSize.sm,
                 backgroundColor: Colors.purple.shade300,
@@ -62,7 +76,7 @@ class AlkProductMetadata extends StatelessWidget {
                   vertical: AlkSize.xs,
                 ),
                 child: Text(
-                  productDiscount!,
+                  widget.productDiscount!,
                   style: Theme.of(context)
                       .textTheme
                       .labelLarge!
@@ -71,12 +85,9 @@ class AlkProductMetadata extends StatelessWidget {
               ),
             SizedBox(width: AlkSize.spaceBtwItems),
 
-            // Original price (strikethrough)
-            if (productDiscount != null && productDiscount!.isNotEmpty)
-             
+            if (widget.productDiscount != null && widget.productDiscount!.isNotEmpty)
               Text(
-               // productPrice,
-                '$productOldPrice TND',
+                '${widget.productOldPrice} TND',
                 style: Theme.of(context).textTheme.titleSmall!.apply(
                       decoration: TextDecoration.lineThrough,
                     ),
@@ -85,20 +96,16 @@ class AlkProductMetadata extends StatelessWidget {
 
             // New price
             Row(
-              
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-               
-                Icon(Iconsax.coin_15 , color: Colors.purple.shade300, size: 25, ),
+                Icon(Iconsax.coin_15, color: Colors.purple.shade300, size: 25),
                 Text(
-                  
-                  '$productNewPrice ',
+                  '${widget.productNewPrice} ',
                   style: Theme.of(context)
                       .textTheme
                       .headlineMedium!
                       .apply(color: AlkColors.darkerGrey),
                 ),
-                 
               ],
             ),
           ],
@@ -106,13 +113,10 @@ class AlkProductMetadata extends StatelessWidget {
 
         SizedBox(height: AlkSize.spaceBtwItems),
 
-        // Stock
-        Row(
-          children: [
-            // const AlkProductTitleText(title: 'Disponibilité :'),
-           // SizedBox(width: AlkSize.spaceBtwItems),
-            // Text('En Stock', style: Theme.of(context).textTheme.titleMedium),
-            productStock != '0'
+        // Stock (Dynamically fetched)
+        isLoadingStock
+            ? const CircularProgressIndicator() // ✅ Show loading indicator
+            : (productStock != null && productStock! > 0
                 ? AlkRoundedContainer(
                     radius: AlkSize.sm,
                     backgroundColor: Colors.green.withOpacity(0.8),
@@ -120,12 +124,9 @@ class AlkProductMetadata extends StatelessWidget {
                       horizontal: AlkSize.sm,
                       vertical: AlkSize.xs,
                     ),
-                    child: Text(
+                    child: const Text(
                       'En Stock',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelLarge!
-                          .apply(color: Colors.white),
+                      style: TextStyle(color: Colors.white),
                     ),
                   )
                 : AlkRoundedContainer(
@@ -135,46 +136,35 @@ class AlkProductMetadata extends StatelessWidget {
                       horizontal: AlkSize.sm,
                       vertical: AlkSize.xs,
                     ),
-                    child: Text(
-                      'hors stock',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelLarge!
-                          .apply(color: Colors.white),
+                    child: const Text(
+                      'Hors Stock',
+                      style: TextStyle(color: Colors.white),
                     ),
-                  ),
-          ],
-        ),
-        SizedBox(height: AlkSize.spaceBtwItems /2),
+                  )),
+
+        SizedBox(height: AlkSize.spaceBtwItems / 2),
 
         // Brand
         Row(
           children: [
-          
-             productBrandId != '0' ?
-            AlkCircularImage(
-
-              image:
-                   'https://www.alkirtas.com/img/m/${productBrandId}.jpg', // logo brand li jebneh bessif
-              backgroundColor: Colors.transparent,
-              isNetworkImage: true,
-              fit: BoxFit.contain,
-              
-            )
-            : AlkCircularImage(
-              isNetworkImage: false,
-               image: AlkImages.darkAppLogo,
-               width: 52,
-               height: 52,
-               overlayColor: Colors.purple,
-               ),
-
+            widget.productBrandId != '0'
+                ? AlkCircularImage(
+                    image:
+                        'https://www.alkirtas.com/img/m/${widget.productBrandId}.jpg',
+                    backgroundColor: Colors.transparent,
+                    isNetworkImage: true,
+                    fit: BoxFit.contain,
+                  )
+                : AlkCircularImage(
+                    isNetworkImage: false,
+                    image: AlkImages.darkAppLogo,
+                    width: 52,
+                    height: 52,
+                    overlayColor: Colors.purple,
+                  ),
             AlkBrandTitleTextVerifIcon(
-              title: productBrand == 'False' ? 'A L K I R T A S' : productBrand,
+              title: widget.productBrand == 'False' ? 'A L K I R T A S' : widget.productBrand,
               brandTextSize: TextSizes.medium,
-            
-               
-              
             ),
             SizedBox(height: AlkSize.spaceBtwSections),
           ],

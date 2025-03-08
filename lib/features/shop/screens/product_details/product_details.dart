@@ -65,6 +65,7 @@ class _ProductDetailsState extends State<ProductDetails> {
   try {
     print("🟡 Fetching product features for ID: ${widget.productId}");
     
+    
     final ProductControllerStore productController = ProductControllerStore();
     List<String> fetchedFeatures = await productController.fetchProductFeatures(widget.productId);
 
@@ -94,6 +95,7 @@ class _ProductDetailsState extends State<ProductDetails> {
     print("Product OLD Price: ${widget.productOldPrice}");
     print("Product NEW Price: ${widget.productNewPrice}");
     print("product features: $productFeatures");
+  
    
 
     return Scaffold(
@@ -134,13 +136,14 @@ class _ProductDetailsState extends State<ProductDetails> {
                       productReference: widget.productReference),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkProductMetadata(
+                    productId: widget.productId,
                     productName: widget.productName,
                     productDiscount: widget.productDiscount,
                     productBrand: widget.productBrand,
                     productBrandId: widget.productBrandId,
                     productOldPrice: widget.productOldPrice,
                     productNewPrice: widget.productNewPrice,
-                    productStock: widget.productStock,
+                    //productStock: widget.productStock,
                   ),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkRef(

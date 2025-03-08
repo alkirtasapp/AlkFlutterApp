@@ -30,7 +30,7 @@ class _StorePageState extends State<StoreDrawer> {
   List<Map<String, dynamic>> products = [];
   Set<int> fetchedProductIds = {}; // Track fetched product IDs
   int offset = 0;
-  final int limit = 12; // Ensuring fixed product fetch limit
+  final int limit = 10; // Ensuring fixed product fetch limit
   TextEditingController searchTextController = TextEditingController();
   String currentSearchQuery = "";
 
@@ -125,7 +125,7 @@ class _StorePageState extends State<StoreDrawer> {
     currentSearchQuery = query;
   });
 
-  final List<int>? productIds = await searchController.searchProducts(query, offset: offset, limit: 10);
+  final List<int>? productIds = await searchController.searchProducts(query, offset: offset, limit: 100);
 
   if (productIds != null && productIds.isNotEmpty) {
     final List<Map<String, dynamic>>? searchedProducts = await productController.fetchProductsByIds(productIds);
@@ -158,7 +158,7 @@ class _StorePageState extends State<StoreDrawer> {
 
   print("📡 Loading more search results for query: $currentSearchQuery, Offset: $offset");
 
-  final List<int>? productIds = await searchController.searchProducts(currentSearchQuery, offset: offset, limit: 10);
+  final List<int>? productIds = await searchController.searchProducts(currentSearchQuery, offset: offset, limit: 100);
 
   if (productIds != null && productIds.isNotEmpty) {
     final List<Map<String, dynamic>>? moreSearchedProducts =
