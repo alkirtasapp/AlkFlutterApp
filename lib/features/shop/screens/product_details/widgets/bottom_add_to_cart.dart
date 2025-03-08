@@ -122,7 +122,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
                 productReference: widget.productReference,
                 productImageList: widget.productImageList,
                 productFeatures: widget.productFeatures,
-                quantity: quantity, // ✅ Pass quantity to cart
+                quantity: quantity, 
               );
 
               Get.snackbar(
@@ -132,7 +132,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
                 duration: Duration(seconds: 2),
                 backgroundColor: Colors.purple.shade300,
                 colorText: Colors.white,
-                onTap: (snack) => Get.to(CartScreen()),
+                onTap: (snack) => Get.to(() => CartScreen()),
                 isDismissible: true,
               );
             },

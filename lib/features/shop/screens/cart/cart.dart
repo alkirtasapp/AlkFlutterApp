@@ -31,13 +31,13 @@ class _CartScreenState extends State<CartScreen> {
 
   Future<void> checkout() async {
     try {
-      // Step 1: Create Cart
+      //  Create Cart
       String cartId = await createCart(productProvider.cartItems);
 
-      // Step 2: Create Order using the generated cart ID
+      //  Create Order using the  cart ID
       await createOrder(cartId);
 
-      // Step 3: Clear Local Cart
+      //  Clear Local Cart
       productProvider.clearCart();
 
       print("Order placed successfully!");
