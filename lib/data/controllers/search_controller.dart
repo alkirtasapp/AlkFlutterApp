@@ -9,7 +9,7 @@ class AlkSearchController {
     try {
       final String cleanedQuery = query.trim();
 
-      // ✅ Keep the entire phrase together instead of splitting into separate words
+     
       final String formattedQuery = "%[$cleanedQuery]%";
 
       final String searchApi = '$baseUrl?filter[name]=$formattedQuery&language=1'

@@ -254,8 +254,11 @@ class AlkLoginForm extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AlkColors.primaryColor,
+                ),
                 onPressed: () => onSignIn(context),
-                child: const Text('Connexion'),
+                child: const Text('Connexion',style: TextStyle(color: Colors.white),),
               ),
             ),
             const SizedBox(height: AlkSize.spaceBtwItems),

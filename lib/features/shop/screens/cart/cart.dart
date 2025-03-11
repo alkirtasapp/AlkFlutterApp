@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:test/common/widgets/appbar/appbar.dart';
 import 'package:test/common/widgets/products/cart/cartItem.dart';
+import 'package:test/features/shop/screens/checkout/checkout.dart';
 import 'package:test/features/shop/screens/product_details/product_details.dart';
 import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
@@ -9,6 +10,8 @@ import 'package:test/common/widgets/providers/product_provider.dart';
 import 'package:test/utils/backendData/userData.dart';
 import 'package:test/utils/backendData/addressData.dart';
 import 'package:http/http.dart' as http;
+import 'package:xml/xml.dart' as xml;
+
 import 'dart:convert';
 
 class CartScreen extends StatefulWidget {
@@ -23,10 +26,13 @@ class _CartScreenState extends State<CartScreen> {
 
   double getTotalPrice() {
     return productProvider.cartItems.fold(0.0, (sum, product) {
-      final price = double.tryParse(product['productPrice'].toString()) ?? 0.0;
-      final quantity = int.tryParse(product['productQuantity'].toString()) ?? 1;
-      return sum + (price * quantity);
-    }) + 8.0; // Add delivery charge (8.000 TND)
+          final price =
+              double.tryParse(product['productPrice'].toString()) ?? 0.0;
+          final quantity =
+              int.tryParse(product['productQuantity'].toString()) ?? 1;
+          return sum + (price * quantity);
+        }) +
+        8.0; // Add delivery charge (8.000 TND)
   }
 
   Future<void> checkout() async {
@@ -38,60 +44,69 @@ class _CartScreenState extends State<CartScreen> {
       await createOrder(cartId);
 
       //  Clear Local Cart
-      productProvider.clearCart();
+      // productProvider.clearCart();
 
-      print("Order placed successfully!");
+      // Navigate to Checkout Screen on success
+      Get.to(() => CheckoutScreen());
+
+
+
+      print("Cart  placed successfully!");
     } catch (e) {
       print("Error during checkout: $e");
     }
   }
 
   Future<String> createCart(List<Map<String, String>> cartItems) async {
-    String url = "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
-    
-    String cartRowsXml = cartItems.map((item) {
-      return """
-      <cart_row>
-        <id_product>${item['productId']}</id_product>
-        <id_product_attribute><![CDATA[]]></id_product_attribute>
-        <id_address_delivery>${AddressData.id}</id_address_delivery>
-        <id_customization><![CDATA[]]></id_customization>
-        <quantity>${item['productQuantity']}</quantity>
-      </cart_row>
-      """;
-    }).join();
+  String url = "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
 
-    String xmlBody = """
-    <?xml version="1.0" encoding="UTF-8"?>
-    <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
-      <cart>
-        <id_currency>1</id_currency>
-        <id_lang>1</id_lang>
-        <id_customer>${UserData.id}</id_customer>
-        <associations>
-          <cart_rows>
-            $cartRowsXml
-          </cart_rows>
-        </associations>
-      </cart>
-    </prestashop>
+  String cartRowsXml = cartItems.map((item) {
+    return """
+    <cart_row>
+      <id_product><![CDATA[${item['productId']}]]></id_product>
+      <id_product_attribute><![CDATA[]]></id_product_attribute>
+      <id_address_delivery><![CDATA[${AddressData.id}]]></id_address_delivery>
+      <id_customization><![CDATA[]]></id_customization>
+      <quantity><![CDATA[${item['productQuantity']}]]></quantity>
+    </cart_row>
     """;
-    
-    var response = await http.post(
-      Uri.parse(url),
-      headers: {
-        "Content-Type": "application/xml",
-      },
-      body: xmlBody,
-    );
-    
-    if (response.statusCode == 201) {
-      var jsonResponse = json.decode(response.body);
-      return jsonResponse["cart"]["id"].toString();
-    } else {
-      throw Exception("Failed to create cart: ${response.statusCode}, ${response.body}");
-    }
+  }).join();
+
+  String xmlBody = '''<?xml version="1.0" encoding="UTF-8"?>
+<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
+  <cart>
+    <id_currency>1</id_currency>
+    <id_lang>1</id_lang>
+    <id_customer><![CDATA[${UserData.id}]]></id_customer>
+    <associations>
+      <cart_rows>
+        $cartRowsXml
+      </cart_rows>
+    </associations>
+  </cart>
+</prestashop>''';
+
+  var response = await http.post(
+    Uri.parse(url),
+    headers: {
+      "Content-Type": "application/xml",
+      "Accept": "application/xml",
+    },
+    body: xmlBody.trim(), // Ensure no extra spaces
+  );
+
+  print("Response Status: ${response.statusCode}");
+  print("Response Body: ${response.body}");
+
+  if (response.statusCode == 201 || response.statusCode == 200) {
+    final document = xml.XmlDocument.parse(response.body);
+    final cartIdElement = document.findAllElements("id").first;
+    return cartIdElement.text;
+  } else {
+    throw Exception("${UserData.id} USER Failed to create cart: ${response.statusCode}, ${response.body}");
   }
+}
+
 
   Future<void> createOrder(String cartId) async {
     // Implement order creation logic using the cartId
@@ -131,16 +146,23 @@ class _CartScreenState extends State<CartScreen> {
                                   productBrand: product['productBrand'] ?? '',
                                   productName: product['productName'] ?? '',
                                   productImage: product['productImage'] ?? '',
-                                  productDiscount: product['productDiscount'] ?? '',
-                                  productOldPrice: product['productOldPrice'] ?? '',
-                                  productNewPrice: product['productNewPrice'] ?? '',
-                                  productReference: product['productReference'] ?? '',
+                                  productDiscount:
+                                      product['productDiscount'] ?? '',
+                                  productOldPrice:
+                                      product['productOldPrice'] ?? '',
+                                  productNewPrice:
+                                      product['productNewPrice'] ?? '',
+                                  productReference:
+                                      product['productReference'] ?? '',
                                   productStock: product['productStock'] ?? '',
-                                  productDescription: product['productDescription'] ?? '',
-                                  productBrandId: product['productBrandId'] ?? '',
+                                  productDescription:
+                                      product['productDescription'] ?? '',
+                                  productBrandId:
+                                      product['productBrandId'] ?? '',
                                   productId: product['productId'] ?? '',
-                                  productImageList: product['productImageList']?.split(',') ?? [],
-                                 
+                                  productImageList:
+                                      product['productImageList']?.split(',') ??
+                                          [],
                                 ));
                           },
                           child: AlkCartItem(
@@ -148,7 +170,8 @@ class _CartScreenState extends State<CartScreen> {
                             productBrand: product['productBrand']!,
                             productImage: product['productImage']!,
                             productPrice: product['productPrice']!,
-                            productQuantity: product['productQuantity']!, // Display correct quantity
+                            productQuantity: product[
+                                'productQuantity']!, 
                             onDelete: () {
                               setState(() {}); // Trigger rebuild on delete
                             },
@@ -164,6 +187,8 @@ class _CartScreenState extends State<CartScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: checkout,
+                    
+                      
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.purple,
                         padding: EdgeInsets.symmetric(
