@@ -30,8 +30,8 @@ class CheckoutScreen extends StatelessWidget {
                           child: TextFormField(
                             expands: false,
                             decoration: InputDecoration(
-                              //labelText: '',
-                              labelText: UserData.firstname,
+                              labelText: 'Nom',
+                              
                               labelStyle: const TextStyle(color: Colors.grey),
                               prefixIcon: const Icon(Iconsax.user) ,
                             ),
@@ -42,8 +42,8 @@ class CheckoutScreen extends StatelessWidget {
                           child: TextFormField(
                             expands: false,
                             decoration: InputDecoration(
-                              //labelText: 'Prénom',
-                              labelText: UserData.lastname,
+                              labelText: 'Prénom',
+                              
                               labelStyle: const TextStyle(color: Colors.grey),
                               prefixIcon: const Icon(Iconsax.user) ,
                               
@@ -97,7 +97,7 @@ class CheckoutScreen extends StatelessWidget {
                       obscureText: true,
                       expands: false,
                       decoration: const InputDecoration(
-                              labelText: 'Pays',labelStyle: TextStyle(color: Colors.grey),
+                              labelText: 'Gouvernerat',labelStyle: TextStyle(color: Colors.grey),
                               prefixIcon: Icon(Iconsax.map_1),
                               
                             ),
