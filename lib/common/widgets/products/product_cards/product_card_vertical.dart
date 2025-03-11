@@ -60,9 +60,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
       return const Center(child: Text('Failed to load product'));
      
     }
-      // nchoufou l content mtaa l product data gbal kol chy 
-         print("Product Data mta3 l Store mel Service  : $productData");
-         print("Keys in productData: ${productData!.keys}");
+     
     
 
     final title = _safeConvertToString(productData!['name']);

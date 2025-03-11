@@ -6,6 +6,7 @@ import 'package:test/common/widgets/custom_shapes/containers/primary_header_cont
 import 'package:test/common/widgets/icons/circularIcons.dart';
 import 'package:test/common/widgets/list_tiles/settings_menu_tile.dart';
 import 'package:test/common/widgets/texts/section_heading.dart';
+import 'package:test/features/authentication/screens/login/log_in.dart';
 import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
 
@@ -89,9 +90,12 @@ class SettingScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                    
-                        onPressed: () => Get.back(),
-                        child: const Text('Déconnexion')),
+                        style: OutlinedButton.styleFrom(
+                            backgroundColor: AlkColors.primaryColor),               
+                        onPressed: () => Get.to(()=> LoginScreen()),
+                        child: const Text('Déconnexion',style: TextStyle(
+                          color: Colors.white
+                        ),)),
                         
                   ),
                 ],
