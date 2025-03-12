@@ -15,31 +15,32 @@ import '../../../../utils/backendData/userData.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
-
+  // handle user inputs 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   void signInUser(BuildContext context) async {
     final email = emailController.text;
     final password = passwordController.text;
-
+    
+    // check if the email and password fields are empty
     if (email.isEmpty || password.isEmpty) {
       showErrorDialog(context, 'Please fill in both fields.');
       return;
     }
-
+    // check if the email is valid
     final response = await http.get(
       Uri.parse(
         'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU',
       ),
     );
-
+    // check if the response status code is 200
     if (response.statusCode == 200) {
       var data = json.decode(response.body);
-
+      // check if the data is not empty
       if (data['customers'] != null && data['customers'].isNotEmpty) {
         var customer = data['customers'][0];
-
+        // check if the email is valid
         if (customer['email'] == email) {
           bool passwordMatch = BCrypt.checkpw(password, customer['passwd']);
           if (passwordMatch) {

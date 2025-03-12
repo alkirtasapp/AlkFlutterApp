@@ -6,11 +6,12 @@ import 'package:test/utils/backendData/addressData.dart';
 import 'package:test/utils/backendData/userData.dart';
 
 class AddressController extends GetxController {
-  var isLoading = false.obs;
+ 
+  var isLoading = false.obs; // track loading state
 
   Future<void> fetchCustomerAddress() async {
     try {
-      isLoading.value = true;
+      isLoading.value = true; // set loading state to true
       String url = "https://www.alkirtas.com/api/addresses?limit=1&filter[id_customer]=${UserData.id}&display=full&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
       
       var response = await http.get(Uri.parse(url));

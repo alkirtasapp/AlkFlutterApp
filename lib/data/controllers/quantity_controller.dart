@@ -8,9 +8,10 @@ Future<int?> fetchQuantity(int productId) async {
           'https://www.alkirtas.com/api/stock_availables?display=full&limit=10&filter[id_product]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
       final response = await http.get(Uri.parse(stockApi));
-
-      print('🔍 Fetching stock for Product ID: $productId'); // ✅ Log Request
-      print('📥 API Raw Response: ${response.body}'); // ✅ Log Full API Response
+      //  Log Request
+      print('🔍 Fetching stock for Product ID: $productId'); 
+      //  Log Full API Response
+      print('📥 API Raw Response: ${response.body}'); 
 
       if (response.statusCode == 200) {
         final stockData = json.decode(utf8.decode(response.bodyBytes));

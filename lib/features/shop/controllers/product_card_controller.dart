@@ -8,35 +8,39 @@ import 'package:test/data/controllers/details_controller.dart';
 class ProductCardControllerTax {
   final DetailsController detailsController = DetailsController();
 
-  static List<int>? cachedProductIds; // ✅ Prevents re-fetching
-  static Future<void>? _fetchingProductsFuture; // ✅ Ensures fetch runs ONCE
+  //  Prevents re-fetching
+  static List<int>? cachedProductIds;
+  //  Ensures fetch runs ONCE
+  static Future<void>? _fetchingProductsFuture; 
 
   Future<Map<String, dynamic>?> fetchProductData(int productIndex) async {
     try {
       var box = Hive.box('productCache');
       String cacheKey = "product_$productIndex";
 
-      // ✅ Step 1: Check if product is cached
+      //  Step 1: Check if product is cached
       if (box.containsKey(cacheKey)) {
         print("⚡ Using cached product data for ID $productIndex");
         return Map<String, dynamic>.from(box.get(cacheKey));
       }
 
-      // ✅ Step 2: Fetch product IDs if not already fetched
+      //  Step 2: Fetch product IDs if not already fetched
       if (cachedProductIds == null) {
         if (_fetchingProductsFuture != null) {
           print("🔄 Waiting for existing fetch...");
-          await _fetchingProductsFuture; // ✅ Wait for ongoing fetch instead of starting new one
+          //  Wait for ongoing fetch instead of starting new one
+          await _fetchingProductsFuture; 
         } else {
           _fetchingProductsFuture = _fetchProductIds();
           await _fetchingProductsFuture;
-          _fetchingProductsFuture = null; // ✅ Reset after fetch completes
+          //  Reset after fetch completes
+          _fetchingProductsFuture = null; 
         }
       }
 
-      print("🔍 Final Product IDs: $cachedProductIds"); // ✅ Logs only ONCE per session
+      print("🔍 Final Product IDs: $cachedProductIds"); //  Logs only ONCE per session
 
-      // ✅ Step 3: Fetch all product details in one API request
+      //  Step 3: Fetch all product details in one API request
       String productIdsQuery = cachedProductIds!.join('|');
       final productApi =
           'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsQuery]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
@@ -56,7 +60,7 @@ class ProductCardControllerTax {
       List<Map<String, dynamic>> rawProducts = List<Map<String, dynamic>>.from(productData['products']);
       List<Map<String, dynamic>> processedProducts = [];
 
-      // ✅ Step 4: Process all product details concurrently
+      //  Step 4: Process all product details concurrently
       List<Future<void>> asyncTasks = [];
       for (var product in rawProducts) {
         asyncTasks.add(_processProductDetails(product));
@@ -64,9 +68,9 @@ class ProductCardControllerTax {
       }
 
       await Future.wait(asyncTasks);
-      print("✅ Processed All Product Data");
+      print(" Processed All Product Data");
 
-      // ✅ Step 5: Cache all products at once
+      //  Step 5: Cache all products at once
       for (var i = 0; i < processedProducts.length; i++) {
         box.put("product_$i", processedProducts[i]);
       }
@@ -79,9 +83,9 @@ class ProductCardControllerTax {
     }
   }
 
-  /// ✅ Fetches product IDs only ONCE and caches them
+  ///  Fetches product IDs only ONCE and caches them
   Future<void> _fetchProductIds() async {
-    final List<int> categoryIds = [10, 17, 11, 486, 12, 590, 544];
+    final List<int> categoryIds = [10, 590, 11, 486, 12,];
     const int productsPerCategory = 2;
     final List<int> productIds = [];
 
@@ -99,7 +103,7 @@ class ProductCardControllerTax {
         List<int> selectedIds = categoryProducts
             .map((product) => product['id'] is String 
                 ? int.parse(product['id']) 
-                : product['id'] as int) // ✅ Safe conversion
+                : product['id'] as int) 
             .toList();
 
         productIds.addAll(selectedIds);
@@ -111,15 +115,15 @@ class ProductCardControllerTax {
       return;
     }
 
-    cachedProductIds = productIds; // ✅ Store fetched IDs
-    print("✅ Cached Product IDs: $cachedProductIds"); // ✅ Logs only once!
+    cachedProductIds = productIds; //  Store fetched IDs
+    print("✅ Cached Product IDs: $cachedProductIds"); //  Logs only once!
   }
 
   Future<void> _processProductDetails(Map<String, dynamic> product) async {
     try {
       List<Future<void>> tasks = [];
 
-      // ✅ Fetch discount
+      //  Fetch discount
       tasks.add(fetchDiscount(product['id']).then((discount) {
         if (discount != null && discount['reduction_type'] == 'percentage') {
           product['discount'] = double.tryParse(discount['reduction']) ?? 0;
@@ -128,12 +132,12 @@ class ProductCardControllerTax {
         }
       }));
 
-      // ✅ Fetch tax-inclusive price (TTC)
+      //  Fetch tax-inclusive price (TTC)
       tasks.add(fetchTTCPrice(product['id'], product['price'], product['id_tax_rules_group']).then((ttcPrice) {
         product['ttc_price'] = ttcPrice ?? product['price'];
       }));
 
-      // ✅ Fetch images
+      //  Fetch images
       tasks.add(Future(() {
         if (product.containsKey('associations') && product['associations'].containsKey('images')) {
           final images = product['associations']['images'] as List;

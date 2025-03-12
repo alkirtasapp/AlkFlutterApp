@@ -28,10 +28,10 @@ class CheckoutScreen extends StatelessWidget {
                         /// Nom et Prénom
                         Expanded(
                           child: TextFormField(
+                            
                             expands: false,
                             decoration: InputDecoration(
                               labelText: 'Nom',
-                              
                               labelStyle: const TextStyle(color: Colors.grey),
                               prefixIcon: const Icon(Iconsax.user) ,
                             ),
@@ -40,9 +40,11 @@ class CheckoutScreen extends StatelessWidget {
                         SizedBox(width: AlkSize.spaceBtwInputFields),
                            Expanded(
                           child: TextFormField(
+
                             expands: false,
                             decoration: InputDecoration(
-                              labelText: 'Prénom',
+                              hintText: AddressData.firstname,
+                              //labelText: 'Prénom',
                               
                               labelStyle: const TextStyle(color: Colors.grey),
                               prefixIcon: const Icon(Iconsax.user) ,

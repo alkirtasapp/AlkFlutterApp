@@ -7,12 +7,12 @@ class AlkGridLayout extends StatelessWidget {
   const AlkGridLayout({
     super.key, 
     this.mainAxisExtent = 280, 
-    /*required this.itemBuilder, */
+    
     required this.itemCount,
   });
   final int itemCount ;
   final double? mainAxisExtent;
-  /*final Widget? Function (BuildContext,int) itemBuilder;*/
+  
 
   @override
   Widget build(BuildContext context) {

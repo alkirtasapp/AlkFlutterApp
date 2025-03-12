@@ -7,7 +7,7 @@ import 'utils/theme/theme.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
-
+  // function to check if onboarding screen has been seen
   Future<bool> _hasSeenOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('hasSeenOnboarding') ?? false;
@@ -27,6 +27,7 @@ class App extends StatelessWidget {
             themeMode: ThemeMode.light,
             theme: TAppTheme.lightTheme,
             darkTheme: TAppTheme.darkTheme,
+            // redirect to login Screen 
             home: hasSeenOnboarding ? LoginScreen() : const OnBoardingScreen(),
           );
         }
