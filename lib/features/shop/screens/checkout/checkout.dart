@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:test/common/widgets/signIn/AlkTOU.dart';
+import 'package:test/data/controllers/addresses_controller.dart';
 import 'package:test/utils/backendData/addressData.dart';
 import 'package:test/utils/backendData/userData.dart';
 import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
 
 class CheckoutScreen extends StatelessWidget {
-  const CheckoutScreen({super.key});
+ CheckoutScreen({super.key});
+   // handle user inputs 
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  final phoneController = TextEditingController();
+  final addressController = TextEditingController();  
+  final postalCodeController = TextEditingController();
+  final cityController = TextEditingController();
+  final gouverneratController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +37,8 @@ class CheckoutScreen extends StatelessWidget {
                         /// Nom et Prénom
                         Expanded(
                           child: TextFormField(
-                            
+                            controller:  lastNameController,
+                                                 
                             expands: false,
                             decoration: InputDecoration(
                               labelText: 'Nom',
@@ -37,14 +47,18 @@ class CheckoutScreen extends StatelessWidget {
                             ),
                           ),
                         ),
+
+
+
+
                         SizedBox(width: AlkSize.spaceBtwInputFields),
                            Expanded(
                           child: TextFormField(
-
+                            controller:  firstNameController,
                             expands: false,
                             decoration: InputDecoration(
-                              hintText: AddressData.firstname,
-                              //labelText: 'Prénom',
+                            
+                              labelText: 'Prénom',
                               
                               labelStyle: const TextStyle(color: Colors.grey),
                               prefixIcon: const Icon(Iconsax.user) ,
@@ -57,34 +71,48 @@ class CheckoutScreen extends StatelessWidget {
                       /// Phone 
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                        TextFormField(
+                        controller: phoneController,
                       expands: false,
                       decoration: const InputDecoration(
                               labelText: 'Téléphone',labelStyle: TextStyle(color: Colors.grey),
                               prefixIcon: Icon(Iconsax.mobile) 
                             ),
                     ),
+
+
+
                     /// Phone 
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                        TextFormField(
+                        controller: addressController,
                       expands: false,
                       decoration: const InputDecoration(
                               labelText: 'Adresse ',labelStyle: TextStyle(color: Colors.grey),
                               prefixIcon: Icon(Iconsax.house) 
                             ),
                     ),
+
+
+
                     
                     /// Email
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                     TextFormField(
+                      controller: postalCodeController,
                       expands: false,
                       decoration: const InputDecoration(
                               labelText: 'Code postale',labelStyle: TextStyle(color: Colors.grey),
                               prefixIcon: Icon(Iconsax.direct) 
                             ),
                     ),
+
+
+
+
                     /// Password 
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                     TextFormField(
+                      controller: cityController,
                       obscureText: true,
                       expands: false,
                       decoration: const InputDecoration(
@@ -93,9 +121,14 @@ class CheckoutScreen extends StatelessWidget {
                               
                             ),
                     ),
+
+
+
                      /// Password check
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                     TextFormField(
+                      controller: gouverneratController,
+                      
                       obscureText: true,
                       expands: false,
                       decoration: const InputDecoration(
@@ -104,6 +137,10 @@ class CheckoutScreen extends StatelessWidget {
                               
                             ),
                     ),
+
+
+
+
                      const SizedBox(height: AlkSize.spaceBtwInputFields),
                     /// TermesOfConditions Checkbox
                     Row(
@@ -114,7 +151,14 @@ class CheckoutScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                     SizedBox(width: double.infinity,
-                    child: ElevatedButton(onPressed: (){}, child: const Text('Confirmer la commande')),)
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                       backgroundColor: MaterialStateProperty.all(Colors.purpleAccent[700]),
+                      ),
+
+                      onPressed: (){},
+                     child: const Text('Confirmer la commande')),
+                     )
                     
                   ],
                 ),

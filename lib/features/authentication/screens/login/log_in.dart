@@ -256,7 +256,7 @@ class AlkLoginForm extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AlkColors.primaryColor,
+                  backgroundColor: Colors.purpleAccent[700],
                 ),
                 onPressed: () => onSignIn(context),
                 child: const Text('Connexion',style: TextStyle(color: Colors.white),),
