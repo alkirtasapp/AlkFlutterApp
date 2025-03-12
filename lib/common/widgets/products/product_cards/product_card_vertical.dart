@@ -13,7 +13,8 @@ import '../../../styles/shadows.dart';
 import '../../roundedContainer.dart';
 
 class AlkProductCardVertical extends StatefulWidget {
-  final int productIndex; // Index of the product to fetch
+  // Index of the product to fetch
+  final int productIndex; 
 
   const AlkProductCardVertical({
     super.key,
@@ -27,13 +28,15 @@ class AlkProductCardVertical extends StatefulWidget {
 
 class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
   final ProductCardControllerTax controller = ProductCardControllerTax();
-  Map<String, dynamic>? productData; // To store product details
+  // To store product details
+  Map<String, dynamic>? productData; 
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadProductData(); // Fetch product data during initialization
+    // Fetch product data during initialization
+    _loadProductData(); 
   }
 
   Future<void> _loadProductData() async {
@@ -71,14 +74,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
     final brandId = _safeConvertToString(productData!['id_manufacturer']);
     final productStock =_safeConvertToString(productData!['quantity']);
     final List<String> imageList = (productData!['image_urls'] as List<dynamic>).cast<String>();
-  //    //addding features details
-  //  final List<String> productFeatures = productData!['details_table'] != null
-  //  ? (productData!['details_table'] as Map<String, String>)
-  //      .entries
-  //      .map((entry) => "${entry.key}: ${entry.value}")
-  //      .toList()
-  //  : [];
-  //final List<String> productFeatures = [];
+
 
     final rawTTCPrice =
         double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))
@@ -121,9 +117,9 @@ print('Discount for product ${productData!['id']}: $discountText');
         productBrand: brandName,
         productBrandId:brandId,
         productImage: imageUrl,
-        productImageList: imageList,  // Now correctly passing as List<String>
+        productImageList: imageList,  
         productStock : productStock,
-        //productFeatures: productFeatures,
+        
          
   
 
@@ -131,7 +127,7 @@ print('Discount for product ${productData!['id']}: $discountText');
         productOldPrice: discountText != null ? displayPrice : '', 
         productNewPrice: discountValue > 0
             ? (double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)
-            : displayPrice,  // If no discount, keep normal price
+            : displayPrice,  
       )),
       child: Container(
         width: 180,
@@ -142,7 +138,7 @@ print('Discount for product ${productData!['id']}: $discountText');
           color: dark ? AlkColors.darkerGrey : AlkColors.white,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Prevent column overflow
+          mainAxisSize: MainAxisSize.min, 
           children: [
             // Product Thumbnail
             AlkRoundedContainer(
@@ -170,7 +166,8 @@ print('Discount for product ${productData!['id']}: $discountText');
                       },
                     ),
                   ),
-                  // Discount Tag
+
+                  /// Discount Tag
                   if (discountText != null )
                     Positioned(
                       top: 1,
@@ -196,7 +193,7 @@ print('Discount for product ${productData!['id']}: $discountText');
               ),
             ),
 
-            // Product Details
+            /// Product Details
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(left: AlkSize.sm),
@@ -217,7 +214,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
-                    //original price mfassa5 
+                    ///original price mfassa5 
                     Text(
                       discountText != null ? '$displayPrice TND' : '',
                       overflow: TextOverflow.ellipsis,
@@ -232,7 +229,7 @@ print('Discount for product ${productData!['id']}: $discountText');
                       children: [
                         Padding(
                           padding: EdgeInsets.only(left: AlkSize.sm),
-                          // prix ken fama discount 
+                          /// prix ken fama discount 
                           child: Text(
                             discountValue > 0 ? '${(double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)} TND' : '$displayPrice TND',
                          

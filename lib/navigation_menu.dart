@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/common/widgets/providers/product_provider.dart'; // Import ProductProvider
+import 'package:test/common/widgets/providers/product_provider.dart'; 
 import 'package:test/features/authentication/screens/home/home.dart';
 import 'package:test/features/personalization/screens/settings/settings.dart';
 import 'package:test/features/shop/screens/cart/cart.dart';
@@ -14,14 +14,14 @@ class NavigationMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Ensure ProductProvider is available globally for GetX navigation
+    //  Ensure ProductProvider is available globally for GetX navigation
     if (!Get.isRegistered<ProductProvider>()) {
       Get.put(ProductProvider(), permanent: true);
     }
-
+    //  Initialize NavigationController
     final controller = Get.put(NavigationController());
     final darkMode = AlkHelperFunctions.isDarkMode(context);
-
+    //  Use WillPopScope to handle back button press
     return WillPopScope(
       onWillPop: () async {
         final shouldPop = await showDialog<bool>(
@@ -45,6 +45,7 @@ class NavigationMenu extends StatelessWidget {
         );
         return shouldPop ?? false;
       },
+      //  Scaffold with NavigationBar and screens
       child: Scaffold(
         bottomNavigationBar: Obx(
           () => NavigationBar(
@@ -73,7 +74,8 @@ class NavigationController extends GetxController {
   final screens = [
     const HomeScreen(),
     const StoreDrawer(),
-    const CartScreen(), // ✅ Cart now has access to ProductProvider
+    //  Cart now has access to ProductProvider
+    const CartScreen(), 
     const SettingScreen(),
   ];
 }

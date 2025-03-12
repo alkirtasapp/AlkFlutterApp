@@ -8,6 +8,7 @@ Future<void> main() async {
   
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Hive 
   await Hive.initFlutter();
   
   // Open product cache box
@@ -17,6 +18,7 @@ Future<void> main() async {
   await box.clear();
   print(" Product cache cleared on app reload");
 
+  // Redirection to the app
   runApp(const App());
 
 }

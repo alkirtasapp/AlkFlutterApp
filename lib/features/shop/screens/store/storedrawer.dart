@@ -28,9 +28,9 @@ class _StorePageState extends State<StoreDrawer> {
   bool isSearchVisible = false;
   bool isSearching = false;
   List<Map<String, dynamic>> products = [];
-  Set<int> fetchedProductIds = {}; // Track fetched product IDs
+  Set<int> fetchedProductIds = {}; 
   int offset = 0;
-  final int limit = 10; // Ensuring fixed product fetch limit
+  final int limit = 10; 
   TextEditingController searchTextController = TextEditingController();
   String currentSearchQuery = "";
 
@@ -56,7 +56,7 @@ class _StorePageState extends State<StoreDrawer> {
     setState(() {
       isLoading = true;
       products.clear();
-      fetchedProductIds.clear(); // Clear fetched product IDs
+      fetchedProductIds.clear(); 
       offset = 0;
       isSearching = false;
     });
@@ -118,7 +118,8 @@ class _StorePageState extends State<StoreDrawer> {
  Future<void> _searchProducts(String query) async {
   setState(() {
     isLoading = true;
-    products.clear(); // Clear previous search results
+    // Clear previous search results
+    products.clear(); 
     fetchedProductIds.clear();
     isSearching = true;
     offset = 0;
@@ -133,12 +134,14 @@ class _StorePageState extends State<StoreDrawer> {
     if (searchedProducts != null && searchedProducts.isNotEmpty) {
       setState(() {
         for (var product in searchedProducts) {
-          if (!fetchedProductIds.contains(product['id'])) {  // Prevent duplicates
+          // Prevent duplicates
+          if (!fetchedProductIds.contains(product['id'])) {  
             products.add(product);
             fetchedProductIds.add(product['id']);
           }
         }
-        offset += searchedProducts.length; // Move offset forward correctly
+        // Move offset forward correctly
+        offset += searchedProducts.length; 
       });
       print("✅ Displaying first ${searchedProducts.length} search results.");
     } else {
@@ -308,7 +311,8 @@ class _StorePageState extends State<StoreDrawer> {
                       ),
                     ),
                     onSubmitted: (query) {
-                      _searchProducts(query); // Call _searchProducts on search submission
+                      // Call _searchProducts on search submission
+                      _searchProducts(query); 
                     },
                   ),
                 ),
@@ -331,13 +335,15 @@ class _StorePageState extends State<StoreDrawer> {
           },
           child: Stack(
             children: [
+              
               AlkStoreGridDrawer(
                 key: productListKey,
                 itemCount: products.length,
                 categoryId: isSearching ? -1 : selectedCategoryId,
                 preloadedProducts: products,
               ),
-              if (isFetchingMore)
+              if (isFetchingMore) 
+                 
                 Positioned(
                   left: 0,
                   right: 0,
