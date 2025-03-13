@@ -39,13 +39,13 @@ class _CartScreenState extends State<CartScreen> {
   Future<void> checkout() async {
     try {
       //  Create Cart
-     // String cartId = await createCart(productProvider.cartItems);
+      String cartId = await createCart(productProvider.cartItems);
 
       //  Create Order using the  cart ID
-      //await createOrder(cartId);
+      await createOrder(cartId);
 
       //  Clear Local Cart
-      // productProvider.clearCart();
+       productProvider.clearCart();
 
       // Navigate to Checkout Screen on success
       Get.to(() => CheckoutScreen());
@@ -222,3 +222,41 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 }
+
+
+ /// DOCS : 
+ /// -this class cart.dart Represents the collection of the products that the user have possible intentions to order 
+ /// -cart contains product details from product provider class 
+ /// - a fucntion to calculate the total price of all products existing in the cart 
+ /// - a Gesture Detector to redirect to the product details screen if a user wants to recheck the product in the cart 
+ /// - a Checkout methode that serves as (only can be presses when the cart has items ): 
+ ///     - Store products in the cartItems 
+ ///     - create a Post request to create a cart that contains the list of products (cartitems)
+ /// expected output 
+ /// I/flutter (24377): Response Status: 201
+// Response Body: <?xml version="1.0" encoding="UTF-8"?>
+// <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
+// <cart>
+// 	<id><![CDATA[7151]]></id>
+// 	<id_address_delivery><![CDATA[]]></id_address_delivery>
+// 	<id_address_invoice><![CDATA[]]></id_address_invoice>
+// 	<id_currency xlink:href="https://www.alkirtas.com/api/currencies/1"><![CDATA[1]]></id_currency>
+// 	<id_customer xlink:href="https://www.alkirtas.com/api/customers/14"><![CDATA[14]]></id_customer>
+// 	<id_guest><![CDATA[]]></id_guest>
+// 	<id_lang xlink:href="https://www.alkirtas.com/api/languages/1"><![CDATA[1]]></id_lang>
+// 	<id_shop_group><![CDATA[1]]></id_shop_group>
+// 	<id_shop><![CDATA[1]]></id_shop>
+// 	<id_carrier><![CDATA[]]></id_carrier>
+// 	<recyclable><![CDATA[]]></recyclable>
+// 	<gift><![CDATA[]]></gift>
+// 	<gift_message><![CDATA[]]></gift_message>
+// 	<mobile_theme><![CDATA[]]></mobile_theme>
+// 	<delivery_option><![CDATA[]]></delivery_option>
+// 	<secure_key><![CDATA[]]></secure_key>
+// 	<allow_seperated_package><![CDATA[]]></allow_seperated_package>
+// 	<date_add><![CDATA[2025-
+
+// Cart  placed successfully!
+/// => then next step : creating the address 
+///
+   

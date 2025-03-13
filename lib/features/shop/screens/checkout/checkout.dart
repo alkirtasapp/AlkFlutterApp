@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:test/common/widgets/signIn/AlkTOU.dart';
 import 'package:test/data/controllers/addresses_controller.dart';
@@ -8,12 +10,12 @@ import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
 
 class CheckoutScreen extends StatelessWidget {
- CheckoutScreen({super.key});
-   // handle user inputs 
+  CheckoutScreen({super.key});
+  // handle user inputs
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final phoneController = TextEditingController();
-  final addressController = TextEditingController();  
+  final adressController = TextEditingController();
   final postalCodeController = TextEditingController();
   final cityController = TextEditingController();
   final gouverneratController = TextEditingController();
@@ -21,7 +23,9 @@ class CheckoutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Confiramtion'),),
+      appBar: AppBar(
+        title: Text('Confiramtion'),
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(AlkSize.defaultSpace),
@@ -37,127 +41,141 @@ class CheckoutScreen extends StatelessWidget {
                         /// Nom et Prénom
                         Expanded(
                           child: TextFormField(
-                            controller:  lastNameController,
-                                                 
+                            controller: lastNameController,
                             expands: false,
                             decoration: InputDecoration(
                               labelText: 'Nom',
                               labelStyle: const TextStyle(color: Colors.grey),
-                              prefixIcon: const Icon(Iconsax.user) ,
+                              prefixIcon: const Icon(Iconsax.user),
                             ),
                           ),
                         ),
 
-
-
-
                         SizedBox(width: AlkSize.spaceBtwInputFields),
-                           Expanded(
+                        Expanded(
                           child: TextFormField(
-                            controller:  firstNameController,
+                            controller: firstNameController,
                             expands: false,
                             decoration: InputDecoration(
-                            
                               labelText: 'Prénom',
-                              
                               labelStyle: const TextStyle(color: Colors.grey),
-                              prefixIcon: const Icon(Iconsax.user) ,
-                              
+                              prefixIcon: const Icon(Iconsax.user),
                             ),
                           ),
                         ),
                       ],
                     ),
-                      /// Phone 
+
+                    /// Phone
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
-                       TextFormField(
-                        controller: phoneController,
+                    TextFormField(
+                      controller: phoneController,
                       expands: false,
                       decoration: const InputDecoration(
-                              labelText: 'Téléphone',labelStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(Iconsax.mobile) 
-                            ),
+                          labelText: 'Téléphone',
+                          labelStyle: TextStyle(color: Colors.grey),
+                          prefixIcon: Icon(Iconsax.mobile)),
                     ),
 
-
-
-                    /// Phone 
+                    /// Phone
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
-                       TextFormField(
-                        controller: addressController,
+                    TextFormField(
+                      controller: adressController,
                       expands: false,
                       decoration: const InputDecoration(
-                              labelText: 'Adresse ',labelStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(Iconsax.house) 
-                            ),
+                          labelText: 'Adresse ',
+                          labelStyle: TextStyle(color: Colors.grey),
+                          prefixIcon: Icon(Iconsax.house)),
                     ),
 
-
-
-                    
                     /// Email
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                     TextFormField(
                       controller: postalCodeController,
                       expands: false,
                       decoration: const InputDecoration(
-                              labelText: 'Code postale',labelStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(Iconsax.direct) 
-                            ),
+                          labelText: 'Code postale',
+                          labelStyle: TextStyle(color: Colors.grey),
+                          prefixIcon: Icon(Iconsax.direct)),
                     ),
 
-
-
-
-                    /// Password 
+                    /// Password
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                     TextFormField(
                       controller: cityController,
-                      obscureText: true,
+                      obscureText: false,
                       expands: false,
                       decoration: const InputDecoration(
-                              labelText: 'Ville ',labelStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(Iconsax.building) ,
-                              
-                            ),
+                        labelText: 'Ville ',
+                        labelStyle: TextStyle(color: Colors.grey),
+                        prefixIcon: Icon(Iconsax.building),
+                      ),
                     ),
 
-                     /// Password check
+                    /// Gouvernerat
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                     TextFormField(
                       controller: gouverneratController,
-                      
-                      obscureText: true,
+                      obscureText: false ,
                       expands: false,
                       decoration: const InputDecoration(
-                              labelText: 'Gouvernerat',labelStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(Iconsax.map_1),
-                              
-                            ),
+                        labelText: 'Gouvernerat',
+                        labelStyle: TextStyle(color: Colors.grey),
+                        prefixIcon: Icon(Iconsax.map_1),
+                      ),
                     ),
 
+                    const SizedBox(height: AlkSize.spaceBtwInputFields),
 
-
-
-                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                     /// TermesOfConditions Checkbox
                     Row(
                       children: [
-                        Checkbox(value: true, onChanged: (value){}),
+                        Checkbox(value: true, onChanged: (value) {}),
                         AlkTOUCHeckbox()
                       ],
                     ),
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
-                    SizedBox(width: double.infinity,
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                       backgroundColor: MaterialStateProperty.all(Colors.purpleAccent[700]),
-                      ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all(
+                              Colors.purpleAccent[700]),
+                        ),
+                        onPressed: () async {
+                          print("🛒 Checkout button clicked");
 
-                      onPressed: (){},
-                     child: const Text('Confirmer la commande')),
-                     )
-                    
+                          // Store user input into AddressData
+                          AddressData.id_customer = UserData.id;
+                          AddressData.lastname = lastNameController.text;
+                          AddressData.firstname = firstNameController.text;
+                          AddressData.address1 = adressController.text;
+                          AddressData.postcode = postalCodeController.text;
+                          AddressData.city = cityController.text;
+                          AddressData.phone = phoneController.text;
+                          AddressData.id_country = "208"; // Tunisia
+
+                          // Ensure the AddressController is initialized
+                          final AddressController addressController =
+                              Get.put(AddressController(), permanent: true);
+
+                          print(
+                              "🔍 Checking if customer already has an address...");
+
+                          // Fetch or create an address before proceeding with the order
+                          await addressController.fetchCustomerAddress();
+
+                          // Ensure the address is set before proceeding
+                          if (AddressData.id.isNotEmpty) {
+                            print("✅ Address confirmed: ${AddressData.id}");
+                            print("🚀 Proceeding to order...");
+                          } else {
+                            print("❌ Address creation failed! Cannot proceed.");
+                          }
+                        },
+                        child: const Text('Confirmer la commande'),
+                      ),
+                    )
                   ],
                 ),
               )
