@@ -18,6 +18,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final SignUpController _controller = SignUpController();
   bool _isChecked = false; // Terms of Use checkbox state
 
+  // Handle sign up
   void _handleSignUp() async {
     setState(() => _controller.isLoading = true);
 
@@ -238,3 +239,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
+
+/// import reqiured packages
+/// Call for SignUpController
+/// Create SignUp handler function
+/// Create success and error dialog
+/* Create the UI{
+  SignUp Fields : 
+  - Title (Sexe)
+  - Last Name
+  - First Name
+  - Phone Number
+  - Email
+  - Password
+  - Confirm Password
+  - Terms of Use Checkbox
+         }*/
+
+
+

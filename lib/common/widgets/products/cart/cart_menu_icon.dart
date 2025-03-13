@@ -49,4 +49,9 @@ class AlkCartCounterIcon extends StatelessWidget {
       ],
     );
   }
-}
+} /// 1. Import the required libraries  
+/// 2. Create a personalized CartCounterIcon widget
+/// 3. Retrieve the ProductProvider using GetX  
+/// 4. Show the number of items in the cart
+/// 5. Show the CartScreen when the icon is pressed
+

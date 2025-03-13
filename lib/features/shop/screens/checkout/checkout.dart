@@ -122,8 +122,6 @@ class CheckoutScreen extends StatelessWidget {
                             ),
                     ),
 
-
-
                      /// Password check
                     const SizedBox(height: AlkSize.spaceBtwInputFields),
                     TextFormField(

@@ -241,3 +241,7 @@ class ProductCardControllerTax {
     return 'https://www.alkirtas.com/img/p/$path/$imageIdStr.jpg';
   }
 }
+
+///  Product data model
+/// Used to store product data in Hive
+/// 

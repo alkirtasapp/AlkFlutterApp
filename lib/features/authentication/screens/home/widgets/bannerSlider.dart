@@ -74,3 +74,7 @@ class AlkBannerSlider extends StatelessWidget {
     );
   }
 }
+// this Class is used to display the banner slider in the home screen
+// it enables u to swipe through the different banners which exist on the asset u 
+// have provided in the images_strings.dart file
+// have to provide the path of the images in pubspec.yaml file

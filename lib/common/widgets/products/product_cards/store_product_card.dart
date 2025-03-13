@@ -233,3 +233,5 @@ class ProductCardStore extends StatelessWidget {
     );
   }
 }
+
+/// same documentation for ProductCardVertical

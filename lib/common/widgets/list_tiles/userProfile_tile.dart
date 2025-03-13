@@ -29,7 +29,7 @@ class AlkProfileTile extends StatelessWidget {
       ),
       subtitle: Text("${UserData.email} ",
       style: Theme.of(context).textTheme.labelMedium!.apply(color: AlkColors.white),),
-      trailing: IconButton(onPressed: (){},icon: const Icon(Iconsax.edit),color: Colors.white,),
+      //trailing: IconButton(onPressed: (){},icon: const Icon(Iconsax.edit),color: Colors.white,),
     );
   }
 }

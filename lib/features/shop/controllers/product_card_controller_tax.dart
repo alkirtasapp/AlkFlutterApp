@@ -113,7 +113,7 @@ class ProductCardControllerTax {
       return null;
     }
   }
-
+  // Construct image URL from image ID
   String constructImageUrl(dynamic imageId) {
     if (imageId == null) {
       return 'placeholder_image_url';
@@ -123,4 +123,25 @@ class ProductCardControllerTax {
     final path = digits.join('/');
     return 'https://www.alkirtas.com/img/p/$path/$imageIdStr.jpg';
   }
-}
+} 
+
+
+// This Controller is used to fetch product data from the PrestaShop API for Home Screen 
+// Products are being fetched from multiple categories and then a random product is selected
+// The selected product is then enriched with discount and tax data
+/* -fields extracted from the productApi :
+      - ProductID
+      - productName
+      - productPrice
+      - constructImages (to get the product image)
+      - productDescription
+      - productReference
+      - productManufacturer
+      - productAvailableNow
+      - productCategoryID
+   -fields extracted from the discountApi (tax rules):
+      - idTax
+   -fields extracted from the TaxApi (tax ):
+      - rate
+
+*/

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:test/features/shop/screens/cart/cart.dart';
+import 'package:test/features/shop/screens/store/storedrawer.dart';
 
 import 'package:test/utils/constants/size.dart';
 
@@ -30,7 +34,10 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: AlkSize.spaceBtwSections),
 
                   // SEARCH BAR
-                  const AlkSearchContainer(text: 'Recherche',  icon: Iconsax.search_normal, ),
+                  AlkSearchContainer(text: 'Découvrir ma boutique',
+                    icon: Iconsax.search_normal,
+                   onPressed: () => Get.to(()=> StoreDrawer( ))
+                    ),
                   const SizedBox(height: AlkSize.spaceBtwSections),
 
                   //CATEGORIES
@@ -89,6 +96,14 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+
+/// 1.  Import the required packages
+/// 2.  Create a stateless widget called HomeScreen
+/// 3.  Create a Personalized Header Container with a search bar and categories AlkPrimaryHeaderContainer
+/// 4.  Create a Category Section with a heading and categories AlkHomeCategories
+/// 5.  Create a Banner Slider AlkBannerSlider
+/// 6.  Create a Section Heading for the products AlkSectionHeading
+/// 7.  Create a GridLayout for the products AlkGridLayout to display the products
 
 
 

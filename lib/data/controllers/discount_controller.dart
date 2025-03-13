@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 class DiscountController {
 
+  /// Fetches the discount for a product
   Future<Map<String, dynamic>?> fetchDiscount(int productId) async {
     try {
       final discountApi =
@@ -11,9 +12,8 @@ class DiscountController {
 
       final response = await http.get(Uri.parse(discountApi));
 
-     /* print(
-          'Response for product $productId: ${response.body}'); // Debugging output*/
-
+     
+      // Check if the response is successful
       if (response.statusCode == 200) {
         final discountData = json.decode(utf8.decode(response.bodyBytes));
 
@@ -21,17 +21,18 @@ class DiscountController {
           print('No specific_prices key in response for product $productId');
           return null;
         }
-
+         // Extract the discounts from the response
         final discounts = discountData['specific_prices'] as List<dynamic>?;
         if (discounts == null || discounts.isEmpty) {
           print('No discounts found for product $productId');
           return null;
         }
-
+        // Get the current date and time
         DateTime now = DateTime.now();
         Map<String, dynamic>? permanentDiscount;
         Map<String, dynamic>? latestDiscount;
 
+        // Iterate through the discounts to find the latest valid discount
         for (var discount in discounts) {
           if (!discount.containsKey('reduction') ||
               !discount.containsKey('reduction_type')) {
@@ -39,7 +40,7 @@ class DiscountController {
                 'Skipping discount for product $productId: Incomplete data ${discount}');
             continue;
           }
-
+          // Extract the 'from' and 'to' dates
           String fromDateStr = discount['from'] ?? "";
           String toDateStr = discount['to'] ?? "";
 
@@ -101,3 +102,5 @@ class DiscountController {
     return null;
   }
 }
+
+/// Fetches the total price including taxes for a product

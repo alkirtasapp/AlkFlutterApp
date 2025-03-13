@@ -12,21 +12,21 @@ class AlkSearchContainer extends StatelessWidget {
       this.icon, 
        this.showBackground =true , 
         this.showBorder = true,
-        this.onTap, 
+        this.onPressed, 
         this.padding = const EdgeInsets.symmetric(horizontal: AlkSize.defaultSpace),
   });
 
   final String text;
   final IconData? icon;
   final bool showBackground,showBorder;
-  final VoidCallback? onTap;
+  final VoidCallback? onPressed;
   final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
     final dark = AlkHelperFunctions.isDarkMode(context);
     return GestureDetector(
-      onTap: onTap,
+      onTap: onPressed,
       child: Padding(
         
         padding: padding,

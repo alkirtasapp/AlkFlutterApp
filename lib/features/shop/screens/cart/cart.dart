@@ -22,8 +22,8 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  //  Get the product provider
   final productProvider = Get.find<ProductProvider>();
-
   double getTotalPrice() {
     return productProvider.cartItems.fold(0.0, (sum, product) {
           final price =
@@ -32,9 +32,10 @@ class _CartScreenState extends State<CartScreen> {
               int.tryParse(product['productQuantity'].toString()) ?? 1;
           return sum + (price * quantity);
         }) +
-        8.0; // Add delivery charge (8.000 TND)
+        8.0;
+         // Add delivery charge (8.000 TND)
   }
-
+  //  Checkout
   Future<void> checkout() async {
     try {
       //  Create Cart
@@ -52,11 +53,12 @@ class _CartScreenState extends State<CartScreen> {
 
 
       print("Cart  placed successfully!");
+     
     } catch (e) {
       print("Error during checkout: $e");
     }
   }
-
+  //  Create Cart
   Future<String> createCart(List<Map<String, String>> cartItems) async {
   String url = "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
 
@@ -85,7 +87,7 @@ class _CartScreenState extends State<CartScreen> {
     </associations>
   </cart>
 </prestashop>''';
-
+  // Send POST request
   var response = await http.post(
     Uri.parse(url),
     headers: {
@@ -98,6 +100,8 @@ class _CartScreenState extends State<CartScreen> {
   print("Response Status: ${response.statusCode}");
   print("Response Body: ${response.body}");
 
+
+  // Parse response
   if (response.statusCode == 201 || response.statusCode == 200) {
     final document = xml.XmlDocument.parse(response.body);
     final cartIdElement = document.findAllElements("id").first;
@@ -107,7 +111,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 }
 
-
+  //  Create Order
   Future<void> createOrder(String cartId) async {
     // Implement order creation logic using the cartId
   }
@@ -190,7 +194,7 @@ class _CartScreenState extends State<CartScreen> {
                     
                       
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
+                        backgroundColor: Colors.purple[400],
                         padding: EdgeInsets.symmetric(
                             vertical: AlkSize.buttonHeight),
                         shape: RoundedRectangleBorder(

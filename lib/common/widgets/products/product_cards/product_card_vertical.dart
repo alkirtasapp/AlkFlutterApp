@@ -38,7 +38,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
     // Fetch product data during initialization
     _loadProductData(); 
   }
-
+  // Fetch product data using the controller
   Future<void> _loadProductData() async {
     final data = await controller.fetchProductData(widget.productIndex);
     setState(() {
@@ -46,7 +46,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
       isLoading = false;
     });
   }
-
+  // Convert the value to a string
   String _safeConvertToString(dynamic value, [String fallback = 'Unknown']) {
     if (value is String) return value;
     if (value is bool) return value ? 'True' : 'False';
@@ -56,16 +56,17 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
+      // Show a loading indicator while fetching data
       return const Center(child: CircularProgressIndicator());
     }
-
+    // Show an error message if the product data is not available
     if (productData == null) {
       return const Center(child: Text('Failed to load product'));
      
     }
      
     
-
+    // Fetch product details
     final title = _safeConvertToString(productData!['name']);
     final id = _safeConvertToString(productData!['id']);
     final reference = _safeConvertToString(productData!['reference']);
@@ -100,7 +101,7 @@ if (discountValue > 0) {
 } else {
   print('No discount to display for product ${productData!['id']}');
 }
-print('Discount for product ${productData!['id']}: $discountText');
+
     final imageUrl =
         controller.constructImageUrl(productData!['id_default_image']);
         
@@ -108,7 +109,7 @@ print('Discount for product ${productData!['id']}: $discountText');
         
     return GestureDetector(
       
-      onTap: () => Get.to(() => ProductDetails(
+      onTap: () => Get.to(() => ProductDetails( // Show the ProductDetails screen when the card is tapped
        
         productId: id,
         productName: title,
@@ -203,12 +204,14 @@ print('Discount for product ${productData!['id']}: $discountText');
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      // Product Title
                       title,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     Text(
+                      // Product Brand
                       brandName != 'False' ? brandName : 'A L K I R T A S ' ,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -274,3 +277,18 @@ print('Discount for product ${productData!['id']}: $discountText');
     );
   }
 }
+
+
+/// Import the required libraries
+///  Create a personalized ProductCardVertical widget
+/// Fetch product data using the ProductCardController
+/// Display the product details
+/// Show the ProductDetails screen when the card is tapped
+/// Show the discount tag if available
+/// Show the original and discounted prices
+/// Add the product to the cart when the add icon is pressed
+/// Show the add icon and the product price
+/// Show the product image, title, brand, and price
+/// Show a loading indicator while fetching data
+/// Show an error message if the product data is not available
+/// aaplied on both products on HomeScreen and StoreDrawer

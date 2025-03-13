@@ -131,3 +131,10 @@ class SignUpController {
     }
   }
 }
+
+
+/// Import the necessary libraries
+/// Create a Function to check if the email is unique
+/// Check if email is already in use before proceeding
+/// Create a Function to create XML request for PrestaShop API
+/// Create a Function to send API request
