@@ -14,12 +14,19 @@ Future<void> main() async {
   // Open product cache box
   var box = await Hive.openBox('productCache');
 
-  // fassa5 l cache every restart
+  // clear  l cache every restart
   await box.clear();
   print(" Product cache cleared on app reload");
 
-  // Redirection to the app
+  // Run the app
   runApp(const App());
 
 }
+
+ /// 1.  Import the required packages
+ /// 2.  Initialize Hive  
+ /// 3.  Open the product cache box
+ /// 4.  Clear the cache on app reload
+ /// 5.  Run the app
+ /// 6.  The cache is now cleared every time the app is restarted
 

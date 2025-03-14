@@ -18,6 +18,9 @@ class LoginScreen extends StatelessWidget {
   // handle user inputs 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+   
+
+
 
   void signInUser(BuildContext context) async {
     final email = emailController.text;
@@ -205,8 +208,9 @@ class AlkLoginForm extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final void Function(BuildContext) onSignIn;
+    final RxBool isObscured = true.obs;
 
-  const AlkLoginForm({
+   AlkLoginForm({
     super.key,
     required this.emailController,
     required this.passwordController,
@@ -229,16 +233,21 @@ class AlkLoginForm extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AlkSize.spaceBtwInputFields),
-            // Password Input
-            TextFormField(
-              controller: passwordController,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Iconsax.password_check),
-                labelText: 'Mot de passe',
-                suffixIcon: Icon(Iconsax.eye_slash),
-              ),
-              obscureText: true,
-            ),
+            // Password Input with Visibility Toggle
+            Obx(() => TextFormField(
+                  controller: passwordController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Iconsax.password_check),
+                    labelText: 'Mot de passe',
+                    suffixIcon: IconButton(
+                      icon: Icon(isObscured.value ? Iconsax.eye_slash : Iconsax.eye),
+                      onPressed: () {
+                        isObscured.value = !isObscured.value;
+                      },
+                    ),
+                  ),
+                  obscureText: isObscured.value,
+                )),
             const SizedBox(height: AlkSize.spaceBtwInputFields / 2),
             // Remember Me and Forgot Password
             Row(
@@ -256,7 +265,7 @@ class AlkLoginForm extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AlkColors.primaryColor,
+                  backgroundColor: Colors.purpleAccent[700],
                 ),
                 onPressed: () => onSignIn(context),
                 child: const Text('Connexion',style: TextStyle(color: Colors.white),),
@@ -302,3 +311,18 @@ class AlkLoginHeader extends StatelessWidget {
     );
   }
 }
+ /// 1.  Import the required packages
+ /// 2.  Create a function to sign in the user
+ /// 3.  Check if the email and password fields are empty 
+ /// 4.  Check if the email is valid
+ /// 5.  Check if the response status code is 200
+ /// 6.  Decode the response body
+ /// 7.  Check if the data is not empty
+ /// 9.  Check if the password is valid
+ /// 10.  Set the user data
+ /// 12.  Show an error dialog
+ /// 13.  Build the login screen
+ /// 14.  Stores the Customers data in UserData class
+ /// 15.  Redirects to SignUpScreen upon Pressing the Create Account Button
+ /// 16.  Redirects to NavigationMenu upon successful login
+ 

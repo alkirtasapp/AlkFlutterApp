@@ -45,3 +45,17 @@ class AlkStoreGridDrawer extends StatelessWidget {
     );
   }
 }
+
+/// 1. Import the required libraries
+/// 2. Create a personalized StoreGridDrawer widget
+/// 3. Show the product card vertically
+/// 4. Set the mainAxisExtent to 280 (product card height)
+/// 5. Set the crossAxisCount to 2   (number of product cards per row)
+/// 6. Set the mainAxisSpacing to 20 (vertical spacing between product cards)
+/// 7. Set the crossAxisSpacing to 20 (horizontal spacing between product cards)
+/// 8. Accepts paginated products
+/// 9. Display the category ID and number of products on the current page
+/// 10. Display the product name and ID
+/// 11. Pass product data to the card
+/// 12. Return the product card
+/// 13. Return the GridView

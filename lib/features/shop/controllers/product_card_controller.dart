@@ -85,7 +85,7 @@ class ProductCardControllerTax {
 
   ///  Fetches product IDs only ONCE and caches them
   Future<void> _fetchProductIds() async {
-    final List<int> categoryIds = [10, 590, 11, 486, 12,];
+    final List<int> categoryIds = [590, 12 , 292, 162, 18];
     const int productsPerCategory = 2;
     final List<int> productIds = [];
 
@@ -106,6 +106,8 @@ class ProductCardControllerTax {
                 : product['id'] as int) 
             .toList();
 
+ 
+
         productIds.addAll(selectedIds);
       }
     }
@@ -114,6 +116,7 @@ class ProductCardControllerTax {
       print("❌ No product IDs fetched.");
       return;
     }
+   
 
     cachedProductIds = productIds; //  Store fetched IDs
     print("✅ Cached Product IDs: $cachedProductIds"); //  Logs only once!
@@ -241,3 +244,29 @@ class ProductCardControllerTax {
     return 'https://www.alkirtas.com/img/p/$path/$imageIdStr.jpg';
   }
 }
+
+// This Controller is used to fetch product data from the PrestaShop API for Home Screen 
+// Products are being fetched from multiple categories and then a random product is selected
+/* -fields extracted from the productApi :
+      - ProductID
+      - productName
+      - productPrice
+      - constructImages (to get the product image)
+      - productDescription
+      - productReference
+      - productManufacturer
+      - productAvailableNow
+      - productCategoryID
+   -fields extracted from the discountApi (tax rules):
+      - idTax
+   -fields extracted from the TaxApi (tax ):
+      - rate
+*/
+// products will be stored in a LIST of Map  "final List<Map<String, dynamic>> fetchedProducts = [];"
+// then , each product in the list we be treated and extracted 
+/* extracted fields for the specific product :  
+   - basic product details : name , price , id , reference ... 
+   - dicount (fetchDiscount)
+   - TTC price (fetchTTCPrice)
+   - product images (constructImageUrls)
+   */

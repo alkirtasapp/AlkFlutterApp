@@ -31,3 +31,11 @@ class AlkGridLayout extends StatelessWidget {
          );
   }
 }
+
+/// 1. Import the required libraries
+/// 2. Create a personalized GridLayout widget
+/// 3. Show the product card vertically
+/// 4. Set the mainAxisExtent to 280 (product card height)
+/// 5. Set the crossAxisCount to 2   (number of product cards per row)
+/// 6. Set the mainAxisSpacing to 20 (vertical spacing between product cards)
+/// 7. Set the crossAxisSpacing to 20 (horizontal spacing between product cards)

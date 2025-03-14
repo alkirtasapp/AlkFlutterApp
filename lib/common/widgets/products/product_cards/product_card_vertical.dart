@@ -14,13 +14,12 @@ import '../../roundedContainer.dart';
 
 class AlkProductCardVertical extends StatefulWidget {
   // Index of the product to fetch
-  final int productIndex; 
+  final int productIndex;
 
   const AlkProductCardVertical({
     super.key,
     required this.productIndex,
   });
-  
 
   @override
   State<AlkProductCardVertical> createState() => _AlkProductCardVerticalState();
@@ -29,16 +28,17 @@ class AlkProductCardVertical extends StatefulWidget {
 class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
   final ProductCardControllerTax controller = ProductCardControllerTax();
   // To store product details
-  Map<String, dynamic>? productData; 
+  Map<String, dynamic>? productData;
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     // Fetch product data during initialization
-    _loadProductData(); 
+    _loadProductData();
   }
 
+  // Fetch product data using the controller
   Future<void> _loadProductData() async {
     final data = await controller.fetchProductData(widget.productIndex);
     setState(() {
@@ -47,34 +47,34 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
     });
   }
 
+  // Convert the value to a string
   String _safeConvertToString(dynamic value, [String fallback = 'Unknown']) {
     if (value is String) return value;
     if (value is bool) return value ? 'True' : 'False';
     return value?.toString() ?? fallback;
   }
-     
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
+      // Show a loading indicator while fetching data
       return const Center(child: CircularProgressIndicator());
     }
-
+    // Show an error message if the product data is not available
     if (productData == null) {
       return const Center(child: Text('Failed to load product'));
-     
     }
-     
-    
 
+    // Fetch product details
     final title = _safeConvertToString(productData!['name']);
     final id = _safeConvertToString(productData!['id']);
     final reference = _safeConvertToString(productData!['reference']);
     final brandName = _safeConvertToString(productData!['manufacturer_name']);
     final description = _safeConvertToString(productData!['description_short']);
     final brandId = _safeConvertToString(productData!['id_manufacturer']);
-    final productStock =_safeConvertToString(productData!['quantity']);
-    final List<String> imageList = (productData!['image_urls'] as List<dynamic>).cast<String>();
-
+    final productStock = _safeConvertToString(productData!['quantity']);
+    final List<String> imageList =
+        (productData!['image_urls'] as List<dynamic>).cast<String>();
 
     final rawTTCPrice =
         double.tryParse(_safeConvertToString(productData!['ttc_price'], '0.00'))
@@ -88,47 +88,45 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
             '0.00';
     final displayPrice = (taxRulesGroupId == 0) ? rawPriceHT : rawTTCPrice;
 
-   // Ensure the discount is always a double
-final double discountValue =
-    (productData!['discount'] as num?)?.toDouble() ?? 0;
+    // Ensure the discount is always a double
+    final double discountValue =
+        (productData!['discount'] as num?)?.toDouble() ?? 0;
 
+    String? discountText;
+    if (discountValue > 0) {
+      discountText = '${discountValue.toStringAsFixed(0)}%';
+      print(
+          'Displaying discount for product ${productData!['id']}: $discountText');
+    } else {
+      print('No discount to display for product ${productData!['id']}');
+    }
 
-String? discountText;
-if (discountValue > 0) {
-  discountText = '${discountValue.toStringAsFixed(0)}%';
-  print('Displaying discount for product ${productData!['id']}: $discountText');
-} else {
-  print('No discount to display for product ${productData!['id']}');
-}
-print('Discount for product ${productData!['id']}: $discountText');
     final imageUrl =
         controller.constructImageUrl(productData!['id_default_image']);
-        
-    final dark = Theme.of(context).brightness == Brightness.dark;
-        
-    return GestureDetector(
-      
-      onTap: () => Get.to(() => ProductDetails(
-       
-        productId: id,
-        productName: title,
-        productReference : reference,
-        productDiscount: discountText ?? '', 
-        productBrand: brandName,
-        productBrandId:brandId,
-        productImage: imageUrl,
-        productImageList: imageList,  
-        productStock : productStock,
-        
-         
-  
 
-        productDescription : description,
-        productOldPrice: discountText != null ? displayPrice : '', 
-        productNewPrice: discountValue > 0
-            ? (double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)
-            : displayPrice,  
-      )),
+    final dark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () => Get.to(() => ProductDetails(
+            // Show the ProductDetails screen when the card is tapped
+
+            productId: id,
+            productName: title,
+            productReference: reference,
+            productDiscount: discountText ?? '',
+            productBrand: brandName,
+            productBrandId: brandId,
+            productImage: imageUrl,
+            productImageList: imageList,
+            productStock: productStock,
+
+            productDescription: description,
+            productOldPrice: discountText != null ? displayPrice : '',
+            productNewPrice: discountValue > 0
+                ? (double.parse(displayPrice) * (1 - discountValue / 100))
+                    .toStringAsFixed(2)
+                : displayPrice,
+          )),
       child: Container(
         width: 180,
         padding: const EdgeInsets.all(1),
@@ -138,7 +136,7 @@ print('Discount for product ${productData!['id']}: $discountText');
           color: dark ? AlkColors.darkerGrey : AlkColors.white,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min, 
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Product Thumbnail
             AlkRoundedContainer(
@@ -152,7 +150,6 @@ print('Discount for product ${productData!['id']}: $discountText');
                         BorderRadius.circular(AlkSize.productImageRadius),
                     child: Image.network(
                       imageUrl,
-                      
                       fit: BoxFit.contain,
                       width: double.infinity,
                       height: double.infinity,
@@ -168,13 +165,13 @@ print('Discount for product ${productData!['id']}: $discountText');
                   ),
 
                   /// Discount Tag
-                  if (discountText != null )
+                  if (discountText != null)
                     Positioned(
                       top: 1,
                       left: 1,
                       child: AlkRoundedContainer(
                         radius: AlkSize.sm,
-                        backgroundColor:  Colors.purple.shade300,
+                        backgroundColor: Colors.purple.shade300,
                         padding: const EdgeInsets.symmetric(
                           horizontal: AlkSize.sm,
                           vertical: AlkSize.xs,
@@ -188,7 +185,6 @@ print('Discount for product ${productData!['id']}: $discountText');
                         ),
                       ),
                     ),
-                     
                 ],
               ),
             ),
@@ -198,41 +194,44 @@ print('Discount for product ${productData!['id']}: $discountText');
               child: Padding(
                 padding: const EdgeInsets.only(left: AlkSize.sm),
                 child: Column(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center, 
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      // Product Title
                       title,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     Text(
-                      brandName != 'False' ? brandName : 'A L K I R T A S ' ,
+                      // Product Brand
+                      brandName != 'False' ? brandName : 'A L K I R T A S ',
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
-                    ///original price mfassa5 
+
+                    ///original price mfassa5
                     Text(
                       discountText != null ? '$displayPrice TND' : '',
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        decoration: TextDecoration.lineThrough,
-                        color: AlkColors.black
-                      ),
+                          decoration: TextDecoration.lineThrough,
+                          color: AlkColors.black),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Padding(
                           padding: EdgeInsets.only(left: AlkSize.sm),
-                          /// prix ken fama discount 
+
+                          /// prix ken fama discount
                           child: Text(
-                            discountValue > 0 ? '${(double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)} TND' : '$displayPrice TND',
-                         
+                            discountValue > 0
+                                ? '${(double.parse(displayPrice) * (1 - discountValue / 100)).toStringAsFixed(2)} TND'
+                                : '$displayPrice TND',
                             style: Theme.of(context)
                                 .textTheme
                                 .headlineSmall
@@ -258,7 +257,30 @@ print('Discount for product ${productData!['id']}: $discountText');
                             child: Center(
                                 child: IconButton(
                                     color: AlkColors.white,
-                                    onPressed: () {},
+                                    onPressed: () => Get.to(() =>
+                                        ProductDetails(
+                                          // Show the ProductDetails screen when the card is tapped
+
+                                          productId: id,
+                                          productName: title,
+                                          productReference: reference,
+                                          productDiscount: discountText ?? '',
+                                          productBrand: brandName,
+                                          productBrandId: brandId,
+                                          productImage: imageUrl,
+                                          productImageList: imageList,
+                                          productStock: productStock,
+
+                                          productDescription: description,
+                                          productOldPrice: discountText != null
+                                              ? displayPrice
+                                              : '',
+                                          productNewPrice: discountValue > 0
+                                              ? (double.parse(displayPrice) *
+                                                      (1 - discountValue / 100))
+                                                  .toStringAsFixed(2)
+                                              : displayPrice,
+                                        )),
                                     icon: const Icon(Iconsax.add))),
                           ),
                         ),
@@ -274,3 +296,17 @@ print('Discount for product ${productData!['id']}: $discountText');
     );
   }
 }
+
+/// Import the required libraries
+///  Create a personalized ProductCardVertical widget
+/// Fetch product data using the ProductCardController
+/// Display the product details
+/// Show the ProductDetails screen when the card is tapped
+/// Show the discount tag if available
+/// Show the original and discounted prices
+/// Add the product to the cart when the add icon is pressed
+/// Show the add icon and the product price
+/// Show the product image, title, brand, and price
+/// Show a loading indicator while fetching data
+/// Show an error message if the product data is not available
+/// aaplied on both products on HomeScreen and StoreDrawer

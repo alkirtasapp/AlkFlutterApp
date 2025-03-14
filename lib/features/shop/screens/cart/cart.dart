@@ -22,8 +22,8 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  //  Get the product provider
   final productProvider = Get.find<ProductProvider>();
-
   double getTotalPrice() {
     return productProvider.cartItems.fold(0.0, (sum, product) {
           final price =
@@ -32,13 +32,14 @@ class _CartScreenState extends State<CartScreen> {
               int.tryParse(product['productQuantity'].toString()) ?? 1;
           return sum + (price * quantity);
         }) +
-        8.0; // Add delivery charge (8.000 TND)
+        8.0;
+         // Add delivery charge (8.000 TND)
   }
-
+  //  Checkout
   Future<void> checkout() async {
     try {
       //  Create Cart
-     // String cartId = await createCart(productProvider.cartItems);
+      //String cartId = await createCart(productProvider.cartItems);
 
       //  Create Order using the  cart ID
       //await createOrder(cartId);
@@ -52,11 +53,12 @@ class _CartScreenState extends State<CartScreen> {
 
 
       print("Cart  placed successfully!");
+     
     } catch (e) {
       print("Error during checkout: $e");
     }
   }
-
+  //  Create Cart
   Future<String> createCart(List<Map<String, String>> cartItems) async {
   String url = "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
 
@@ -85,7 +87,7 @@ class _CartScreenState extends State<CartScreen> {
     </associations>
   </cart>
 </prestashop>''';
-
+  // Send POST request
   var response = await http.post(
     Uri.parse(url),
     headers: {
@@ -98,6 +100,8 @@ class _CartScreenState extends State<CartScreen> {
   print("Response Status: ${response.statusCode}");
   print("Response Body: ${response.body}");
 
+
+  // Parse response
   if (response.statusCode == 201 || response.statusCode == 200) {
     final document = xml.XmlDocument.parse(response.body);
     final cartIdElement = document.findAllElements("id").first;
@@ -107,7 +111,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 }
 
-
+  //  Create Order
   Future<void> createOrder(String cartId) async {
     // Implement order creation logic using the cartId
   }
@@ -190,7 +194,7 @@ class _CartScreenState extends State<CartScreen> {
                     
                       
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
+                        backgroundColor: Colors.purple[400],
                         padding: EdgeInsets.symmetric(
                             vertical: AlkSize.buttonHeight),
                         shape: RoundedRectangleBorder(
@@ -218,3 +222,41 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 }
+
+
+ /// DOCS : 
+ /// -this class cart.dart Represents the collection of the products that the user have possible intentions to order 
+ /// -cart contains product details from product provider class 
+ /// - a fucntion to calculate the total price of all products existing in the cart 
+ /// - a Gesture Detector to redirect to the product details screen if a user wants to recheck the product in the cart 
+ /// - a Checkout methode that serves as (only can be presses when the cart has items ): 
+ ///     - Store products in the cartItems 
+ ///     - create a Post request to create a cart that contains the list of products (cartitems)
+ /// expected output 
+ /// I/flutter (24377): Response Status: 201
+// Response Body: <?xml version="1.0" encoding="UTF-8"?>
+// <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
+// <cart>
+// 	<id><![CDATA[7151]]></id>
+// 	<id_address_delivery><![CDATA[]]></id_address_delivery>
+// 	<id_address_invoice><![CDATA[]]></id_address_invoice>
+// 	<id_currency xlink:href="https://www.alkirtas.com/api/currencies/1"><![CDATA[1]]></id_currency>
+// 	<id_customer xlink:href="https://www.alkirtas.com/api/customers/14"><![CDATA[14]]></id_customer>
+// 	<id_guest><![CDATA[]]></id_guest>
+// 	<id_lang xlink:href="https://www.alkirtas.com/api/languages/1"><![CDATA[1]]></id_lang>
+// 	<id_shop_group><![CDATA[1]]></id_shop_group>
+// 	<id_shop><![CDATA[1]]></id_shop>
+// 	<id_carrier><![CDATA[]]></id_carrier>
+// 	<recyclable><![CDATA[]]></recyclable>
+// 	<gift><![CDATA[]]></gift>
+// 	<gift_message><![CDATA[]]></gift_message>
+// 	<mobile_theme><![CDATA[]]></mobile_theme>
+// 	<delivery_option><![CDATA[]]></delivery_option>
+// 	<secure_key><![CDATA[]]></secure_key>
+// 	<allow_seperated_package><![CDATA[]]></allow_seperated_package>
+// 	<date_add><![CDATA[2025-
+
+// Cart  placed successfully!
+/// => then next step : creating the address 
+///
+   

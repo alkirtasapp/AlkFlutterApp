@@ -85,7 +85,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
               AlkCircularIcon(
                 icon: Iconsax.minus,
                 size: 25,
-                backgroundColor: Colors.purple,
+                backgroundColor: Colors.purple[400],
                 height: 40,
                 width: 40,
                 color: Colors.white,
@@ -97,7 +97,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
               AlkCircularIcon(
                 icon: Iconsax.add,
                 size: 25,
-                backgroundColor: Colors.purple,
+                backgroundColor: Colors.purple[400],
                 height: 40,
                 width: 40,
                 color: Colors.white,
@@ -138,7 +138,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
             },
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.all(AlkSize.md),
-              backgroundColor: AlkColors.primaryColor,
+              backgroundColor: Colors.purple[400],
               side: const BorderSide(color: Colors.grey),
             ),
             child: const Text('Ajouter au Panier'),

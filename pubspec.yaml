@@ -32,7 +32,7 @@ dependencies:
 
 
   #provider for pagination
-  provider: ^6.0.5  # ✅ Add this line
+  provider: ^6.0.5  
 
 
 

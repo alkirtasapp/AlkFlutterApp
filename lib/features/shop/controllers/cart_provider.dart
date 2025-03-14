@@ -19,3 +19,10 @@ class CartProvider with ChangeNotifier {
     notifyListeners(); // Notify widgets to rebuild
   }
 }
+
+
+
+/// This is the provider for the cart screen
+/// It contains the cart items and methods to add and remove items from the cart
+/// It also contains a method to calculate the total price of the cart
+

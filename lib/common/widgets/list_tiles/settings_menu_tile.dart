@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:test/utils/constants/colors.dart';
 
 class AlkSettingMenuTile extends StatelessWidget {
-  const AlkSettingMenuTile({super.key, required this.icon, required this.title, required this.subtitle, this.trailing,
+ const AlkSettingMenuTile({super.key, required this.icon, required this.title, required this.subtitle, this.trailing, required this.onPressed,
     });
       final IconData icon;
     final String title;
     final String subtitle;
     final Widget? trailing;
+    final VoidCallback onPressed ;
 
 
   @override
@@ -34,6 +36,9 @@ class AlkSettingMenuTile extends StatelessWidget {
             .apply(color: AlkColors.darkGrey),
       ),
       trailing: trailing,
+      onTap: onPressed,
+     
     );
+    
   }
 }

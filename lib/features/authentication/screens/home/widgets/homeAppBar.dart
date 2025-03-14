@@ -40,3 +40,7 @@ class AlkHomeAppBar extends StatelessWidget {
     );
   }
 }
+
+/// 1. Import the required libraries
+/// 2. Create a personalized app bar with a CartCounterIcon
+/// 3. Show the user's first name from UserData class

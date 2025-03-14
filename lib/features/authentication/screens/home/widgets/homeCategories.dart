@@ -67,10 +67,7 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
           return AlkVerticalImageText(
             title: category['name'] ?? 'Unknown',
             textColor: AlkColors.white,
-            onTap: () {
-           
-             
-            },
+            onTap: () {},
             backgroundColor: Colors.white,
             
           );

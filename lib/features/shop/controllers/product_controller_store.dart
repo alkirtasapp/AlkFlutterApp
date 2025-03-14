@@ -219,7 +219,7 @@ class ProductControllerStore {
       print("❌ Error processing product details for ${product['id']}: $e");
     }
   }
-
+   // Fetch Products by IDs
   Future<List<Map<String, dynamic>>?> fetchProductsByIds(List<int> productIds) async {
     try {
       if (productIds.isEmpty) {
@@ -248,7 +248,7 @@ class ProductControllerStore {
       return null;
     }
   }
-
+  // Construct Image URL from image ID
   String constructImageUrl(dynamic imageId) {
     if (imageId == null) return 'placeholder_image_url';
     final imageIdStr = imageId.toString();
@@ -256,3 +256,42 @@ class ProductControllerStore {
     return 'https://www.alkirtas.com/img/p/$path/$imageIdStr.jpg';
   }
 }
+
+
+// This Controller is used to fetch product data from the PrestaShop API for StoreDrawer Screen (Noutique)
+// the Store Screen contain a drawer that holds all the categories and subCategories of the store
+// the user can navigate through the categories and subCategories to find the products he is looking for
+// Products are being fetched from certain categories and then a latest products are selected
+/* -fields extracted from the productApi :
+      - ProductID
+      - productName
+      - productPrice
+      - constructImages (to get the product image)
+      - productDescription
+      - productReference
+      - productManufacturer
+      - productAvailableNow
+      - productCategoryID
+        
+  -fields extracted from the categoryApi :
+      - CategoryID
+      - CategoryName
+      - CategoryParentID
+      - CategoryLevelDepth
+
+  -fields extracted from the Feature api : 
+      - FeatureID
+      - FeatureName
+      - FeatureValue
+      - FeaturePosition
+      - FeatureCustom
+      - FeatureIDProduct
+   
+  -fields extracted from the tax api :
+      - TaxID
+      - TaxRate
+  -fields extracted from stock api :
+      - StockID
+      - StockQuantity      
+*/
+

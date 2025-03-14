@@ -79,3 +79,11 @@ class NavigationController extends GetxController {
     const SettingScreen(),
   ];
 }
+
+/// 1.  Import the required packages
+/// 2.  This widget is used to create the navigation menu with a bottom navigation bar with 4 Main screens (Acceuil, Boutique, Panier, Profile)
+      /// these 4 section are the main sections of the app
+/// 3.  Initialize the ProductProvider globally for GetX navigation
+/// 4.  Initialize the NavigationController
+/// 5.  Use WillPopScope to handle back button press
+/// 6.  Scaffold with NavigationBar and screens

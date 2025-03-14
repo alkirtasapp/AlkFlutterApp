@@ -7,6 +7,7 @@ import 'package:test/common/widgets/icons/circularIcons.dart';
 import 'package:test/common/widgets/list_tiles/settings_menu_tile.dart';
 import 'package:test/common/widgets/texts/section_heading.dart';
 import 'package:test/features/authentication/screens/login/log_in.dart';
+import 'package:test/features/shop/screens/cart/cart.dart';
 import 'package:test/utils/constants/colors.dart';
 import 'package:test/utils/constants/size.dart';
 
@@ -67,24 +68,27 @@ class SettingScreen extends StatelessWidget {
                   AlkSettingMenuTile(
                       icon: Iconsax.safe_home,
                       title: 'Mes Adresses',
-                      subtitle: 'Définir l\'adresse de livraison'),
+                      subtitle: 'Définir l\'adresse de livraison', onPressed: () {  },),
+                      
                   AlkSettingMenuTile(
                       icon: Iconsax.shopping_cart,
                       title: 'Mon Panier',
                       subtitle:
-                          'Ajouter, supprimer des produits et passer à la caisse'),
-                  AlkSettingMenuTile(
+                          'Ajouter, supprimer des produits et passer à la caisse',
+                          onPressed: () => Get.to(()=> CartScreen()),
+                          ),
+                /*  AlkSettingMenuTile(
                       icon: Iconsax.bag_tick,
                       title: 'Mes Commandes',
-                      subtitle: 'Commandes en cours et terminées'),
+                      subtitle: 'Commandes en cours et terminées', onPressed: () {  },),*/
                   AlkSettingMenuTile(
                       icon: Iconsax.discount_shape,
                       title: 'Mes Coupons',
-                      subtitle: 'Liste de tous les coupons de réduction'),
+                      subtitle: 'Liste de tous les coupons de réduction', onPressed: () {  }, ),
                   AlkSettingMenuTile(
                       icon: Iconsax.notification,
                       title: 'Notifications',
-                      subtitle: 'Définir tout type de message de notification'),
+                      subtitle: 'Définir tout type de message de notification', onPressed: () {  }, ),
                   SizedBox(height: AlkSize.spaceBtwSections),
                   // Log out
                   SizedBox(
@@ -107,3 +111,18 @@ class SettingScreen extends StatelessWidget {
     );
   }
 }
+
+
+/// import required packages
+/// Create SettingScreen stateless widget that displayes the user profile and account settings
+/// Create the UI{
+///   Header :  AppBar and User Icon
+///  Body :
+///   - Account Settings
+///   - My Addresses
+///   - My Cart
+///   - My Orders
+///   - My Coupons
+/// }
+/// Add a log out button at the end of the screen
+

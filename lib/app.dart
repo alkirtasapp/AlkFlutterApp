@@ -35,3 +35,9 @@ class App extends StatelessWidget {
     );
   }
 }
+
+/// 1.  Import the required packages
+/// 2.  Create a function to check if the onboarding screen has been seen
+/// 3.  Build the app
+/// 4.  Get the value of the onboarding screen
+/// 5.  Show the login screen if the onboarding screen has been seen

@@ -1,4 +1,4 @@
-import 'dart:convert';
+/*import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:test/utils/backendData/productDetailData.dart';
@@ -12,14 +12,14 @@ class ProductCardControllerTax {
 
       for (int categoryId in categoryIds) {
         final categoryApi =
-            'https://www.alkirtas.com/api/products?display=[id,reference,description,available_now,name,price,id_default_image,manufacturer_name,id_category_default,id_tax_rules_group]&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+            'https://www.alkirtas.com/api/products?display=full&filter[id_category_default]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
         final response = await http.get(Uri.parse(categoryApi));
         if (response.statusCode == 200) {
           final categoryData = json.decode(utf8.decode(response.bodyBytes));
           final categoryProducts = categoryData['products'] as List<dynamic>;
 
-          categoryProducts.shuffle(Random());
+        //  categoryProducts.shuffle(Random());
           final selectedProducts =
               categoryProducts.take(productsPerCategory).toList();
 
@@ -113,7 +113,7 @@ class ProductCardControllerTax {
       return null;
     }
   }
-
+  // Construct image URL from image ID
   String constructImageUrl(dynamic imageId) {
     if (imageId == null) {
       return 'placeholder_image_url';
@@ -123,4 +123,32 @@ class ProductCardControllerTax {
     final path = digits.join('/');
     return 'https://www.alkirtas.com/img/p/$path/$imageIdStr.jpg';
   }
-}
+} 
+
+
+// This Controller is used to fetch product data from the PrestaShop API for Home Screen 
+// Products are being fetched from multiple categories and then a random product is selected
+/* -fields extracted from the productApi :
+      - ProductID
+      - productName
+      - productPrice
+      - constructImages (to get the product image)
+      - productDescription
+      - productReference
+      - productManufacturer
+      - productAvailableNow
+      - productCategoryID
+   -fields extracted from the discountApi (tax rules):
+      - idTax
+   -fields extracted from the TaxApi (tax ):
+      - rate
+*/
+// products will be stored in a LIST of Map  "final List<Map<String, dynamic>> fetchedProducts = [];"
+// then , each product in the list we be treated and extracted 
+/* extracted fields for the specific product :  
+   - basic product details : name , price , id , reference ... 
+   - dicount (fetchDiscount)
+   - TTC price (fetchTTCPrice)
+   - product images (constructImageUrls)
+   */
+*/
