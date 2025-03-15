@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:test/features/authentication/screens/login/log_in.dart';
+import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
 
 class OnboardingConstroller extends GetxController {
   static OnboardingConstroller get instance => Get.find();

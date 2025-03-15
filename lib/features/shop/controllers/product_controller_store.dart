@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
-import 'package:test/data/controllers/details_controller.dart';
-import 'package:test/data/controllers/discount_controller.dart';
-import 'package:test/data/controllers/product_list_Category.dart';
-import 'package:test/data/controllers/tax_controller.dart';
-import 'package:test/data/controllers/quantity_controller.dart';
+import 'package:alkirtas/data/controllers/details_controller.dart';
+import 'package:alkirtas/data/controllers/discount_controller.dart';
+import 'package:alkirtas/data/controllers/product_list_Category.dart';
+import 'package:alkirtas/data/controllers/tax_controller.dart';
+import 'package:alkirtas/data/controllers/quantity_controller.dart';
 
 class ProductControllerStore {
   final QuantityController quantityController = QuantityController();
@@ -261,7 +261,7 @@ class ProductControllerStore {
 // This Controller is used to fetch product data from the PrestaShop API for StoreDrawer Screen (Noutique)
 // the Store Screen contain a drawer that holds all the categories and subCategories of the store
 // the user can navigate through the categories and subCategories to find the products he is looking for
-// Products are being fetched from certain categories and then a latest products are selected
+// Products are being fetched from certain categories and then a laalkirtas products are selected
 /* -fields extracted from the productApi :
       - ProductID
       - productName

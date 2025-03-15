@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:test/common/widgets/appbar/appbar.dart';
-import 'package:test/common/widgets/products/cart/cartItem.dart';
-import 'package:test/features/shop/screens/checkout/checkout.dart';
-import 'package:test/features/shop/screens/product_details/product_details.dart';
-import 'package:test/utils/constants/colors.dart';
-import 'package:test/utils/constants/size.dart';
-import 'package:test/common/widgets/providers/product_provider.dart';
-import 'package:test/utils/backendData/userData.dart';
-import 'package:test/utils/backendData/addressData.dart';
+import 'package:alkirtas/common/widgets/appbar/appbar.dart';
+import 'package:alkirtas/common/widgets/products/cart/cartItem.dart';
+import 'package:alkirtas/features/shop/screens/checkout/checkout.dart';
+import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/utils/constants/size.dart';
+import 'package:alkirtas/common/widgets/providers/product_provider.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
+import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart' as xml;
 

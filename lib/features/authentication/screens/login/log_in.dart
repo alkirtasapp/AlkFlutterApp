@@ -3,12 +3,12 @@ import 'package:bcrypt/bcrypt.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/features/authentication/screens/signUp/sign_up.dart';
-import 'package:test/navigation_menu.dart';
-import 'package:test/utils/constants/colors.dart';
-import 'package:test/utils/constants/images_strings.dart';
-import 'package:test/utils/constants/size.dart';
-import 'package:test/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/features/authentication/screens/signUp/sign_up.dart';
+import 'package:alkirtas/navigation_menu.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/utils/constants/images_strings.dart';
+import 'package:alkirtas/utils/constants/size.dart';
+import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../utils/backendData/userData.dart';

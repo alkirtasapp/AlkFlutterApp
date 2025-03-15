@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:test/utils/backendData/addressData.dart';
-import 'package:test/utils/backendData/userData.dart';
+import 'package:alkirtas/utils/backendData/addressData.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
 
 class AddressController extends GetxController {
   var isLoading = false.obs;

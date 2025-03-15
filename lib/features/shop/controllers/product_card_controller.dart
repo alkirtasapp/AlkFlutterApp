@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as htmlParser;
-import 'package:test/data/controllers/details_controller.dart';
+import 'package:alkirtas/data/controllers/details_controller.dart';
 
 class ProductCardControllerTax {
   final DetailsController detailsController = DetailsController();
@@ -121,7 +121,7 @@ class ProductCardControllerTax {
     cachedProductIds = productIds; //  Store fetched IDs
     print("✅ Cached Product IDs: $cachedProductIds"); //  Logs only once!
   }
-
+  // 
   Future<void> _processProductDetails(Map<String, dynamic> product) async {
     try {
       List<Future<void>> tasks = [];
@@ -233,7 +233,7 @@ class ProductCardControllerTax {
     return cleanText;
   }
 
-
+    // 
     String constructImageUrl(dynamic imageId) {
     if (imageId == null) {
       return 'placeholder_image_url';
@@ -269,4 +269,6 @@ class ProductCardControllerTax {
    - dicount (fetchDiscount)
    - TTC price (fetchTTCPrice)
    - product images (constructImageUrls)
+       prestashop handles images fetching using their ids 
+
    */

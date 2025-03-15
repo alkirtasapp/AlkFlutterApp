@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test/utils/constants/size.dart';
+import 'package:alkirtas/utils/constants/size.dart';
 
 import '../../utils/constants/colors.dart';
 

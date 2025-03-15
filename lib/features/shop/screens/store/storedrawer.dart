@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/common/widgets/custom_shapes/containers/searchContainer.dart';
-import 'package:test/data/controllers/search_controller.dart';
-import 'package:test/utils/constants/size.dart';
+import 'package:alkirtas/common/widgets/custom_shapes/containers/searchContainer.dart';
+import 'package:alkirtas/data/controllers/search_controller.dart';
+import 'package:alkirtas/utils/constants/size.dart';
 import '../../../../common/widgets/layout/store_grid_drawer.dart';
 import '../../controllers/categories_store_controller.dart';
 import '../../controllers/product_controller_store.dart';

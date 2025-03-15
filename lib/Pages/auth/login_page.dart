@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:test/Components/login_form.dart';
-import 'package:test/Components/sign_button.dart';
-import 'package:test/Components/square_tile.dart';
+import 'package:alkirtas/Components/login_form.dart';
+import 'package:alkirtas/Components/sign_button.dart';
+import 'package:alkirtas/Components/square_tile.dart';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;

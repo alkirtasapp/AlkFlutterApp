@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:test/common/widgets/roundedContainer.dart';
-import 'package:test/common/widgets/texts/section_heading.dart';
-import 'package:test/utils/constants/size.dart';
+import 'package:alkirtas/common/widgets/roundedContainer.dart';
+import 'package:alkirtas/common/widgets/texts/section_heading.dart';
+import 'package:alkirtas/utils/constants/size.dart';
 
 class ProductAttributes extends StatelessWidget {
   const ProductAttributes({super.key});

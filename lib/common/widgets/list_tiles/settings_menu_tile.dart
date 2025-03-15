@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:test/utils/constants/colors.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
 
 class AlkSettingMenuTile extends StatelessWidget {
  const AlkSettingMenuTile({super.key, required this.icon, required this.title, required this.subtitle, this.trailing, required this.onPressed,

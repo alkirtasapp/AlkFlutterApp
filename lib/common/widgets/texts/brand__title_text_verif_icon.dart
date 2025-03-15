@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:test/utils/constants/colors.dart';
-import 'package:test/utils/constants/enums.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/utils/constants/enums.dart';
 
 import 'brand_title_text.dart';
 

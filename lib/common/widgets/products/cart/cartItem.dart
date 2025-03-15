@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/features/shop/screens/cart/cart.dart';
-import 'package:test/features/shop/screens/product_details/product_details.dart';
-import 'package:test/utils/constants/colors.dart';
-import 'package:test/utils/constants/size.dart';
-import 'package:test/common/widgets/images/AlkRoundedImages.dart';
-import 'package:test/common/widgets/texts/brand__title_text_verif_icon.dart';
-import 'package:test/common/widgets/texts/product_title_text.dart';
-import 'package:test/common/widgets/providers/product_provider.dart';
+import 'package:alkirtas/features/shop/screens/cart/cart.dart';
+import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/utils/constants/size.dart';
+import 'package:alkirtas/common/widgets/images/AlkRoundedImages.dart';
+import 'package:alkirtas/common/widgets/texts/brand__title_text_verif_icon.dart';
+import 'package:alkirtas/common/widgets/texts/product_title_text.dart';
+import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 
 class AlkCartItem extends StatelessWidget {
   final String productName;

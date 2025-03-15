@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/common/widgets/images/AlkCircularImage.dart';
-import 'package:test/common/widgets/roundedContainer.dart';
-import 'package:test/common/widgets/texts/brand__title_text_verif_icon.dart';
-import 'package:test/common/widgets/texts/product_title_text.dart';
-import 'package:test/data/controllers/quantity_controller.dart';
-import 'package:test/utils/constants/enums.dart';
-import 'package:test/utils/constants/images_strings.dart';
-import 'package:test/utils/constants/size.dart';
+import 'package:alkirtas/common/widgets/images/AlkCircularImage.dart';
+import 'package:alkirtas/common/widgets/roundedContainer.dart';
+import 'package:alkirtas/common/widgets/texts/brand__title_text_verif_icon.dart';
+import 'package:alkirtas/common/widgets/texts/product_title_text.dart';
+import 'package:alkirtas/data/controllers/quantity_controller.dart';
+import 'package:alkirtas/utils/constants/enums.dart';
+import 'package:alkirtas/utils/constants/images_strings.dart';
+import 'package:alkirtas/utils/constants/size.dart';
 import '../../../../../common/widgets/texts/section_heading.dart';
 import '../../../../../utils/constants/colors.dart';
 

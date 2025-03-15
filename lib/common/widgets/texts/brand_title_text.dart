@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test/utils/constants/enums.dart';
+import 'package:alkirtas/utils/constants/enums.dart';
 
 class AlkBrandTitleText extends StatelessWidget {
   const AlkBrandTitleText({super.key,

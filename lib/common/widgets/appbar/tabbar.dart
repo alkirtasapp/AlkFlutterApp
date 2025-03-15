@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:test/utils/constants/colors.dart';
-import 'package:test/utils/device/device_utility.dart';
-import 'package:test/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/utils/device/device_utility.dart';
+import 'package:alkirtas/utils/helpers/helper_functions.dart';
 
 class AlkTabBar extends StatelessWidget implements PreferredSizeWidget  {
     final List<Widget> tabs; 

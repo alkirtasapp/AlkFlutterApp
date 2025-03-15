@@ -1,6 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:test/app.dart';
+import 'package:alkirtas/app.dart';
 import 'package:flutter/material.dart';
 
 

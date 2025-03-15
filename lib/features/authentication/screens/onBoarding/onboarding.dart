@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:test/features/authentication/controller.onboarding/onboarding_constroller.dart';
-import 'package:test/utils/constants/colors.dart';
-import 'package:test/utils/constants/images_strings.dart';
-import 'package:test/utils/constants/size.dart';
-import 'package:test/utils/constants/text_strings.dart';
-import 'package:test/utils/device/device_utility.dart';
-import 'package:test/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/features/authentication/controller.onboarding/onboarding_constroller.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/utils/constants/images_strings.dart';
+import 'package:alkirtas/utils/constants/size.dart';
+import 'package:alkirtas/utils/constants/text_strings.dart';
+import 'package:alkirtas/utils/device/device_utility.dart';
+import 'package:alkirtas/utils/helpers/helper_functions.dart';
 
 class OnBoardingScreen extends StatelessWidget {
   const OnBoardingScreen({super.key});

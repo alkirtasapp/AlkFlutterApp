@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/common/widgets/appbar/appbar.dart';
-import 'package:test/common/widgets/custom_shapes/containers/primary_header_container.dart';
-import 'package:test/common/widgets/icons/circularIcons.dart';
-import 'package:test/common/widgets/list_tiles/settings_menu_tile.dart';
-import 'package:test/common/widgets/texts/section_heading.dart';
-import 'package:test/features/authentication/screens/login/log_in.dart';
-import 'package:test/features/shop/screens/cart/cart.dart';
-import 'package:test/utils/constants/colors.dart';
-import 'package:test/utils/constants/size.dart';
+import 'package:alkirtas/common/widgets/appbar/appbar.dart';
+import 'package:alkirtas/common/widgets/custom_shapes/containers/primary_header_container.dart';
+import 'package:alkirtas/common/widgets/icons/circularIcons.dart';
+import 'package:alkirtas/common/widgets/list_tiles/settings_menu_tile.dart';
+import 'package:alkirtas/common/widgets/texts/section_heading.dart';
+import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
+import 'package:alkirtas/features/shop/screens/cart/cart.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/utils/constants/size.dart';
 
 import '../../../../common/widgets/list_tiles/userProfile_tile.dart';
 import '../../../../utils/backendData/userData.dart';

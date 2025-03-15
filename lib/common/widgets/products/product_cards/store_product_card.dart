@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/features/shop/screens/product_details/product_details.dart';
-import 'package:test/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
+import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import '../../../../features/shop/controllers/product_controller_store.dart';
 import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/size.dart';

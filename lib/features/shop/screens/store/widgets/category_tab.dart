@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test/common/widgets/layout/grid_layout.dart';
+import 'package:alkirtas/common/widgets/layout/grid_layout.dart';
 
 import '../../../../../common/widgets/brands/brand_showcase.dart';
 import '../../../../../utils/constants/images_strings.dart';

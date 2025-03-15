@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/common/widgets/appbar/appbar.dart';
-import 'package:test/common/widgets/appbar/tabbar.dart';
-import 'package:test/common/widgets/custom_shapes/containers/searchContainer.dart';
-import 'package:test/common/widgets/products/cart/cart_menu_icon.dart';
-import 'package:test/common/widgets/roundedContainer.dart';
-import 'package:test/common/widgets/texts/section_heading.dart';
-import 'package:test/features/shop/controllers/brand_controller.dart';
-import 'package:test/features/shop/screens/store/widgets/category_tab.dart';
-import 'package:test/utils/constants/size.dart';
-import 'package:test/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/common/widgets/appbar/appbar.dart';
+import 'package:alkirtas/common/widgets/appbar/tabbar.dart';
+import 'package:alkirtas/common/widgets/custom_shapes/containers/searchContainer.dart';
+import 'package:alkirtas/common/widgets/products/cart/cart_menu_icon.dart';
+import 'package:alkirtas/common/widgets/roundedContainer.dart';
+import 'package:alkirtas/common/widgets/texts/section_heading.dart';
+import 'package:alkirtas/features/shop/controllers/brand_controller.dart';
+import 'package:alkirtas/features/shop/screens/store/widgets/category_tab.dart';
+import 'package:alkirtas/utils/constants/size.dart';
+import 'package:alkirtas/utils/helpers/helper_functions.dart';
 
 import '../../../../common/widgets/images/AlkCircularImage.dart';
 import '../../../../common/widgets/layout/brandGridLayout.dart';

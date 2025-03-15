@@ -1,4 +1,4 @@
-name: test
+name: alkirtas
 description: "A new Flutter project."
 version: 1.0.0+1
 environment:
@@ -26,6 +26,7 @@ dependencies:
   shared_preferences: ^2.0.0
   readmore: ^3.0.0
 
+
   #hive for cache
   hive: ^2.2.3
   hive_flutter: ^1.1.0
@@ -43,6 +44,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0 # Code linting for better coding practices
   hive_generator: ^2.0.1
   build_runner: ^2.1.7
+  flutter_launcher_icons: ^0.14.3
 
 # Flutter-specific settings
 flutter:
@@ -83,7 +85,10 @@ flutter:
       fonts:
         - asset: lib/assets/fonts/Cairo-Regular.ttf
         - asset: lib/assets/fonts/Cairo-Bold.ttf
-
-
-
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: "AppIcon"
+  image_path: "lib/assets/icons/icon.png"
+  min_sdk_android: 21 
+  remove_alpha_ios: true  
 

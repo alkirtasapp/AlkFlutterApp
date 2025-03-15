@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:test/utils/constants/size.dart';
-import 'package:test/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/utils/constants/size.dart';
+import 'package:alkirtas/utils/helpers/helper_functions.dart';
 
 
 class AlkCircularIcon extends StatelessWidget {

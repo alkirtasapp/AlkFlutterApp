@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/common/widgets/providers/product_provider.dart'; 
-import 'package:test/features/authentication/screens/home/home.dart';
-import 'package:test/features/personalization/screens/settings/settings.dart';
-import 'package:test/features/shop/screens/cart/cart.dart';
-import 'package:test/features/shop/screens/store/storedrawer.dart';
-import 'package:test/utils/constants/colors.dart';
-import 'package:test/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/common/widgets/providers/product_provider.dart'; 
+import 'package:alkirtas/features/authentication/screens/home/home.dart';
+import 'package:alkirtas/features/personalization/screens/settings/settings.dart';
+import 'package:alkirtas/features/shop/screens/cart/cart.dart';
+import 'package:alkirtas/features/shop/screens/store/storedrawer.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/utils/helpers/helper_functions.dart';
 
 class NavigationMenu extends StatelessWidget {
   const NavigationMenu({super.key});

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/common/widgets/appbar/appbar.dart';
-import 'package:test/features/authentication/controllers/sign_up_controller.dart';
-import 'package:test/features/authentication/screens/login/log_in.dart';
-import 'package:test/utils/constants/size.dart';
+import 'package:alkirtas/common/widgets/appbar/appbar.dart';
+import 'package:alkirtas/features/authentication/controllers/sign_up_controller.dart';
+import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
+import 'package:alkirtas/utils/constants/size.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});

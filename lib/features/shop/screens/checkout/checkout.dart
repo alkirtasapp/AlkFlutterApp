@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:test/common/widgets/signIn/AlkTOU.dart';
-import 'package:test/data/controllers/addresses_controller.dart';
-import 'package:test/utils/backendData/addressData.dart';
-import 'package:test/utils/backendData/userData.dart';
-import 'package:test/utils/constants/colors.dart';
-import 'package:test/utils/constants/size.dart';
+import 'package:alkirtas/common/widgets/signIn/AlkTOU.dart';
+import 'package:alkirtas/data/controllers/addresses_controller.dart';
+import 'package:alkirtas/utils/backendData/addressData.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/utils/constants/size.dart';
 
 class CheckoutScreen extends StatefulWidget {
   CheckoutScreen({super.key});

@@ -4,8 +4,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart%20';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:test/features/shop/controllers/home_controller.dart';
-import 'package:test/utils/constants/colors.dart';
+import 'package:alkirtas/features/shop/controllers/home_controller.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
 
 import '../../../../../common/widgets/custom_shapes/containers/circular_container.dart';
 import '../../../../../common/widgets/images/AlkRoundedImages.dart';

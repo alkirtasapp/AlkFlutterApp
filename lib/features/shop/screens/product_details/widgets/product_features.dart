@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test/utils/constants/colors.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
 
 class AlkProductFeatures extends StatelessWidget {
   const AlkProductFeatures({

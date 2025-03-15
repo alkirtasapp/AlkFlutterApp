@@ -1,9 +1,9 @@
-import 'package:test/utils/theme/custom_themes/appbar_theme.dart';
-import 'package:test/utils/theme/custom_themes/bottom_sheet_theme.dart';
-import 'package:test/utils/theme/custom_themes/checkbox_theme.dart';
-import 'package:test/utils/theme/custom_themes/elevatedButtonTheme.dart';
-import 'package:test/utils/theme/custom_themes/outlined_button_theme.dart';
-import 'package:test/utils/theme/custom_themes/text_theme.dart';
+import 'package:alkirtas/utils/theme/custom_themes/appbar_theme.dart';
+import 'package:alkirtas/utils/theme/custom_themes/bottom_sheet_theme.dart';
+import 'package:alkirtas/utils/theme/custom_themes/checkbox_theme.dart';
+import 'package:alkirtas/utils/theme/custom_themes/elevatedButtonTheme.dart';
+import 'package:alkirtas/utils/theme/custom_themes/outlined_button_theme.dart';
+import 'package:alkirtas/utils/theme/custom_themes/text_theme.dart';
 import 'package:flutter/material.dart';
 
 import 'custom_themes/chip_theme.dart';

@@ -1,11 +1,11 @@
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:test/utils/backendData/cartData.dart';
+import 'package:alkirtas/utils/backendData/cartData.dart';
 import 'dart:convert';
 
-import 'package:test/utils/backendData/userData.dart';
-import 'package:test/utils/backendData/addressData.dart';
-import 'package:test/common/widgets/providers/product_provider.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
+import 'package:alkirtas/utils/backendData/addressData.dart';
+import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 
 class CartController extends GetxController {
   var isLoading = false.obs;

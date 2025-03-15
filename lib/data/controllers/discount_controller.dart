@@ -104,3 +104,13 @@ class DiscountController {
 }
 
 /// Fetches the total price including taxes for a product
+/// using the  specific_prices APi to fetch the Discounted prices !
+///1. we gotta Fetches the discount for a product
+///2. Extract the discounts from the response
+///3. Get the current date and time
+///4. Iterate through the discounts to find the latest valid discount
+///5. Extract the 'from' and 'to' dates
+///6. Check for permanent discount (always valid)
+///7. Ensure the discount is within the valid period
+///8. Select the latest valid discount (based on 'to' date) 
+///9. Apply permanent discount if available; otherwise, use the latest valid discount

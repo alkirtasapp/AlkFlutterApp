@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:test/features/authentication/screens/login/log_in.dart';
-import 'package:test/features/authentication/screens/onBoarding/onboarding.dart';
+import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
+import 'package:alkirtas/features/authentication/screens/onBoarding/onboarding.dart';
 import 'utils/theme/theme.dart';
 
 class App extends StatelessWidget {
