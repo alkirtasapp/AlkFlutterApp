@@ -193,3 +193,96 @@ class _ProductDetailsState extends State<ProductDetails> {
     );
   }
 }
+
+/*
+  This file defines the ProductDetails widget, which is a screen for displaying 
+  detailed information about a specific product. It's designed to provide an 
+  immersive product viewing experience, 
+
+
+
+  1.  Stateful Widget:
+      -   `ProductDetails` is a `StatefulWidget` because it manages the state of 
+          product features, including loading states and fetched data.
+
+  2.  Product Information:
+      -   It receives detailed product information through its constructor, including:
+          -   `productName`: Name of the product.
+          -   `productReference`: The product reference or code.
+          -   `productDiscount`: Discount applied to the product.
+          -   `productBrand`: Brand of the product.
+          -   `productOldPrice`: Original price of the product (before discount).
+          -   `productNewPrice`: Discounted price of the product.
+          -   `productDescription`: Detailed description of the product.
+          -   `productBrandId`: ID of the product's brand.
+          -   `productId`: Unique identifier of the product.
+          -   `productImage`: URL or path to the main product image.
+          -   `productImageList`: List of URLs or paths to additional product images.
+          -   `productStock`: The stock quantity of the product (used by nested widgets).
+          -   `productFeatures`: Optional list of product features.
+
+  3.  Dynamic Feature Fetching:
+      -   `productFeatures`: A list to store product features (fetched dynamically).
+      -   `isLoadingFeatures`: A flag to indicate whether features are being fetched.
+      -   `initState()`: Calls `_fetchProductFeatures()` to start fetching when the widget initializes.
+      -   `_fetchProductFeatures()`:
+          -   Uses `ProductControllerStore` to get product features.
+          -   Updates `productFeatures` and `isLoadingFeatures` when the fetch completes.
+          -   Handles potential errors during the fetch.
+
+  4.  UI Structure:
+      -   `Scaffold`: The base layout.
+      -   `bottomNavigationBar`: Uses the `AlkBottomAddToCart` widget to provide 
+          "Add to Cart" functionality.
+      -   `SingleChildScrollView`: Enables scrolling for long content.
+      -   `Column`: Organizes the main layout vertically.
+      -   `AlkProductImageSlider`: Displays a carousel of product images.
+      -   `Padding`: Adds spacing around the product details.
+      -   `AlkRef`: Custom widget for displaying product reference and description titles.
+      -   `AlkProductMetadata`: Displays main product details (name, price, brand).
+      -   `ReadMoreText`: Used for truncating and expanding the product description.
+      -   `AlkProductFeatures`: Displays a list of product features (if available).
+      -   `CircularProgressIndicator`: Shown while product features are loading.
+
+  5.  Add to Cart Integration:
+      -   `AlkBottomAddToCart`: Used in the `bottomNavigationBar` to integrate the 
+          "Add to Cart" feature. It passes relevant product details.
+
+  6.  Dependencies:
+      -   `get`: For state management (`Get.find<ProductProvider>()`) and navigation (`Get.to()`).
+      -   `iconsax`: For icons (`Iconsax.component5`, `Iconsax.document_text5`, `Iconsax.receipt_text5`).
+      -   `readmore`: For truncating and expanding text (`ReadMoreText`).
+      -   `alkirtas/common/widgets/providers/product_provider.dart`: 
+         The `ProductProvider` for managing the cart.
+      -   `alkirtas/features/shop/screens/product_details/widgets/bottom_add_to_cart.dart`: 
+          The "Add to Cart" bottom bar.
+      -   `alkirtas/features/shop/screens/product_details/widgets/product_features.dart`: 
+          Widget to display product features.
+      -   `alkirtas/common/widgets/texts/section_heading.dart`: Custom section heading widget.
+      -   `alkirtas/utils/constants/size.dart`: App size constants.
+      -   `alkirtas/features/shop/controllers/product_card_controller.dart`: 
+        `ProductCardControllerTax` for cleaning the product description.
+      -   `alkirtas/features/shop/controllers/product_controller_store.dart`: 
+        `ProductControllerStore` for fetching product features.
+      -   `alkirtas/features/shop/screens/product_details/widgets/product_detail_image_slider.dart`: 
+         Image slider for the product.
+      -   `alkirtas/features/shop/screens/product_details/widgets/product_metadata.dart`: 
+         Widget to display product metadata.
+      -   `alkirtas/features/shop/screens/product_details/widgets/reference.dart`:
+         Custom widget for displaying product reference
+
+  7. Functionality:
+    - When initialising the widget, it will fetch the product features by calling `_fetchProductFeatures()`
+    - If the features are still being fetched, a loading indicator will be displayed.
+    - If no features are available, it will display a message "Aucune information sur le produit disponible."
+    - the price to be displayed in the bottom add to cart will be chosen regarding the existence of the discount, if there is a discount, the `productNewPrice` will be chosen, else if there is no discount, the `productOldPrice` will be chosen, else the `productNewPrice` will be chosen as a default.
+    - The product Description will be cleaned from html using `ProductCardControllerTax.cleanDescription()`
+    - it uses a bottom navigation bar `AlkBottomAddToCart` to add to cart.
+
+  In Summary:
+
+  The `ProductDetails` widget is a comprehensive screen for presenting detailed 
+  product information and integrating the "Add to Cart" functionality. It 
+  dynamically fetches product features, handles loading states, and displays 
+  various product details in a structured and user-friendly way.
+*/

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:alkirtas/features/shop/screens/cart/cart.dart';
 
 import '../../../../utils/constants/colors.dart';
 import '../../providers/product_provider.dart';
@@ -18,12 +17,12 @@ class AlkCartCounterIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-     // Retrieve ProductProvider using GetX
+    // Retrieve ProductProvider using GetX
     final productProvider = Get.find<ProductProvider>();
     return Stack(
       children: [
         IconButton(
-            onPressed: () => Get.to(() => const CartScreen()),
+            onPressed: onPressed, // Use the passed-in onPressed callback
             icon: Icon(Iconsax.shopping_bag, color: iconColor)),
         Positioned(
           right: 0,
@@ -36,12 +35,9 @@ class AlkCartCounterIcon extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-             
-                productProvider.cartItems.length.toString(),  
-                style: Theme.of(context)
-                    .textTheme
-                    .labelLarge!
-                    .apply(color: AlkColors.white, fontSizeFactor: 0.8),
+                productProvider.cartItems.length.toString(),
+                style: Theme.of(context).textTheme.labelLarge!.apply(
+                    color: AlkColors.white, fontSizeFactor: 0.8),
               ),
             ),
           ),
@@ -49,7 +45,15 @@ class AlkCartCounterIcon extends StatelessWidget {
       ],
     );
   }
-} /// 1. Import the required libraries  
+}
+
+/// 1. Import the required libraries
+/// 2. Create a personalized CartCounterIcon widget
+/// 3. Retrieve the ProductProvider using GetX
+/// 4. Show the number of items in the cart
+/// 5. Use the onPressed callback to navigate to cart screen
+
+ /// 1. Import the required libraries  
 /// 2. Create a personalized CartCounterIcon widget
 /// 3. Retrieve the ProductProvider using GetX  
 /// 4. Show the number of items in the cart

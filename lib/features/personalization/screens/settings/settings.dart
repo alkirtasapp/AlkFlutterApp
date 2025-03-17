@@ -1,3 +1,4 @@
+import 'package:alkirtas/navigation_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -75,7 +76,7 @@ class SettingScreen extends StatelessWidget {
                       title: 'Mon Panier',
                       subtitle:
                           'Ajouter, supprimer des produits et passer à la caisse',
-                          onPressed: () => Get.to(()=> CartScreen()),
+                          onPressed:  (){Get.offAll(() => const NavigationMenu(selectedMenu: 2));}
                           ),
                 /*  AlkSettingMenuTile(
                       icon: Iconsax.bag_tick,

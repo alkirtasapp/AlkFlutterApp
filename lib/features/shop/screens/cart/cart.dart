@@ -26,44 +26,62 @@ class _CartScreenState extends State<CartScreen> {
   final productProvider = Get.find<ProductProvider>();
   double getTotalPrice() {
     return productProvider.cartItems.fold(0.0, (sum, product) {
-          final price =
-              double.tryParse(product['productPrice'].toString()) ?? 0.0;
-          final quantity =
-              int.tryParse(product['productQuantity'].toString()) ?? 1;
-          return sum + (price * quantity);
-        }) +
-        8.0;
-         // Add delivery charge (8.000 TND)
+      final price =
+          double.tryParse(product['productPrice'].toString()) ?? 0.0;
+      final quantity =
+          int.tryParse(product['productQuantity'].toString()) ?? 1;
+      return sum + (price * quantity);
+    });
   }
+
+  double getTotalPriceWithDelivery() {
+    return getTotalPrice() + 8.0;
+  }
+
   //  Checkout
   Future<void> checkout() async {
-    try {
-      //  Create Cart
-      //String cartId = await createCart(productProvider.cartItems);
+    double cartTotal = getTotalPrice();
+    if (cartTotal < 20.0) {
+      // Show alert
+      Get.snackbar(
+        'Commande Non Valide',
+        'Un montant total de 20,000 TND HT minimum est requis pour valider votre commande ',
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 4),
+        backgroundColor: Colors.red[300],
+        colorText: Colors.white,
+        isDismissible: true,
+        dismissDirection: DismissDirection.horizontal,
+        
+      );
+    } else {
+      try {
+        //  Create Cart
+        //String cartId = await createCart(productProvider.cartItems);
 
-      //  Create Order using the  cart ID
-      //await createOrder(cartId);
+        //  Create Order using the  cart ID
+        //await createOrder(cartId);
 
-      //  Clear Local Cart
-      // productProvider.clearCart();
+        //  Clear Local Cart
+        // productProvider.clearCart();
 
-      // Navigate to Checkout Screen on success
-      Get.to(() => CheckoutScreen());
+        // Navigate to Checkout Screen on success
+        Get.to(() => CheckoutScreen());
 
-
-
-      print("Cart  placed successfully!");
-     
-    } catch (e) {
-      print("Error during checkout: $e");
+        print("Cart  placed successfully!");
+      } catch (e) {
+        print("Error during checkout: $e");
+      }
     }
   }
+
   //  Create Cart
   Future<String> createCart(List<Map<String, String>> cartItems) async {
-  String url = "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+    String url =
+        "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
 
-  String cartRowsXml = cartItems.map((item) {
-    return """
+    String cartRowsXml = cartItems.map((item) {
+      return """
     <cart_row>
       <id_product><![CDATA[${item['productId']}]]></id_product>
       <id_product_attribute><![CDATA[]]></id_product_attribute>
@@ -72,9 +90,9 @@ class _CartScreenState extends State<CartScreen> {
       <quantity><![CDATA[${item['productQuantity']}]]></quantity>
     </cart_row>
     """;
-  }).join();
+    }).join();
 
-  String xmlBody = '''<?xml version="1.0" encoding="UTF-8"?>
+    String xmlBody = '''<?xml version="1.0" encoding="UTF-8"?>
 <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
   <cart>
     <id_currency>1</id_currency>
@@ -87,29 +105,29 @@ class _CartScreenState extends State<CartScreen> {
     </associations>
   </cart>
 </prestashop>''';
-  // Send POST request
-  var response = await http.post(
-    Uri.parse(url),
-    headers: {
-      "Content-Type": "application/xml",
-      "Accept": "application/xml",
-    },
-    body: xmlBody.trim(), // Ensure no extra spaces
-  );
+    // Send POST request
+    var response = await http.post(
+      Uri.parse(url),
+      headers: {
+        "Content-Type": "application/xml",
+        "Accept": "application/xml",
+      },
+      body: xmlBody.trim(), // Ensure no extra spaces
+    );
 
-  print("Response Status: ${response.statusCode}");
-  print("Response Body: ${response.body}");
+    print("Response Status: ${response.statusCode}");
+    print("Response Body: ${response.body}");
 
-
-  // Parse response
-  if (response.statusCode == 201 || response.statusCode == 200) {
-    final document = xml.XmlDocument.parse(response.body);
-    final cartIdElement = document.findAllElements("id").first;
-    return cartIdElement.text;
-  } else {
-    throw Exception("${UserData.id} USER Failed to create cart: ${response.statusCode}, ${response.body}");
+    // Parse response
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final document = xml.XmlDocument.parse(response.body);
+      final cartIdElement = document.findAllElements("id").first;
+      return cartIdElement.text;
+    } else {
+      throw Exception(
+          "${UserData.id} USER Failed to create cart: ${response.statusCode}, ${response.body}");
+    }
   }
-}
 
   //  Create Order
   Future<void> createOrder(String cartId) async {
@@ -174,8 +192,8 @@ class _CartScreenState extends State<CartScreen> {
                             productBrand: product['productBrand']!,
                             productImage: product['productImage']!,
                             productPrice: product['productPrice']!,
-                            productQuantity: product[
-                                'productQuantity']!, 
+                            productQuantity:
+                                product['productQuantity']!, // Corrected
                             onDelete: () {
                               setState(() {}); // Trigger rebuild on delete
                             },
@@ -185,14 +203,18 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                   ),
                 ),
+                Text(
+                  "Total: ${getTotalPriceWithDelivery().toStringAsFixed(3)} TND (Livraison 8.000 TND)",
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AlkColors.darkGrey,
+                      ),
+                ),
                 Padding(
                   padding: EdgeInsets.all(AlkSize.defaultSpace),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: checkout,
-                    
-                      
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.purple[400],
                         padding: EdgeInsets.symmetric(
@@ -201,39 +223,43 @@ class _CartScreenState extends State<CartScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      child: Text(
-                        "Commander ",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                            ),
+                      child: Column(
+                        children: [
+                          Text(
+                            "Commander ",
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  color: Colors.white,
+                                ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                Text(
-                  "Total: ${getTotalPrice().toStringAsFixed(3)} TND (Livraison 8.000 TND)",
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AlkColors.darkGrey,
-                      ),
-                ),
-                const SizedBox(height: AlkSize.spaceBtwSections),
               ],
             ),
     );
   }
 }
 
-
- /// DOCS : 
- /// -this class cart.dart Represents the collection of the products that the user have possible intentions to order 
- /// -cart contains product details from product provider class 
- /// - a fucntion to calculate the total price of all products existing in the cart 
- /// - a Gesture Detector to redirect to the product details screen if a user wants to recheck the product in the cart 
- /// - a Checkout methode that serves as (only can be presses when the cart has items ): 
- ///     - Store products in the cartItems 
- ///     - create a Post request to create a cart that contains the list of products (cartitems)
- /// expected output 
- /// I/flutter (24377): Response Status: 201
+/// DOCS :
+/// -this class cart.dart Represents the collection of the products that the
+/// user have possible intentions to order
+/// -cart contains product details from product provider class
+/// - a function to calculate the total price of all products existing in the
+/// cart
+/// - a Gesture Detector to redirect to the product details screen if a user
+/// wants to recheck the product in the cart
+/// - a Checkout methode that serves as (only can be presses when the cart has
+/// items ):
+///     - Store products in the cartItems
+///     - create a Post request to create a cart that contains the list of
+///     products (cartitems)
+/// expected output
+/// I/flutter (24377): Response Status: 201
 // Response Body: <?xml version="1.0" encoding="UTF-8"?>
 // <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
 // <cart>
@@ -257,6 +283,4 @@ class _CartScreenState extends State<CartScreen> {
 // 	<date_add><![CDATA[2025-
 
 // Cart  placed successfully!
-/// => then next step : creating the address 
-///
-   
+/// => then next step : creating the address
