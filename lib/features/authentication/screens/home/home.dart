@@ -79,7 +79,7 @@ class HomeScreen extends StatelessWidget {
 
                 //Products Home Page
 
-                AlkGridLayout(itemCount: 10),
+                AlkGridLayout(itemCount: 22),
               ]),
             ),
           ],
@@ -98,14 +98,6 @@ class HomeScreen extends StatelessWidget {
 /// 7.  Create a GridLayout for the products AlkGridLayout to display the products
 
 
-
-/// 1.  Import the required packages
-/// 2.  Create a stateless widget called HomeScreen
-/// 3.  Create a Personalized Header Container with a search bar and categories AlkPrimaryHeaderContainer
-/// 4.  Create a Category Section with a heading and categories AlkHomeCategories
-/// 5.  Create a Banner Slider AlkBannerSlider
-/// 6.  Create a Section Heading for the products AlkSectionHeading
-/// 7.  Create a GridLayout for the products AlkGridLayout to display the products
 
 
 
