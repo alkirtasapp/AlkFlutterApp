@@ -93,9 +93,13 @@ class ProductCardControllerTax {
 
     //  Step 4: Process all product details concurrently
     List<Future<void>> asyncTasks = [];
+
     for (var product in rawProducts) {
+      if (product.containsKey('active')&&
+      product['active'].toString()=='1'){
       asyncTasks.add(_processProductDetails(product));
       processedProducts.add(product);
+    }
     }
 
     await Future.wait(asyncTasks);

@@ -22,52 +22,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _handleSignUp() async {
     setState(() => _controller.isLoading = true);
 
-    String? errorMessage = await _controller.registerUser();
+     bool success = await _controller.registerUser();
 
     setState(() => _controller.isLoading = false);
-
-    if (errorMessage == null) {
-      _showSuccessDialog();
-      await Future.delayed(Duration(seconds: 2));
-      Get.to(() => LoginScreen());
-    } else {
-      _showErrorDialog(errorMessage);
+    if (success) {
+      await Future.delayed(const Duration(seconds: 2));
+      Get.offAll(() =>  LoginScreen()); 
     }
-  }
-
-  // Success message
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Succès"),
-        content: const Text("Compte créé avec succès !"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            
-            child: const Text(""),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Error message
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Erreur"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -152,6 +113,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   validator: (value) => value!.isEmpty ? "Champ obligatoire" : null,
                 ),
                 const SizedBox(height: AlkSize.spaceBtwInputFields),
+                
+                 
 
                 /// Email
                 TextFormField(
@@ -239,22 +202,3 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
-
-/// import reqiured packages
-/// Call for SignUpController
-/// Create SignUp handler function
-/// Create success and error dialog
-/* Create the UI{
-  SignUp Fields : 
-  - Title (Sexe)
-  - Last Name
-  - First Name
-  - Phone Number
-  - Email
-  - Password
-  - Confirm Password
-  - Terms of Use Checkbox
-         }*/
-
-
-
