@@ -51,7 +51,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (value == null || value.trim().isEmpty) {
       return 'Ce champ est requis';
     } else if (!RegExp(r'^\d{4}$').hasMatch(value)) {
-      return 'Le code postale doit contenir 8 chiffres';
+      return 'Le code postale doit contenir 4 chiffres';
     }
     return null;
   }

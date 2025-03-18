@@ -60,6 +60,7 @@ class _StorePageState extends State<StoreDrawer> {
       fetchedProductIds.clear();
       offset = 0;
       isSearching = false;
+      selectedSortOption = "None"; // Reset the filter here
     });
 
     print("📡 Fetching products for Category ID: $categoryId, Offset: $offset");
@@ -128,6 +129,7 @@ class _StorePageState extends State<StoreDrawer> {
       isSearching = true;
       offset = 0;
       currentSearchQuery = query;
+      selectedSortOption = "None"; // Reset the filter here
     });
 
     final List<int>? productIds =
@@ -209,13 +211,21 @@ class _StorePageState extends State<StoreDrawer> {
       } else if (selectedSortOption == "Price Desc") {
         products.sort(
             (a, b) => (b['price'] as num).compareTo(a['price'] as num));
+            
       } else if (selectedSortOption == "Name Asc") {
         products.sort(
             (a, b) => (a['name'] as String).compareTo(b['name'] as String));
       } else if (selectedSortOption == "Name Desc") {
         products.sort(
             (a, b) => (b['name'] as String).compareTo(a['name'] as String));
-      }
+      } else if (selectedSortOption == "Référence Asc") {
+        products.sort(
+            (a, b) => (b['reference'] as String).compareTo(a['reference'] as String));
+      } else if (selectedSortOption == "Référence Desc") {
+        products.sort(
+            (a, b) => (b['reference'] as String).compareTo(a['reference'] as String));
+      } 
+      
     });
   }
 
@@ -241,10 +251,12 @@ class _StorePageState extends State<StoreDrawer> {
               });
             },
             itemBuilder: (BuildContext context) => [
-              PopupMenuItem(value: "Price Asc", child: Text("Prix ↑")),
-              PopupMenuItem(value: "Price Desc", child: Text("Prix ↓")),
+              PopupMenuItem(value: "Price Asc", child: Text("Prix Croissant")),
+              PopupMenuItem(value: "Price Desc", child: Text("Prix Décroissant")),
               PopupMenuItem(value: "Name Asc", child: Text("Nom A-Z")),
               PopupMenuItem(value: "Name Desc", child: Text("Nom Z-A")),
+              PopupMenuItem(value: "Référence Adc", child: Text("Référence Z-A")),
+              PopupMenuItem(value: "Référence Desc", child: Text("Réféence Z-A")),
             ],
           ),
         ],
@@ -395,7 +407,6 @@ class _StorePageState extends State<StoreDrawer> {
                                   child: SizedBox(
                                     width: 10,
                                     child: LinearProgressIndicator(
-                                      
                                       borderRadius: BorderRadius.circular(10),
                                       minHeight: 10,
                                       valueColor: AlwaysStoppedAnimation<Color>(
