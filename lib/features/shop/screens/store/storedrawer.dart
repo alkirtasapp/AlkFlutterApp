@@ -28,11 +28,12 @@ class _StorePageState extends State<StoreDrawer> {
   bool isSearchVisible = false;
   bool isSearching = false;
   List<Map<String, dynamic>> products = [];
-  Set<int> fetchedProductIds = {}; 
+  Set<int> fetchedProductIds = {};
   int offset = 0;
-  final int limit = 10; 
+  final int limit = 10;
   TextEditingController searchTextController = TextEditingController();
   String currentSearchQuery = "";
+  String selectedSortOption = "None"; // Track selected sorting option
 
   @override
   void initState() {
@@ -56,7 +57,7 @@ class _StorePageState extends State<StoreDrawer> {
     setState(() {
       isLoading = true;
       products.clear();
-      fetchedProductIds.clear(); 
+      fetchedProductIds.clear();
       offset = 0;
       isSearching = false;
     });
@@ -64,7 +65,8 @@ class _StorePageState extends State<StoreDrawer> {
     print("📡 Fetching products for Category ID: $categoryId, Offset: $offset");
 
     final List<Map<String, dynamic>> validProducts = await productController
-            .fetchProductDataStore(categoryId, offset, limit) ?? [];
+            .fetchProductDataStore(categoryId, offset, limit) ??
+        [];
 
     if (validProducts.isNotEmpty) {
       setState(() {
@@ -75,6 +77,7 @@ class _StorePageState extends State<StoreDrawer> {
           }
         }
         offset += validProducts.length;
+        _applySorting(); // Apply sorting after fetching
       });
       print(
           "✅ Fetched ${validProducts.length} products for Category ID: $categoryId");
@@ -105,6 +108,7 @@ class _StorePageState extends State<StoreDrawer> {
           }
         }
         offset += moreProducts.length;
+        _applySorting(); // Apply sorting after loading more products
       });
       print(
           "✅ Loaded ${moreProducts.length} more products for Category ID: $selectedCategoryId");
@@ -115,79 +119,105 @@ class _StorePageState extends State<StoreDrawer> {
     setState(() => isFetchingMore = false);
   }
 
- Future<void> _searchProducts(String query) async {
-  setState(() {
-    isLoading = true;
-    // Clear previous search results
-    products.clear(); 
-    fetchedProductIds.clear();
-    isSearching = true;
-    offset = 0;
-    currentSearchQuery = query;
-  });
+  Future<void> _searchProducts(String query) async {
+    setState(() {
+      isLoading = true;
+      // Clear previous search results
+      products.clear();
+      fetchedProductIds.clear();
+      isSearching = true;
+      offset = 0;
+      currentSearchQuery = query;
+    });
 
-  final List<int>? productIds = await searchController.searchProducts(query, offset: offset, limit: 100);
+    final List<int>? productIds =
+        await searchController.searchProducts(query, offset: offset, limit: 100);
 
-  if (productIds != null && productIds.isNotEmpty) {
-    final List<Map<String, dynamic>>? searchedProducts = await productController.fetchProductsByIds(productIds);
+    if (productIds != null && productIds.isNotEmpty) {
+      final List<Map<String, dynamic>>? searchedProducts =
+          await productController.fetchProductsByIds(productIds);
 
-    if (searchedProducts != null && searchedProducts.isNotEmpty) {
-      setState(() {
-        for (var product in searchedProducts) {
-          // Prevent duplicates
-          if (!fetchedProductIds.contains(product['id'])) {  
-            products.add(product);
-            fetchedProductIds.add(product['id']);
+      if (searchedProducts != null && searchedProducts.isNotEmpty) {
+        setState(() {
+          for (var product in searchedProducts) {
+            // Prevent duplicates
+            if (!fetchedProductIds.contains(product['id'])) {
+              products.add(product);
+              fetchedProductIds.add(product['id']);
+            }
           }
-        }
-        // Move offset forward correctly
-        offset += searchedProducts.length; 
-      });
-      print("✅ Displaying first ${searchedProducts.length} search results.");
+          // Move offset forward correctly
+          offset += searchedProducts.length;
+          _applySorting(); // Apply sorting after loading more products
+        });
+        print("✅ Displaying first ${searchedProducts.length} search results.");
+      } else {
+        print("⚠️ No valid product details found.");
+      }
     } else {
-      print("⚠️ No valid product details found.");
+      print("⚠️ No product IDs returned from search.");
     }
-  } else {
-    print("⚠️ No product IDs returned from search.");
+
+    setState(() => isLoading = false);
   }
 
-  setState(() => isLoading = false);
-}
+  Future<void> _loadMoreSearchResults() async {
+    if (isFetchingMore) return;
 
- Future<void> _loadMoreSearchResults() async {
-  if (isFetchingMore) return;
+    setState(() => isFetchingMore = true);
 
-  setState(() => isFetchingMore = true);
+    print(
+        "📡 Loading more search results for query: $currentSearchQuery, Offset: $offset");
 
-  print("📡 Loading more search results for query: $currentSearchQuery, Offset: $offset");
+    final List<int>? productIds = await searchController.searchProducts(
+        currentSearchQuery,
+        offset: offset,
+        limit: 100);
 
-  final List<int>? productIds = await searchController.searchProducts(currentSearchQuery, offset: offset, limit: 100);
+    if (productIds != null && productIds.isNotEmpty) {
+      final List<Map<String, dynamic>>? moreSearchedProducts =
+          await productController.fetchProductsByIds(productIds);
 
-  if (productIds != null && productIds.isNotEmpty) {
-    final List<Map<String, dynamic>>? moreSearchedProducts =
-        await productController.fetchProductsByIds(productIds);
-
-    if (moreSearchedProducts != null && moreSearchedProducts.isNotEmpty) {
-      setState(() {
-        for (var product in moreSearchedProducts) {
-          if (!fetchedProductIds.contains(product['id'])) {
-            products.add(product);
-            fetchedProductIds.add(product['id']);
+      if (moreSearchedProducts != null && moreSearchedProducts.isNotEmpty) {
+        setState(() {
+          for (var product in moreSearchedProducts) {
+            if (!fetchedProductIds.contains(product['id'])) {
+              products.add(product);
+              fetchedProductIds.add(product['id']);
+            }
           }
-        }
-        offset += productIds.length;
-      });
-      print("✅ Loaded ${moreSearchedProducts.length} more products for query: $currentSearchQuery");
+          offset += productIds.length;
+          _applySorting(); // Apply sorting after loading more products
+        });
+        print(
+            "✅ Loaded ${moreSearchedProducts.length} more products for query: $currentSearchQuery");
+      } else {
+        print("⚠️ No more products found for query: $currentSearchQuery");
+      }
     } else {
-      print("⚠️ No more products found for query: $currentSearchQuery");
+      print("⚠️ No more product IDs found for query: $currentSearchQuery");
     }
-  } else {
-    print("⚠️ No more product IDs found for query: $currentSearchQuery");
+
+    setState(() => isFetchingMore = false);
   }
 
-  setState(() => isFetchingMore = false);
-}
-
+  void _applySorting() {
+    setState(() {
+      if (selectedSortOption == "Price Asc") {
+        products.sort(
+            (a, b) => (a['price'] as num).compareTo(b['price'] as num));
+      } else if (selectedSortOption == "Price Desc") {
+        products.sort(
+            (a, b) => (b['price'] as num).compareTo(a['price'] as num));
+      } else if (selectedSortOption == "Name Asc") {
+        products.sort(
+            (a, b) => (a['name'] as String).compareTo(b['name'] as String));
+      } else if (selectedSortOption == "Name Desc") {
+        products.sort(
+            (a, b) => (b['name'] as String).compareTo(a['name'] as String));
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -201,6 +231,21 @@ class _StorePageState extends State<StoreDrawer> {
                 isSearchVisible = !isSearchVisible;
               });
             },
+          ),
+          PopupMenuButton<String>(
+            icon: Icon(Iconsax.filter),
+            onSelected: (String value) {
+              setState(() {
+                selectedSortOption = value;
+                _applySorting(); // Apply sorting when an option is selected
+              });
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(value: "Price Asc", child: Text("Prix ↑")),
+              PopupMenuItem(value: "Price Desc", child: Text("Prix ↓")),
+              PopupMenuItem(value: "Name Asc", child: Text("Nom A-Z")),
+              PopupMenuItem(value: "Name Desc", child: Text("Nom Z-A")),
+            ],
           ),
         ],
         title: Text(
@@ -216,7 +261,7 @@ class _StorePageState extends State<StoreDrawer> {
       ),
       drawer: Drawer(
         child: isLoading
-            ? Center(child:CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator())
             : ListView(
                 children: [
                   for (var category
@@ -228,7 +273,6 @@ class _StorePageState extends State<StoreDrawer> {
                             selectedCategory = category.key;
                             selectedCategoryId = category.value;
                             productListKey = UniqueKey();
-                            products.clear();
                           });
 
                           _fetchProductsForCategory(selectedCategoryId);
@@ -249,7 +293,6 @@ class _StorePageState extends State<StoreDrawer> {
                                     selectedCategory = subcategory['name'];
                                     selectedCategoryId = subcategory['id'];
                                     productListKey = UniqueKey();
-                                    products.clear();
                                   });
 
                                   _fetchProductsForCategory(selectedCategoryId);
@@ -274,7 +317,6 @@ class _StorePageState extends State<StoreDrawer> {
                                           selectedCategoryId =
                                               subSubcategory['id'];
                                           productListKey = UniqueKey();
-                                          products.clear();
                                         });
 
                                         _fetchProductsForCategory(
@@ -311,62 +353,62 @@ class _StorePageState extends State<StoreDrawer> {
                       ),
                     ),
                     onSubmitted: (query) {
-                      // Call _searchProducts on search submission
-                      _searchProducts(query); 
+                      _searchProducts(query);
                     },
                   ),
                 ),
               ),
             ),
-           Flexible(
-  child: isLoading
-      ? Center(child: CircularProgressIndicator())
-      : NotificationListener<ScrollNotification>(
-          onNotification: (ScrollNotification scrollInfo) {
-            if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-                !isFetchingMore) {
-              if (isSearching) {
-                _loadMoreSearchResults();
-              } else {
-                _loadMoreProducts();
-              }
-            }
-            return false;
-          },
-          child: Stack(
-            children: [
-              
-              AlkStoreGridDrawer(
-                key: productListKey,
-                itemCount: products.length,
-                categoryId: isSearching ? -1 : selectedCategoryId,
-                preloadedProducts: products,
-              ),
-              if (isFetchingMore) 
-                 
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: SizedBox(
-                        width: 10,
-                        child: LinearProgressIndicator(
-                          borderRadius: BorderRadius.circular(10),
-                          minHeight: 10,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
-                        ),
+            Expanded(
+              child: isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification scrollInfo) {
+                        if (scrollInfo.metrics.pixels ==
+                                scrollInfo.metrics.maxScrollExtent &&
+                            !isFetchingMore) {
+                          if (isSearching) {
+                            _loadMoreSearchResults();
+                          } else {
+                            _loadMoreProducts();
+                          }
+                        }
+                        return false;
+                      },
+                      child: Stack(
+                        children: [
+                          AlkStoreGridDrawer(
+                            key: productListKey,
+                            itemCount: products.length,
+                            categoryId:
+                                isSearching ? -1 : selectedCategoryId,
+                            preloadedProducts: products,
+                          ),
+                          if (isFetchingMore)
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: SizedBox(
+                                    width: 10,
+                                    child: LinearProgressIndicator(
+                                      
+                                      borderRadius: BorderRadius.circular(10),
+                                      minHeight: 10,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.purple),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-)
-
+            ),
           ],
         ),
       ),

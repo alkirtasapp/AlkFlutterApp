@@ -20,9 +20,10 @@ class CartScreen extends StatefulWidget {
   @override
   State<CartScreen> createState() => _CartScreenState();
 }
-
+// 
 class _CartScreenState extends State<CartScreen> {
   //  Get the product provider
+  // get the total price of the cart (product price * quantity)
   final productProvider = Get.find<ProductProvider>();
   double getTotalPrice() {
     return productProvider.cartItems.fold(0.0, (sum, product) {
@@ -33,16 +34,16 @@ class _CartScreenState extends State<CartScreen> {
       return sum + (price * quantity);
     });
   }
-
+  // Get total price with Delivery
   double getTotalPriceWithDelivery() {
     return getTotalPrice() + 8.0;
   }
 
-  //  Checkout
+  //  Checkout method will be activated once the button is clicked 
   Future<void> checkout() async {
     double cartTotal = getTotalPrice();
     if (cartTotal < 20.0) {
-      // Show alert
+      // Show alert Incase total of the cart is < than 20 dinar 
       Get.snackbar(
         'Commande Non Valide',
         'Un montant total de 20,000 TND HT minimum est requis pour valider votre commande ',
@@ -55,15 +56,16 @@ class _CartScreenState extends State<CartScreen> {
         
       );
     } else {
+      // when pressing the button triggering this 
       try {
-        //  Create Cart
-        //String cartId = await createCart(productProvider.cartItems);
+        //  Create Cart 
+        String cartId = await createCart(productProvider.cartItems);
 
         //  Create Order using the  cart ID
-        //await createOrder(cartId);
+        await createOrder(cartId);
 
         //  Clear Local Cart
-        // productProvider.clearCart();
+         productProvider.clearCart();
 
         // Navigate to Checkout Screen on success
         Get.to(() => CheckoutScreen());
@@ -75,11 +77,13 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
-  //  Create Cart
+  //  sennd a POST requerst to create a CART 
   Future<String> createCart(List<Map<String, String>> cartItems) async {
     String url =
         "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
 
+    // working on cart rows first ! 
+    // used .join beacause cart could have more than 1 product
     String cartRowsXml = cartItems.map((item) {
       return """
     <cart_row>

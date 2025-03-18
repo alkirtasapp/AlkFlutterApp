@@ -17,17 +17,19 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final SignUpController _controller = SignUpController();
   bool _isChecked = false; // Terms of Use checkbox state
+  bool _obscurePassword = true; //for password visibility
+  bool _obscureConfirmPassword = true; // for confirm password visibility
 
   // Handle sign up
   void _handleSignUp() async {
     setState(() => _controller.isLoading = true);
 
-     bool success = await _controller.registerUser();
+    bool success = await _controller.registerUser();
 
     setState(() => _controller.isLoading = false);
     if (success) {
       await Future.delayed(const Duration(seconds: 2));
-      Get.offAll(() =>  LoginScreen()); 
+      Get.offAll(() => LoginScreen());
     }
   }
 
@@ -43,7 +45,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Créons votre compte...', style: Theme.of(context).textTheme.headlineMedium),
+                Text('Créons votre compte...',
+                    style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: AlkSize.spaceBtwSections),
 
                 /// Titre (Sexe)
@@ -75,7 +78,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: AlkSize.spaceBtwInputFields),
 
-
                 /// Nom et Prénom
                 Row(
                   children: [
@@ -83,9 +85,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       child: TextFormField(
                         controller: _controller.lastNameController,
                         decoration: const InputDecoration(
-                          labelText: 'Nom', prefixIcon: Icon(Iconsax.user),
+                          labelText: 'Nom',
+                          prefixIcon: Icon(Iconsax.user),
                         ),
-                        validator: (value) => value!.isEmpty ? "Champ obligatoire" : null,
+                        validator: (value) =>
+                            value!.isEmpty ? "Champ obligatoire" : null,
                       ),
                     ),
                     SizedBox(width: AlkSize.spaceBtwInputFields),
@@ -93,38 +97,42 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       child: TextFormField(
                         controller: _controller.firstNameController,
                         decoration: const InputDecoration(
-                          labelText: 'Prénom', prefixIcon: Icon(Iconsax.user),
+                          labelText: 'Prénom',
+                          prefixIcon: Icon(Iconsax.user),
                         ),
-                        validator: (value) => value!.isEmpty ? "Champ obligatoire" : null,
+                        validator: (value) =>
+                            value!.isEmpty ? "Champ obligatoire" : null,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AlkSize.spaceBtwInputFields),
-               
 
                 /// Phone Number
                 TextFormField(
                   controller: _controller.phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
-                    labelText: 'Téléphone', prefixIcon: Icon(Iconsax.call),
+                    labelText: 'Téléphone',
+                    prefixIcon: Icon(Iconsax.call),
                   ),
-                  validator: (value) => value!.isEmpty ? "Champ obligatoire" : null,
+                  validator: (value) =>
+                      value!.isEmpty ? "Champ obligatoire" : null,
                 ),
                 const SizedBox(height: AlkSize.spaceBtwInputFields),
-                
-                 
 
                 /// Email
                 TextFormField(
                   controller: _controller.emailController,
                   decoration: const InputDecoration(
-                    labelText: 'Email', prefixIcon: Icon(Iconsax.direct),
+                    labelText: 'Email',
+                    prefixIcon: Icon(Iconsax.direct),
                   ),
                   validator: (value) {
                     if (value!.isEmpty) return "Champ obligatoire";
-                    if (!RegExp(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$").hasMatch(value)) {
+                    if (!RegExp(
+                            r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+                        .hasMatch(value)) {
                       return "Email invalide";
                     }
                     return null;
@@ -135,26 +143,51 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 /// Password
                 TextFormField(
                   controller: _controller.passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Mot de passe ', prefixIcon: Icon(Iconsax.password_check),
-                    suffixIcon: Icon(Iconsax.eye_slash),
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Mot de passe ',
+                    prefixIcon: Icon(Iconsax.password_check),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Iconsax.eye_slash : Iconsax.eye,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                   ),
-                  validator: (value) => value!.isEmpty ? "Champ obligatoire" : null,
+                  validator: (value) =>
+                      value!.isEmpty ? "Champ obligatoire" : null,
                 ),
                 const SizedBox(height: AlkSize.spaceBtwInputFields),
 
                 /// Confirm Password
                 TextFormField(
                   controller: _controller.confirmPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Saisissez à nouveau votre mot de passe', prefixIcon: Icon(Iconsax.password_check),
-                    suffixIcon: Icon(Iconsax.eye_slash),
+                  obscureText: _obscureConfirmPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Saisissez à nouveau votre mot de passe',
+                    prefixIcon: Icon(Iconsax.password_check),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Iconsax.eye_slash
+                            : Iconsax.eye,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
                   ),
                   validator: (value) {
                     if (value!.isEmpty) return "Champ obligatoire";
-                    if (value != _controller.passwordController.text) return "Les mots de passe ne correspondent pas";
+                    if (value != _controller.passwordController.text) {
+                      return "Les mots de passe ne correspondent pas";
+                    }
                     return null;
                   },
                 ),
@@ -180,7 +213,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: (_controller.isLoading || !_isChecked) ? null : _handleSignUp,
+                    onPressed:
+                        (_controller.isLoading || !_isChecked) ? null : _handleSignUp,
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.resolveWith<Color>(
                         (Set<MaterialState> states) {
