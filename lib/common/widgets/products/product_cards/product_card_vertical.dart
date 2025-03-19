@@ -140,7 +140,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
           children: [
             // Product Thumbnail
             AlkRoundedContainer(
-              height: 180,
+              height: 160,
               padding: const EdgeInsets.all(AlkSize.sm),
               backgroundColor: dark ? AlkColors.dark : AlkColors.white,
               child: Stack(
