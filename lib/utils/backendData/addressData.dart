@@ -12,4 +12,24 @@ class AddressData {
   static String id_state = '';
   static String phone = '';
   static String phone_mobile = '';
+
+  // Check if an address exists
+  static bool hasAddress() {
+    return id.isNotEmpty;
+  }
+  static void clearAddress() {
+    id = '';
+    id_customer = '';
+    lastname = '';
+    firstname = '';
+    address1 = '';
+    postcode = '';
+    city = '';
+    phone = '';
+    alias = 'Mon adresse';
+    id_country = '208';
+   ;
+  }
+
 }
+

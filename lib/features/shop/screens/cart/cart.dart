@@ -1,3 +1,4 @@
+import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:alkirtas/common/widgets/appbar/appbar.dart';
@@ -11,6 +12,7 @@ import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart' as xml;
+import 'package:provider/provider.dart'; // Import Provider
 
 import 'dart:convert';
 
@@ -20,30 +22,27 @@ class CartScreen extends StatefulWidget {
   @override
   State<CartScreen> createState() => _CartScreenState();
 }
-// 
+
 class _CartScreenState extends State<CartScreen> {
-  //  Get the product provider
-  // get the total price of the cart (product price * quantity)
-  final productProvider = Get.find<ProductProvider>();
-  double getTotalPrice() {
-    return productProvider.cartItems.fold(0.0, (sum, product) {
-      final price =
-          double.tryParse(product['productPrice'].toString()) ?? 0.0;
-      final quantity =
-          int.tryParse(product['productQuantity'].toString()) ?? 1;
+  // Get the total price of the cart (product price * quantity)
+  double getTotalPrice(CartProvider cartProvider) {
+    return cartProvider.cartItems.fold(0.0, (sum, product) {
+      final price = double.tryParse(product['productPrice'].toString()) ?? 0.0;
+      final quantity = int.tryParse(product['productQuantity'].toString()) ?? 1;
       return sum + (price * quantity);
     });
   }
-  // Get total price with Delivery
-  double getTotalPriceWithDelivery() {
-    return getTotalPrice() + 8.0;
+
+  // Get total price with delivery
+  double getTotalPriceWithDelivery(CartProvider cartProvider) {
+    return getTotalPrice(cartProvider) + 8.0; // Delivery fee is fixed at 8.0 TND
   }
 
-  //  Checkout method will be activated once the button is clicked 
-  Future<void> checkout() async {
-    double cartTotal = getTotalPrice();
+  // Checkout method will be activated once the button is clicked
+  Future<void> checkout(CartProvider cartProvider) async {
+    double cartTotal = getTotalPrice(cartProvider);
     if (cartTotal < 20.0) {
-      // Show alert Incase total of the cart is < than 20 dinar 
+      // Show alert if the total of the cart is less than 20 TND
       Get.snackbar(
         'Commande Non Valide',
         'Un montant total de 20,000 TND HT minimum est requis pour valider votre commande ',
@@ -53,37 +52,29 @@ class _CartScreenState extends State<CartScreen> {
         colorText: Colors.white,
         isDismissible: true,
         dismissDirection: DismissDirection.horizontal,
-        
       );
     } else {
-      // when pressing the button triggering this 
+      // When pressing the button, trigger this
       try {
-        //  Create Cart 
-        String cartId = await createCart(productProvider.cartItems);
+        // Create Cart
+        String cartId = await createCart(cartProvider.cartItems);
 
-        //  Create Order using the  cart ID
-        await createOrder(cartId);
-
-        //  Clear Local Cart
-         productProvider.clearCart();
-
-        // Navigate to Checkout Screen on success
+        // Navigate to Checkout Screen with the generated cartId
         Get.to(() => CheckoutScreen());
 
-        print("Cart  placed successfully!");
+        print("Cart placed successfully!");
       } catch (e) {
         print("Error during checkout: $e");
       }
     }
   }
 
-  //  sennd a POST requerst to create a CART 
+  // Send a POST request to create a cart
   Future<String> createCart(List<Map<String, String>> cartItems) async {
     String url =
         "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
 
-    // working on cart rows first ! 
-    // used .join beacause cart could have more than 1 product
+    // Generate XML for cart rows
     String cartRowsXml = cartItems.map((item) {
       return """
     <cart_row>
@@ -109,6 +100,7 @@ class _CartScreenState extends State<CartScreen> {
     </associations>
   </cart>
 </prestashop>''';
+
     // Send POST request
     var response = await http.post(
       Uri.parse(url),
@@ -133,19 +125,22 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
-  //  Create Order
-  Future<void> createOrder(String cartId) async {
-    // Implement order creation logic using the cartId
-  }
-
   @override
   Widget build(BuildContext context) {
+    final cartProvider = Provider.of<CartProvider>(context);
+
+    print("🛒 Cart Items in CartScreen:");
+    for (var item in cartProvider.cartItems) {
+      print(
+          "Product ID: ${item['productId']}, Quantity: ${item['productQuantity']}, Price: ${item['productPrice']}");
+    }
+
     return Scaffold(
       appBar: AlkAppBar(
         showBackArrow: false,
         title: Text('Panier', style: Theme.of(context).textTheme.headlineSmall),
       ),
-      body: productProvider.cartItems.isEmpty
+      body: cartProvider.cartItems.isEmpty
           ? Center(
               child: Text(
                 "Votre panier est vide",
@@ -162,9 +157,9 @@ class _CartScreenState extends State<CartScreen> {
                       separatorBuilder: (_, __) => const SizedBox(
                         height: AlkSize.spaceBtwSections,
                       ),
-                      itemCount: productProvider.cartItems.length,
+                      itemCount: cartProvider.cartItems.length,
                       itemBuilder: (context, index) {
-                        final product = productProvider.cartItems[index];
+                        final product = cartProvider.cartItems[index];
 
                         return GestureDetector(
                           onTap: () {
@@ -196,10 +191,9 @@ class _CartScreenState extends State<CartScreen> {
                             productBrand: product['productBrand']!,
                             productImage: product['productImage']!,
                             productPrice: product['productPrice']!,
-                            productQuantity:
-                                product['productQuantity']!, // Corrected
+                            productQuantity: product['productQuantity']!,
                             onDelete: () {
-                              setState(() {}); // Trigger rebuild on delete
+                              cartProvider.removeFromCart(product['productId']!); // Use removeFromCart
                             },
                           ),
                         );
@@ -208,7 +202,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
                 Text(
-                  "Total: ${getTotalPriceWithDelivery().toStringAsFixed(3)} TND (Livraison 8.000 TND)",
+                  "Total: ${getTotalPriceWithDelivery(cartProvider).toStringAsFixed(3)} TND (Livraison 8.000 TND)",
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: AlkColors.darkGrey,
                       ),
@@ -218,7 +212,9 @@ class _CartScreenState extends State<CartScreen> {
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: checkout,
+                      onPressed: () {
+                        Get.to(() => CheckoutScreen());
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.purple[400],
                         padding: EdgeInsets.symmetric(
@@ -248,43 +244,3 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 }
-
-/// DOCS :
-/// -this class cart.dart Represents the collection of the products that the
-/// user have possible intentions to order
-/// -cart contains product details from product provider class
-/// - a function to calculate the total price of all products existing in the
-/// cart
-/// - a Gesture Detector to redirect to the product details screen if a user
-/// wants to recheck the product in the cart
-/// - a Checkout methode that serves as (only can be presses when the cart has
-/// items ):
-///     - Store products in the cartItems
-///     - create a Post request to create a cart that contains the list of
-///     products (cartitems)
-/// expected output
-/// I/flutter (24377): Response Status: 201
-// Response Body: <?xml version="1.0" encoding="UTF-8"?>
-// <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
-// <cart>
-// 	<id><![CDATA[7151]]></id>
-// 	<id_address_delivery><![CDATA[]]></id_address_delivery>
-// 	<id_address_invoice><![CDATA[]]></id_address_invoice>
-// 	<id_currency xlink:href="https://www.alkirtas.com/api/currencies/1"><![CDATA[1]]></id_currency>
-// 	<id_customer xlink:href="https://www.alkirtas.com/api/customers/14"><![CDATA[14]]></id_customer>
-// 	<id_guest><![CDATA[]]></id_guest>
-// 	<id_lang xlink:href="https://www.alkirtas.com/api/languages/1"><![CDATA[1]]></id_lang>
-// 	<id_shop_group><![CDATA[1]]></id_shop_group>
-// 	<id_shop><![CDATA[1]]></id_shop>
-// 	<id_carrier><![CDATA[]]></id_carrier>
-// 	<recyclable><![CDATA[]]></recyclable>
-// 	<gift><![CDATA[]]></gift>
-// 	<gift_message><![CDATA[]]></gift_message>
-// 	<mobile_theme><![CDATA[]]></mobile_theme>
-// 	<delivery_option><![CDATA[]]></delivery_option>
-// 	<secure_key><![CDATA[]]></secure_key>
-// 	<allow_seperated_package><![CDATA[]]></allow_seperated_package>
-// 	<date_add><![CDATA[2025-
-
-// Cart  placed successfully!
-/// => then next step : creating the address

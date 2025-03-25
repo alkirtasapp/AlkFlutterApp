@@ -20,8 +20,8 @@ class ProductCardControllerTax {
   static Future<void>? _fetchingProductsDetailsFuture;
 
   // Define categories and products per category
-  final List<int> categoryIds = [13,14,15,17,11,12,486,558,590,544,743];
-  final int productsPerCategory = 2;
+  final List<int> categoryIds = [2];
+  final int productsPerCategory = 12;
 
   Future<Map<String, dynamic>?> fetchProductData(int productIndex) async {
     try {

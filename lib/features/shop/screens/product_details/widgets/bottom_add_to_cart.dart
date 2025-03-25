@@ -1,3 +1,4 @@
+import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -6,6 +7,7 @@ import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/constants/size.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/data/controllers/quantity_controller.dart'; // Import QuantityController
+import 'package:provider/provider.dart'; // Import Provider
 
 import '../../cart/cart.dart';
 
@@ -140,23 +142,18 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
           ElevatedButton(
             onPressed: isInStock
                 ? () {
-                    productProvider.addToCart(
+                    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+                    cartProvider.addToCart(
                       productId: widget.productId,
                       productName: widget.productName,
+                      productPrice: widget.productPrice,
                       productBrand: widget.productBrand,
                       productImage: widget.productImage,
-                      productPrice: widget.productPrice,
-                      productDiscount: widget.productDiscount,
-                      productBrandId: widget.productBrandId,
-                      productOldPrice: widget.productOldPrice,
-                      productNewPrice: widget.productNewPrice,
-                      productStock: productStock.toString(), // Use fetched stock
-                      productDescription: widget.productDescription,
-                      productReference: widget.productReference,
-                      productImageList: widget.productImageList,
-                      productFeatures: widget.productFeatures,
                       quantity: quantity,
                     );
+
+                    print("🛒 Product added to cart: ${widget.productName}, Quantity: $quantity");
 
                     Get.snackbar(
                       "Ajouté au Panier",
@@ -226,7 +223,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
       -   `ElevatedButton`: The main button for adding the product to the cart.
       -   `onPressed`:
           -   Conditionally enabled based on `isInStock`.
-          -   If `isInStock` is `true`, it calls `productProvider.addToCart()` to add the product to the cart and shows a success message with `Get.snackbar`.
+          -   If `isInStock` is `true`, it calls `cartProvider.addToCart()` to add the product to the cart and shows a success message with `Get.snackbar`.
           -   If `isInStock` is `false`, it's `null` (disabled).
       -   `style`: Button color changes based on `isInStock`.
       -   `child`: Text changes between "Ajouter au Panier" and "Rupture de stock" based on `isInStock`.
@@ -247,6 +244,8 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
       -   `alkirtas/common/widgets/providers/product_provider.dart`: The `ProductProvider` for managing the cart.
       -   `alkirtas/data/controllers/quantity_controller.dart`: The `QuantityController` to fetch the stock.
       - `../../cart/cart.dart`: The cart screen destination.
+      - `provider`: For state management (`Provider.of<CartProvider>()`).
+      - `alkirtas/common/widgets/providers/cart_provider.dart`: The `CartProvider` for managing the cart.
 
   9. **Functionality**
       - The button to add to cart will be clickable only if the product is in stock, else it will be greyed out and not clickable, also the text will be 'Rupture de stock' (out of stock)

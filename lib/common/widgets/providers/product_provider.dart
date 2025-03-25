@@ -20,7 +20,7 @@ class ProductProvider extends ChangeNotifier {
     required String productReference,
     required List<String> productImageList,
     required List<String>? productFeatures,
-    required int quantity
+    required int quantity,
   }) {
     _cartItems.add({
       'productId': productId,
@@ -39,6 +39,9 @@ class ProductProvider extends ChangeNotifier {
       'productFeatures': productFeatures?.join(',') ?? '',
       'productQuantity': quantity.toString(),
     });
+
+    print("🛒 Product added to cart: $productName, Quantity: $quantity");
+    print("🛒 Current cart items: $_cartItems");
 
     notifyListeners();
   }

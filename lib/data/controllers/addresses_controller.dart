@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:alkirtas/utils/backendData/userData.dart';
+import 'package:xml/xml.dart' as xml;
 
 class AddressController extends GetxController {
   var isLoading = false.obs;
@@ -91,6 +92,7 @@ class AddressController extends GetxController {
       </address>
     </prestashop>
     """;
+
     // Send the request
     var response = await http.post(
       Uri.parse(url),
@@ -99,30 +101,33 @@ class AddressController extends GetxController {
       },
       body: xmlBody,
     );
+
+    // Debug the response
+    print("Response Status: ${response.statusCode}");
+    print("Response Body: ${response.body}");
+
     // Check the response
     if (response.statusCode == 201) {
-      print(" Address created successfully!");
-      // Extract the ID from the response
+      print("✅ Address created successfully!");
+
+      // Parse the JSON response
       var jsonResponse = json.decode(response.body);
-      if (jsonResponse.containsKey("address") && jsonResponse["address"].containsKey("id")) {
-        AddressData.id = jsonResponse["address"]["id"].toString();
+
+      if (jsonResponse['address'] != null) {
+        AddressData.id = jsonResponse['address']['id'];
         print("✅ New Address ID: ${AddressData.id}");
       } else {
-        print(" Could not extract Address ID from response.");
+        print("❌ Address ID not found in the response.");
       }
     } else {
-      print(" Failed to create address. Status code: ${response.statusCode}");
-     
+      print("❌ Failed to create address. Status code: ${response.statusCode}");
     }
   } catch (e) {
-    print(" Error creating address: $e");
+    print("❌ Error creating address: $e");
   } finally {
     isLoading.value = false;
   }
 }
-
-
-    
 
 }
 

@@ -1,32 +1,33 @@
+import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:alkirtas/app.dart';
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 
 Future<void> main() async {
-  
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive 
+  // Initialize Hive
   await Hive.initFlutter();
-  
+
   // Open product cache box
   var box = await Hive.openBox('productCache');
 
-  // clear  l cache every restart
+  // Clear cache on app restart
   await box.clear();
-  print(" Product cache cleared on app reload");
+  print("Product cache cleared on app reload");
 
-  // Run the app
-  runApp(const App());
-
+  // Run the app with MultiProvider
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+      ],
+      child: const App(),
+    ),
+  );
 }
-
- /// 1.  Import the required packages
- /// 2.  Initialize Hive  
- /// 3.  Open the product cache box
- /// 4.  Clear the cache on app reload
- /// 5.  Run the app
- /// 6.  The cache is now cleared every time the app is restarted
 
