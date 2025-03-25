@@ -19,7 +19,7 @@ class OrderController {
       int idCarrier = (deliveryMethod == "Alkirtas corniche") ? 4 : 6; // 4 for Alkirtas corniche, 6 for First Delivery
       double shippingCost = (deliveryMethod == "Alkirtas corniche") ? 0.0 : 8.0;
 
-      // Calculate the total paid (including shipping)
+      // Dynamically calculate total_paid
       double totalPaid = totalProductsWt + shippingCost;
 
       // Set the correct current_state
@@ -30,7 +30,7 @@ class OrderController {
       print("Carrier ID: $idCarrier");
       print("Shipping Cost: $shippingCost");
       print("Total Paid: $totalPaid");
-      print("Total Paid Real:$totalPaid");
+      print("Total Paid Real: $totalPaid");
       print("Total Products: $totalProducts");
       print("Total Products WT: $totalProductsWt");
 
@@ -47,15 +47,14 @@ class OrderController {
           <current_state>$currentState</current_state>
           <module>ps_cashondelivery</module>
           <payment>Paiement comptant à la livraison (Cash on delivery)</payment>
-          <total_paid>$totalPaid</total_paid>
+          <total_paid>${totalPaid.toStringAsFixed(6)}</total_paid> <!-- Ensure precision -->
           <total_paid_real>0</total_paid_real> 
-          <total_products>$totalProducts</total_products> 
-          <total_products_wt>$totalProductsWt</total_products_wt> 
-          <total_shipping>$shippingCost</total_shipping> 
-          <total_shipping_tax_incl>$shippingCost</total_shipping_tax_incl>
-          <total_shipping_tax_excl>$shippingCost</total_shipping_tax_excl>
+          <total_products>${totalProducts.toStringAsFixed(6)}</total_products> 
+          <total_products_wt>${totalProductsWt.toStringAsFixed(6)}</total_products_wt> 
+          <total_shipping>${shippingCost.toStringAsFixed(6)}</total_shipping> 
+          <total_shipping_tax_incl>${shippingCost.toStringAsFixed(6)}</total_shipping_tax_incl>
+          <total_shipping_tax_excl>${shippingCost.toStringAsFixed(6)}</total_shipping_tax_excl>
           <conversion_rate>1</conversion_rate>
-          
         </order>
       </prestashop>
       ''';
