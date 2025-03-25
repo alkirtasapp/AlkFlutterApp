@@ -208,7 +208,7 @@ class CartController extends GetxController {
           <id_carrier>$idCarrier</id_carrier>
           <id_address_delivery><![CDATA[$idAddressDelivery]]></id_address_delivery>
           <id_address_invoice><![CDATA[$idAddressDelivery]]></id_address_invoice>
-          <delivery_option>{"$idAddressDelivery":"$idCarrier"}</delivery_option> <!-- Set delivery_option -->
+          <delivery_option>{"$idAddressDelivery":"$idCarrier,"}</delivery_option> <!-- Set delivery_option -->
           <associations>
             <cart_rows>
               $cartRowsXml
