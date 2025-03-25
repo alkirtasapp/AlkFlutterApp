@@ -20,7 +20,7 @@ class OrderController {
       double shippingCost = (deliveryMethod == "Alkirtas corniche") ? 0.0 : 8.0;
 
       // Calculate the total paid (including shipping)
-      double totalPaid = totalProductsWt + 8.0;
+      double totalPaid = totalProductsWt + shippingCost;
 
       // Set the correct current_state
       int currentState = 13;
@@ -55,7 +55,7 @@ class OrderController {
           <total_shipping_tax_incl>$shippingCost</total_shipping_tax_incl>
           <total_shipping_tax_excl>$shippingCost</total_shipping_tax_excl>
           <conversion_rate>1</conversion_rate>
-          <valid>1</valid> <!-- Mark the order as valid -->
+          
         </order>
       </prestashop>
       ''';

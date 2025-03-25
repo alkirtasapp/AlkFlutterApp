@@ -426,6 +426,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   snackPosition: SnackPosition.TOP,
                                   backgroundColor: Colors.green,
                                   colorText: Colors.white,
+                                  duration: const Duration(seconds: 3),
+                                  isDismissible: true,
+                                  dismissDirection: DismissDirection.vertical
+                                  
                                 );
 
                                 // Redirect to the home page
@@ -435,9 +439,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 Get.snackbar(
                                   "Erreur",
                                   "Échec de la création de la commande. Veuillez réessayer.",
-                                  snackPosition: SnackPosition.BOTTOM,
+                                  snackPosition: SnackPosition.TOP,
                                   backgroundColor: Colors.red,
                                   colorText: Colors.white,
+                                   duration: const Duration(seconds: 3),
+                                  isDismissible: true,
+                                  dismissDirection: DismissDirection.vertical
                                 );
                               }
                             } else {
@@ -445,9 +452,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               Get.snackbar(
                                 "Erreur",
                                 "Échec de la création de l'adresse. Veuillez réessayer.",
-                                snackPosition: SnackPosition.BOTTOM,
+                                snackPosition: SnackPosition.TOP,
                                 backgroundColor: Colors.red,
                                 colorText: Colors.white,
+                                 duration: const Duration(seconds: 3),
+                                  isDismissible: true,
+                                  dismissDirection: DismissDirection.vertical
                               );
                             }
                           } catch (e) {
@@ -455,9 +465,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             Get.snackbar(
                               "Erreur",
                               "Une erreur s'est produite. Veuillez réessayer.",
-                              snackPosition: SnackPosition.BOTTOM,
+                              snackPosition: SnackPosition.TOP,
                               backgroundColor: Colors.red,
                               colorText: Colors.white,
+                               duration: const Duration(seconds: 3),
+                                  isDismissible: true,
+                                  dismissDirection: DismissDirection.vertical
                             );
                           }
                         }
