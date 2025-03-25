@@ -187,7 +187,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ListTile(
                       title: Text("Utiliser l'adresse existante"), // Translated to French
                       subtitle: Text(
-                          "${AddressData.firstname} ${AddressData.lastname}, ${AddressData.address1}, ${AddressData.city}, ${AddressData.postcode}, ${AddressData.phone}"),
+                          "${AddressData.firstname} ${AddressData.lastname}, ${AddressData.address1}, ${AddressData.city}, ${AddressData.postcode}, ${AddressData.phone}, ${AddressData.id_state}"),
                       leading: Radio<bool>(
                         value: true,
                         groupValue: isUsingExistingAddress,
@@ -444,7 +444,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   colorText: Colors.white,
                                    duration: const Duration(seconds: 3),
                                   isDismissible: true,
-                                  dismissDirection: DismissDirection.vertical
+                                  dismissDirection: DismissDirection.horizontal
                                 );
                               }
                             } else {
@@ -457,7 +457,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 colorText: Colors.white,
                                  duration: const Duration(seconds: 3),
                                   isDismissible: true,
-                                  dismissDirection: DismissDirection.vertical
+                                  dismissDirection: DismissDirection.horizontal
                               );
                             }
                           } catch (e) {
@@ -470,7 +470,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               colorText: Colors.white,
                                duration: const Duration(seconds: 3),
                                   isDismissible: true,
-                                  dismissDirection: DismissDirection.vertical
+                                  dismissDirection: DismissDirection.horizontal
                             );
                           }
                         }

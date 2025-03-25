@@ -23,6 +23,7 @@ class NavigationMenu extends StatelessWidget {
     // Initialize NavigationController with selectedMenu
     final controller = Get.put(NavigationController(selectedMenu));
     final darkMode = AlkHelperFunctions.isDarkMode(context);
+
     // Use WillPopScope to handle back button press
     return WillPopScope(
       onWillPop: () async {
@@ -54,24 +55,29 @@ class NavigationMenu extends StatelessWidget {
             height: 80,
             elevation: 0,
             selectedIndex: controller.selectedIndex.value,
-            onDestinationSelected: (index) =>
-                controller.selectedIndex.value = index,
+            onDestinationSelected: (index) {
+              controller.pageController.jumpToPage(index); // Navigate to the selected page
+              controller.selectedIndex.value = index;
+            },
             backgroundColor: darkMode ? AlkColors.black : Colors.white,
             indicatorColor: darkMode
                 ? AlkColors.white.withOpacity(0.1)
                 : AlkColors.black.withOpacity(0.1),
             destinations: const [
               NavigationDestination(icon: Icon(Iconsax.home), label: 'Acceuil'),
-              NavigationDestination(
-                  icon: Icon(Iconsax.shop), label: 'Boutique'),
-              NavigationDestination(
-                  icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
-              NavigationDestination(
-                  icon: Icon(Iconsax.user), label: 'Profile'),
+              NavigationDestination(icon: Icon(Iconsax.shop), label: 'Boutique'),
+              NavigationDestination(icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
+              NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
             ],
           ),
         ),
-        body: Obx(() => controller.screens[controller.selectedIndex.value]),
+        body: PageView(
+          controller: controller.pageController,
+          onPageChanged: (index) {
+            controller.selectedIndex.value = index; // Update the selected index
+          },
+          children: controller.screens,
+        ),
       ),
     );
   }
@@ -80,21 +86,22 @@ class NavigationMenu extends StatelessWidget {
 class NavigationController extends GetxController {
   /// The index of the selected tab
   final Rx<int> selectedIndex;
-  NavigationController(int initialIndex): selectedIndex = initialIndex.obs;
+  final PageController pageController; // PageController for PageView
+
+  NavigationController(int initialIndex)
+      : selectedIndex = initialIndex.obs,
+        pageController = PageController(initialPage: initialIndex);
+
   final screens = [
     const HomeScreen(),
     const StoreDrawer(),
-    // Cart now has access to ProductProvider
     const CartScreen(),
     const SettingScreen(),
   ];
-}
 
-/// 1.  Import the required packages
-/// 2.  This widget is used to create the navigation menu with a bottom
-///     navigation bar with 4 Main screens (Acceuil, Boutique, Panier, Profile)
-///     these 4 section are the main sections of the app
-/// 3.  Initialize the ProductProvider globally for GetX navigation
-/// 4.  Initialize the NavigationController with the selected tab
-/// 5.  Use WillPopScope to handle back button press
-/// 6.  Scaffold with NavigationBar and screens
+  @override
+  void onClose() {
+    pageController.dispose(); // Dispose the PageController when the controller is closed
+    super.onClose();
+  }
+}

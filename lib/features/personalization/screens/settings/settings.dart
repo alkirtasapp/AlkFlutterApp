@@ -1,3 +1,4 @@
+import 'package:alkirtas/features/personalization/screens/address/address.dart';
 import 'package:alkirtas/navigation_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -67,9 +68,13 @@ class SettingScreen extends StatelessWidget {
                   SizedBox(height: AlkSize.spaceBtwItems),
 
                   AlkSettingMenuTile(
-                      icon: Iconsax.safe_home,
-                      title: 'Mes Adresses',
-                      subtitle: 'Définir l\'adresse de livraison', onPressed: () {  },),
+                    icon: Iconsax.safe_home,
+                    title: 'Mes Adresses',
+                    subtitle: 'Définir l\'adresse de livraison',
+                    onPressed: () {
+                      Get.to(() => const AddressScreen());
+                    },
+                  ),
                       
                   AlkSettingMenuTile(
                       icon: Iconsax.shopping_cart,
