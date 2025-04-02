@@ -26,9 +26,7 @@ class ProductDetails extends StatefulWidget {
   final String productImage;
   final List<String> productImageList;
   final String productStock;
-  final List<String>? productFeatures; // Allow null
-  
-  
+  final List<String>? productFeatures;
 
   const ProductDetails({
     super.key,
@@ -44,7 +42,7 @@ class ProductDetails extends StatefulWidget {
     required this.productId,
     required this.productImage,
     required this.productImageList,
-     this.productFeatures = const [],
+    this.productFeatures = const [],
   });
 
   @override
@@ -62,27 +60,25 @@ class _ProductDetailsState extends State<ProductDetails> {
   }
 
   Future<void> _fetchProductFeatures() async {
-  try {
-    print("🟡 Fetching product features for ID: ${widget.productId}");
-    
-    
-    final ProductControllerStore productController = ProductControllerStore();
-    List<String> fetchedFeatures = await productController.fetchProductFeatures(widget.productId);
+    try {
+      print("🟡 Fetching product features for ID: ${widget.productId}");
 
-    print("✅ Features Fetched: $fetchedFeatures");
+      final ProductControllerStore productController = ProductControllerStore();
+      List<String> fetchedFeatures = await productController.fetchProductFeatures(widget.productId);
 
-    setState(() {
-      productFeatures = fetchedFeatures;
-      isLoadingFeatures = false;
-    });
-  } catch (e) {
-    print("❌ Error fetching product features: $e");
-    setState(() {
-      isLoadingFeatures = false;
-    });
+      print("✅ Features Fetched: $fetchedFeatures");
+
+      setState(() {
+        productFeatures = fetchedFeatures;
+        isLoadingFeatures = false;
+      });
+    } catch (e) {
+      print("❌ Error fetching product features: $e");
+      setState(() {
+        isLoadingFeatures = false;
+      });
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -90,20 +86,26 @@ class _ProductDetailsState extends State<ProductDetails> {
         ? widget.productNewPrice
         : (widget.productOldPrice.isNotEmpty ? widget.productOldPrice : widget.productNewPrice);
 
-    print("Product Price: $productPrice");
+    final productImage = widget.productImage.isNotEmpty
+        ? widget.productImage
+        : 'https://www.alkirtas.com/img/default.jpg'; // Fallback image URL
+
+    final productDescription = widget.productDescription.isNotEmpty
+        ? widget.productDescription
+        : 'Description non disponible'; // Fallback description
+
+    print("Product Price: ${productPrice.isNotEmpty ? productPrice : 'N/A'}");
     print("Product discount: ${widget.productDiscount}");
     print("Product OLD Price: ${widget.productOldPrice}");
     print("Product NEW Price: ${widget.productNewPrice}");
     print("product features: $productFeatures");
-  
-   
 
     return Scaffold(
       bottomNavigationBar: AlkBottomAddToCart(
         productId: widget.productId,
         productName: widget.productName,
         productBrand: widget.productBrand,
-        productImage: widget.productImage,
+        productImage: productImage,
         productPrice: productPrice,
         productDiscount: widget.productDiscount,
         productBrandId: widget.productBrandId,
@@ -155,7 +157,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                   SizedBox(height: AlkSize.spaceBtwItems),
                   ReadMoreText(
                     ProductCardControllerTax.cleanDescription(
-                        widget.productDescription),
+                        productDescription),
                     trimLines: 2,
                     trimMode: TrimMode.Line,
                     trimCollapsedText: 'voir plus',
@@ -172,10 +174,9 @@ class _ProductDetailsState extends State<ProductDetails> {
                   SizedBox(height: AlkSize.spaceBtwItems),
 
                   // Show loading indicator while fetching product features
-                  
+
                   isLoadingFeatures
                       ? const CircularProgressIndicator()
-                      
                       : (productFeatures.isNotEmpty
                           ? AlkProductFeatures(productFeatures: productFeatures)
                           : const Text(

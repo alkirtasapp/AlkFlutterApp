@@ -10,19 +10,37 @@ class CartProvider with ChangeNotifier {
     required String productName,
     String? productBrand,
     required String productPrice,
+    String? productDiscount,
+    String? productOldPrice,
+    String? productNewPrice,
     String? productImage,
+    String? productReference,
+    String? productStock,
+    String? productDescription,
+    String? productBrandId,
+    List<String>? productImageList,
+    List<String>? productFeatures,
     required int quantity,
   }) {
     _cartItems.add({
       'productId': productId,
       'productName': productName,
-      'productPrice': productPrice,
       'productBrand': productBrand ?? '',
+      'productPrice': productPrice,
+      'productDiscount': productDiscount ?? '',
+      'productOldPrice': productOldPrice ?? '',
+      'productNewPrice': productNewPrice ?? '',
       'productImage': productImage ?? '',
+      'productReference': productReference ?? '',
+      'productStock': productStock ?? '',
+      'productDescription': productDescription ?? '',
+      'productBrandId': productBrandId ?? '',
+      'productImageList': productImageList?.join(',') ?? '',
+      'productFeatures': productFeatures?.join(',') ?? '',
       'productQuantity': quantity.toString(),
     });
 
-    notifyListeners(); // Notify widgets to rebuild
+    notifyListeners();
   }
 
   void clearCart() {

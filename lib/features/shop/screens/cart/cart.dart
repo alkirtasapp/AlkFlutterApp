@@ -161,29 +161,43 @@ class _CartScreenState extends State<CartScreen> {
                       itemBuilder: (context, index) {
                         final product = cartProvider.cartItems[index];
 
+                        // Calculate productOldPrice and productNewPrice dynamically
+                        final discountValue =
+                            double.tryParse(product['productDiscount'] ?? '0') ??
+                                0.0;
+                        final displayPrice = product['productPrice'] ?? '0';
+                        final productOldPrice =
+                            discountValue > 0 ? displayPrice : '';
+                        final productNewPrice = discountValue > 0
+                            ? (double.parse(displayPrice) *
+                                    (1 - discountValue / 100))
+                                .toStringAsFixed(2)
+                            : displayPrice;
+
                         return GestureDetector(
                           onTap: () {
                             Get.to(() => ProductDetails(
-                                  productBrand: product['productBrand'] ?? '',
+                                  productId: product['productId'] ?? '',
                                   productName: product['productName'] ?? '',
-                                  productImage: product['productImage'] ?? '',
+                                  productReference:
+                                      product['productReference'] ?? '',
                                   productDiscount:
                                       product['productDiscount'] ?? '',
+                                  productBrand: product['productBrand'] ?? '',
+                                  productBrandId:
+                                      product['productBrandId'] ?? '',
+                                  productImage: product['productImage'] ?? '',
+                                  productImageList:
+                                      product['productImageList']
+                                              ?.split(',') ??
+                                          [],
+                                  productStock: product['productStock'] ?? '',
+                                  productDescription:
+                                      product['productDescription'] ?? '',
                                   productOldPrice:
                                       product['productOldPrice'] ?? '',
                                   productNewPrice:
                                       product['productNewPrice'] ?? '',
-                                  productReference:
-                                      product['productReference'] ?? '',
-                                  productStock: product['productStock'] ?? '',
-                                  productDescription:
-                                      product['productDescription'] ?? '',
-                                  productBrandId:
-                                      product['productBrandId'] ?? '',
-                                  productId: product['productId'] ?? '',
-                                  productImageList:
-                                      product['productImageList']?.split(',') ??
-                                          [],
                                 ));
                           },
                           child: AlkCartItem(
@@ -193,7 +207,7 @@ class _CartScreenState extends State<CartScreen> {
                             productPrice: product['productPrice']!,
                             productQuantity: product['productQuantity']!,
                             onDelete: () {
-                              cartProvider.removeFromCart(product['productId']!); // Use removeFromCart
+                              cartProvider.removeFromCart(product['productId']!);
                             },
                           ),
                         );

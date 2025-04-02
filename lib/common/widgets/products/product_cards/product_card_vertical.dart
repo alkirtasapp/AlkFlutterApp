@@ -1,11 +1,13 @@
 import 'dart:ffi';
 
+import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
 import 'package:alkirtas/utils/backendData/productDetailData.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
+import 'package:provider/provider.dart';
 import '../../../../features/shop/controllers/product_card_controller.dart';
 import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/size.dart';
@@ -257,30 +259,38 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
                             child: Center(
                                 child: IconButton(
                                     color: AlkColors.white,
-                                    onPressed: () => Get.to(() =>
-                                        ProductDetails(
-                                          // Show the ProductDetails screen when the card is tapped
+                                    onPressed: () {
+                                      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+                                      cartProvider.addToCart(
+                                        productId: id,
+                                        productName: title,
+                                        productBrand: brandName,
+                                        productImage: imageUrl,
+                                        productPrice: displayPrice,
+                                        productDiscount: discountText ?? '',
+                                        productBrandId: brandId,
+                                        productOldPrice: discountText != null ? displayPrice : '',
+                                        productNewPrice: discountValue > 0
+                                            ? (double.parse(displayPrice) * (1 - discountValue / 100))
+                                                .toStringAsFixed(2)
+                                            : displayPrice,
+                                        productStock: productStock,
+                                        productDescription: description,
+                                        productReference: reference,
+                                        productImageList: imageList,
+                                        productFeatures: [], // Add features if available
+                                        quantity: 1, // Default quantity
+                                      );
 
-                                          productId: id,
-                                          productName: title,
-                                          productReference: reference,
-                                          productDiscount: discountText ?? '',
-                                          productBrand: brandName,
-                                          productBrandId: brandId,
-                                          productImage: imageUrl,
-                                          productImageList: imageList,
-                                          productStock: productStock,
-
-                                          productDescription: description,
-                                          productOldPrice: discountText != null
-                                              ? displayPrice
-                                              : '',
-                                          productNewPrice: discountValue > 0
-                                              ? (double.parse(displayPrice) *
-                                                      (1 - discountValue / 100))
-                                                  .toStringAsFixed(2)
-                                              : displayPrice,
-                                        )),
+                                      Get.snackbar(
+                                        "Produit ajouté",
+                                        "$title a été ajouté au panier",
+                                        snackPosition: SnackPosition.TOP,
+                                        duration: const Duration(seconds: 2),
+                                        backgroundColor: Colors.green,
+                                        colorText: Colors.white,
+                                      );
+                                    },
                                     icon: const Icon(Iconsax.add))),
                           ),
                         ),

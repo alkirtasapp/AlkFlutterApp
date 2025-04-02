@@ -150,10 +150,17 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
                       productPrice: widget.productPrice,
                       productBrand: widget.productBrand,
                       productImage: widget.productImage,
+                      productDiscount: widget.productDiscount,
+                      productBrandId: widget.productBrandId,
+                      productOldPrice: widget.productOldPrice,
+                      productNewPrice: widget.productNewPrice,
+                      productStock: widget.productStock,
+                      productDescription: widget.productDescription,
+                      productReference: widget.productReference,
+                      productImageList: widget.productImageList,
+                      productFeatures: widget.productFeatures,
                       quantity: quantity,
                     );
-
-                    print("🛒 Product added to cart: ${widget.productName}, Quantity: $quantity");
 
                     Get.snackbar(
                       "Ajouté au Panier",
