@@ -19,51 +19,60 @@ class LoginScreen extends StatelessWidget {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
    
-
-
-
   void signInUser(BuildContext context) async {
     final email = emailController.text;
     final password = passwordController.text;
-    
-    // check if the email and password fields are empty
+
+    // Check if the email and password fields are empty
     if (email.isEmpty || password.isEmpty) {
       showErrorDialog(context, 'Please fill in both fields.');
       return;
     }
-    // check if the email is valid
+
+    // Make the API call
     final response = await http.get(
       Uri.parse(
         'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU',
       ),
     );
-    // check if the response status code is 200
-    if (response.statusCode == 200) {
-      var data = json.decode(response.body);
-      // check if the data is not empty
-      if (data['customers'] != null && data['customers'].isNotEmpty) {
-        var customer = data['customers'][0];
-        // check if the email is valid
-        if (customer['email'] == email) {
-          bool passwordMatch = BCrypt.checkpw(password, customer['passwd']);
-          if (passwordMatch) {
-            UserData.email = customer['email'];
-            UserData.firstname = customer['firstname'];
-            UserData.lastname = customer['lastname'];
-            UserData.id = customer['id'].toString();
 
-            // Navigate to NavigationMenu and clear the navigation stack
-            Get.offAll(() => NavigationMenu());
-            return;
-          } else {
-            showErrorDialog(context, 'Mott de passe invalide');
-            return;
+    // Check if the response status code is 200
+    if (response.statusCode == 200) {
+      try {
+        var data = json.decode(response.body);
+
+        // Ensure 'customers' exists and is a list
+        if (data['customers'] != null && data['customers'] is List && data['customers'].isNotEmpty) {
+          var customer = data['customers'][0];
+
+          // Check if the email matches
+          if (customer['email'] == email) {
+            bool passwordMatch = BCrypt.checkpw(password, customer['passwd']);
+            if (passwordMatch) {
+              UserData.email = customer['email'];
+              UserData.firstname = customer['firstname'];
+              UserData.lastname = customer['lastname'];
+              UserData.id = customer['id'].toString();
+
+              // Navigate to NavigationMenu and clear the navigation stack
+              Get.offAll(() => NavigationMenu());
+              return;
+            } else {
+              showErrorDialog(context, 'Mot de passe invalide');
+              return;
+            }
           }
         }
-      } else {
+
+        // If no customers found or invalid structure
         showErrorDialog(context, 'Aucun utilisateur trouvé avec cet e-mail.');
+      } catch (e) {
+        // Handle JSON decoding or other unexpected errors
+        showErrorDialog(context, 'Aucun utilisateur trouvé avec cet e-mail.');
+        print('Error decoding response: $e');
       }
     } else {
+      // Handle non-200 response
       showErrorDialog(context, 'Erreur de connexion.');
     }
   }
@@ -317,12 +326,14 @@ class AlkLoginHeader extends StatelessWidget {
  /// 4.  Check if the email is valid
  /// 5.  Check if the response status code is 200
  /// 6.  Decode the response body
- /// 7.  Check if the data is not empty
+ /// 7.  Ensure 'customers' exists and is a list
+ /// 8.  Check if the data is not empty
  /// 9.  Check if the password is valid
  /// 10.  Set the user data
+ /// 11.  Handle JSON decoding or other unexpected errors
  /// 12.  Show an error dialog
  /// 13.  Build the login screen
  /// 14.  Stores the Customers data in UserData class
  /// 15.  Redirects to SignUpScreen upon Pressing the Create Account Button
  /// 16.  Redirects to NavigationMenu upon successful login
- 
+
