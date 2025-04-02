@@ -93,7 +93,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
     final productProvider = Get.find<ProductProvider>();
     // If loading, show a loading indicator
     if (isLoadingStock) {
-      return Container(
+      return SizedBox(
           height: 100,
           child: Center(child: CircularProgressIndicator())); // Or any loading indicator
     }

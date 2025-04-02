@@ -21,7 +21,7 @@ class ProductCardControllerTax {
 
   // Define categories and products per category
   final List<int> categoryIds = [2];
-  final int productsPerCategory = 12;
+  final int productsPerCategory = 18;
 
   Future<Map<String, dynamic>?> fetchProductData(int productIndex) async {
     try {
@@ -112,28 +112,77 @@ class ProductCardControllerTax {
     print("📡 Fetching productIds...");
 
     final List<int> productIds = [];
+    int attempts = 0; // To prevent infinite loops
+    const int maxAttempts = 5; // Limit the number of attempts to fetch more IDs
+    const int batchSize = 100; // Fetch product IDs in batches of 100
 
     // Fetch products from each category
     for (int categoryId in categoryIds) {
-      List<int> categoryProductIds =
-          await productListCategory.fetchProductIdsFromCategory(categoryId);
+      while (productIds.length < productsPerCategory && attempts < maxAttempts) {
+        attempts++;
+        List<int> categoryProductIds =
+            await productListCategory.fetchProductIdsFromCategory(categoryId);
 
-      // Add products from the category to the overall list
-       for (var i = 0; i < productsPerCategory; i++) {
-          if(categoryProductIds.length > i ){
-         productIds.add(categoryProductIds[i]);
-       }
+        // Fetch details for these product IDs in batches
+        for (int i = 0; i < categoryProductIds.length; i += batchSize) {
+          final batch = categoryProductIds.sublist(
+            i,
+            (i + batchSize > categoryProductIds.length)
+                ? categoryProductIds.length
+                : i + batchSize,
+          );
+
+          String productIdsQuery = batch.join('|');
+          final productApi =
+              'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsQuery]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+
+          final response = await http.get(Uri.parse(productApi));
+          if (response.statusCode != 200) {
+            print("❌ Failed to fetch product details for filtering.");
+            continue;
+          }
+
+          final productData = json.decode(utf8.decode(response.bodyBytes));
+          if (!productData.containsKey('products')) {
+            print("❌ No product data found for filtering.");
+            continue;
+          }
+
+          List<Map<String, dynamic>> rawProducts =
+              List<Map<String, dynamic>>.from(productData['products']);
+
+          // Filter active products
+          List<int> activeProductIds = rawProducts
+              .where((product) =>
+                  product.containsKey('active') &&
+                  product['active'].toString() == '1')
+              .map((product) => int.parse(product['id'].toString()))
+              .toList();
+
+          productIds.addAll(activeProductIds);
+
+          // Break if we have enough product IDs
+          if (productIds.length >= productsPerCategory) {
+            break;
+          }
+        }
+
+        // Break if we have enough product IDs
+        if (productIds.length >= productsPerCategory) {
+          break;
+        }
+
+        print("🔄 Loading more product IDs for Category ID: $categoryId...");
       }
-
     }
 
     if (productIds.isEmpty) {
-      print("❌ No product IDs fetched.");
+      print("❌ No active product IDs fetched.");
       return;
     }
 
-    cachedProductIds = productIds; //  Store fetched IDs
-    print("✅ Cached Product IDs: $cachedProductIds"); //  Logs only once!
+    cachedProductIds = productIds; // Store fetched IDs
+    print("✅ Cached Product IDs: $cachedProductIds"); // Logs only once!
   }
 
   //

@@ -28,7 +28,7 @@ class AddressData {
     phone = '';
     alias = 'Mon adresse';
     id_country = '208';
-   ;
+   
   }
 
 }
