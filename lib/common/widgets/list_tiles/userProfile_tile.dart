@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
@@ -21,11 +23,15 @@ class AlkProfileTile extends StatelessWidget {
         size: 20,
       ),
       title: Text(
-        "${UserData.firstname} ${UserData.lastname}",
+        "${utf8.decode(UserData.firstname.runes.toList())} ${utf8.decode(UserData.lastname.runes.toList())}", 
         style: Theme.of(context)
             .textTheme
             .headlineSmall!
-            .apply(color: AlkColors.white),
+            .copyWith(
+              color: AlkColors.white,
+              fontFamily: 'Cairo', // Explicitly set the Cairo font
+            )
+            
       ),
       subtitle: Text("${UserData.email} ",
       style: Theme.of(context).textTheme.labelMedium!.apply(color: AlkColors.white),),

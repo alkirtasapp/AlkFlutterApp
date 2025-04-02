@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../common/widgets/appbar/appbar.dart';
@@ -29,11 +31,11 @@ class AlkHomeAppBar extends StatelessWidget {
                 .apply(color: AlkColors.grey),
           ),
           Text(
-            "${UserData.firstname} ",
-            style: Theme.of(context)
-                .textTheme
-                .headlineSmall!
-                .apply(color: AlkColors.white),
+            utf8.decode(UserData.firstname.runes.toList()),
+            style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                  color: AlkColors.white,
+                  fontFamily: 'Cairo', // Explicitly set the Cairo font
+                ),
           ),
         ],
       ),
