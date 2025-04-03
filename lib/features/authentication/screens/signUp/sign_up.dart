@@ -1,3 +1,4 @@
+import 'package:alkirtas/features/authentication/screens/signUp/tos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
@@ -17,7 +18,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final SignUpController _controller = SignUpController();
   bool _isChecked = false; // Terms of Use checkbox state
-  bool _obscurePassword = true; //for password visibility
+  bool _obscurePassword = true; // for password visibility
   bool _obscureConfirmPassword = true; // for confirm password visibility
 
   // Handle sign up
@@ -36,7 +37,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AlkAppBar(title: Text ("Créer un compte"),),
+      appBar: AlkAppBar(
+        title: const Text("Créer un compte"),
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(AlkSize.defaultSpace),
@@ -45,11 +48,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("  C'est rapide et facile ! 👋 ",
-                  style: Theme.of(context).textTheme.titleMedium),
-                  
-
-                const SizedBox(height: AlkSize.spaceBtwSections/2),
+                Text(
+                  "  C'est rapide et facile 👋..! ",
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: AlkSize.spaceBtwSections / 2),
 
                 /// Titre (Sexe)
                 Text("Titre", style: Theme.of(context).textTheme.titleMedium),
@@ -204,8 +207,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         setState(() => _isChecked = newValue!);
                       },
                     ),
-                    const Expanded(
-                      child: Text("J'accepte les termes et conditions."),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          // Navigate to the Terms and Conditions screen
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const TermsAndConditionsScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "J'accepte les termes et les conditions d'utilisation.",
+                          style: TextStyle(
+                            decoration: TextDecoration.underline, // Underline the text
+                            color: Theme.of(context).primaryColor, // Use primary color
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -238,3 +257,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
+
+/// Screen to display the Terms and Conditions as part of the app
+
