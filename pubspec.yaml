@@ -35,6 +35,7 @@ dependencies:
   #provider for pagination
   provider: ^6.0.5  
 
+  webview_flutter: ^4.10.0
 
 
 # Development-only dependencies
@@ -90,5 +91,5 @@ flutter_launcher_icons:
   ios: "AppIcon"
   image_path: "lib/assets/icons/icon.png"
   min_sdk_android: 21 
-  remove_alpha_ios: true  
+  remove_alpha_ios: true
 

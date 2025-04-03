@@ -1,4 +1,8 @@
 import 'dart:convert';
+import 'package:alkirtas/features/authentication/screens/login/log_in_divider.dart';
+import 'package:alkirtas/features/authentication/screens/login/log_in_footer.dart';
+import 'package:alkirtas/features/authentication/screens/login/log_in_form.dart';
+import 'package:alkirtas/features/authentication/screens/login/log_in_header.dart';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -25,7 +29,7 @@ class LoginScreen extends StatelessWidget {
 
     // Check if the email and password fields are empty
     if (email.isEmpty || password.isEmpty) {
-      showErrorDialog(context, 'Please fill in both fields.');
+      showErrorDialog(context, 'Veuillez remplir les deux champs.');
       return;
     }
 
@@ -123,11 +127,11 @@ class LoginScreen extends StatelessWidget {
               ),
 
               /// Divider
-              AlkLoginDivider(dark: dark),
+              //AlkLoginDivider(dark: dark), *will be used once FireBase is implemented*
               const SizedBox(height: AlkSize.spaceBtwSections),
 
               /// Footer with social login buttons
-              AlkLoginFooter()
+              //AlkLoginFooter()   *will be used once FireBase is implemented*
             ],
           ),
         ),
@@ -136,190 +140,11 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-class AlkLoginFooter extends StatelessWidget {
-  const AlkLoginFooter({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AlkColors.grey),
-            borderRadius: BorderRadius.circular(100),
-          ),
-          child: IconButton(
-            onPressed: () {},
-            icon: const Image(
-              width: AlkSize.iconMd,
-              height: AlkSize.iconMd,
-              image: AssetImage(AlkImages.google),
-            ),
-          ),
-        ),
-        const SizedBox(width: AlkSize.spaceBtwItems),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AlkColors.grey),
-            borderRadius: BorderRadius.circular(100),
-          ),
-          child: IconButton(
-            onPressed: () {},
-            icon: const Image(
-              width: AlkSize.iconMd,
-              height: AlkSize.iconMd,
-              image: AssetImage(AlkImages.facebook),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
-class AlkLoginDivider extends StatelessWidget {
-  const AlkLoginDivider({super.key, required this.dark});
 
-  final bool dark;
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Flexible(
-          child: Divider(
-            color: dark ? AlkColors.darkGrey : AlkColors.grey,
-            thickness: 0.5,
-            indent: 60,
-            endIndent: 5,
-          ),
-        ),
-        Text(
-          'ou continuez avec',
-          style: Theme.of(context).textTheme.labelMedium,
-        ),
-        Flexible(
-          child: Divider(
-            color: dark ? AlkColors.darkGrey : AlkColors.grey,
-            thickness: 0.5,
-            indent: 5,
-            endIndent: 60,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
-class AlkLoginForm extends StatelessWidget {
-  final TextEditingController emailController;
-  final TextEditingController passwordController;
-  final void Function(BuildContext) onSignIn;
-    final RxBool isObscured = true.obs;
-
-   AlkLoginForm({
-    super.key,
-    required this.emailController,
-    required this.passwordController,
-    required this.onSignIn,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Form(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AlkSize.spaceBtwSections),
-        child: Column(
-          children: [
-            // Email Input
-            TextFormField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Iconsax.direct_right),
-                label: Text('Email'),
-              ),
-            ),
-            const SizedBox(height: AlkSize.spaceBtwInputFields),
-            // Password Input with Visibility Toggle
-            Obx(() => TextFormField(
-                  controller: passwordController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Iconsax.password_check),
-                    labelText: 'Mot de passe',
-                    suffixIcon: IconButton(
-                      icon: Icon(isObscured.value ? Iconsax.eye_slash : Iconsax.eye),
-                      onPressed: () {
-                        isObscured.value = !isObscured.value;
-                      },
-                    ),
-                  ),
-                  obscureText: isObscured.value,
-                )),
-            const SizedBox(height: AlkSize.spaceBtwInputFields / 2),
-            // Remember Me and Forgot Password
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {},
-                  child: const Text('Mot de passe oublié?'),
-                ),
-              ],
-            ),
-            const SizedBox(height: AlkSize.spaceBtwSections),
-            // Sign In Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purpleAccent[700],
-                ),
-                onPressed: () => onSignIn(context),
-                child: const Text('Connexion',style: TextStyle(color: Colors.white),),
-              ),
-            ),
-            const SizedBox(height: AlkSize.spaceBtwItems),
-            // Create Account Button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Get.to(() => const SignUpScreen()),
-                child: const Text('Créer un compte'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class AlkLoginHeader extends StatelessWidget {
-  const AlkLoginHeader({super.key, required this.dark});
-
-  final bool dark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Image(
-          height: 150,
-          image: AssetImage(
-              dark ? AlkImages.darkAppLogo : AlkImages.lighAppLogo),
-        ),
-        const SizedBox(height: AlkSize.lg),
-        Text(
-          'Connectez-vous à Votre Compte',
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ],
-    );
-  }
-}
  /// 1.  Import the required packages
  /// 2.  Create a function to sign in the user
  /// 3.  Check if the email and password fields are empty 

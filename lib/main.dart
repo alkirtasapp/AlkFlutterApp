@@ -1,13 +1,16 @@
+import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:alkirtas/app.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:alkirtas/common/widgets/providers/product_provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+ 
 
   // Initialize Hive
   await Hive.initFlutter();

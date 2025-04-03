@@ -100,13 +100,17 @@ class SettingScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                            backgroundColor: AlkColors.primaryColor),               
-                        onPressed: () => Get.to(()=> LoginScreen()),
-                        child: const Text('Déconnexion',style: TextStyle(
-                          color: Colors.white
-                        ),)),
-                        
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: AlkColors.primaryColor,
+                      ),
+                      onPressed: () => Get.offAll(() => LoginScreen()),
+                      child: const Text(
+                        'Déconnexion',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
