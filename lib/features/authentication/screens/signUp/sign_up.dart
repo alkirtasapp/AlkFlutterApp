@@ -36,7 +36,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AlkAppBar(),
+      appBar: AlkAppBar(title: Text ("Créer un compte"),),
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(AlkSize.defaultSpace),
@@ -45,9 +45,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Créons votre compte...',
-                    style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: AlkSize.spaceBtwSections),
+                Text("  C'est rapide et facile ! 👋 ",
+                  style: Theme.of(context).textTheme.titleMedium),
+                  
+
+                const SizedBox(height: AlkSize.spaceBtwSections/2),
 
                 /// Titre (Sexe)
                 Text("Titre", style: Theme.of(context).textTheme.titleMedium),

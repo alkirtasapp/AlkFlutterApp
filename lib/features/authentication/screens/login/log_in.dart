@@ -145,20 +145,3 @@ class LoginScreen extends StatelessWidget {
 
 
 
- /// 1.  Import the required packages
- /// 2.  Create a function to sign in the user
- /// 3.  Check if the email and password fields are empty 
- /// 4.  Check if the email is valid
- /// 5.  Check if the response status code is 200
- /// 6.  Decode the response body
- /// 7.  Ensure 'customers' exists and is a list
- /// 8.  Check if the data is not empty
- /// 9.  Check if the password is valid
- /// 10.  Set the user data
- /// 11.  Handle JSON decoding or other unexpected errors
- /// 12.  Show an error dialog
- /// 13.  Build the login screen
- /// 14.  Stores the Customers data in UserData class
- /// 15.  Redirects to SignUpScreen upon Pressing the Create Account Button
- /// 16.  Redirects to NavigationMenu upon successful login
-

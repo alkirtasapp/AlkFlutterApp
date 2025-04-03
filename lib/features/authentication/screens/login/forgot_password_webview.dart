@@ -29,7 +29,9 @@ class ForgotPasswordWebView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Réinitialiser le mot de passe'),
+        title: const Text('Réinitialiser le mot de passe',style: TextStyle(color: Colors.white),),
+        backgroundColor: Colors.purple[600], 
+        
       ),
       body: WebViewWidget(controller: controller), // Use WebViewWidget
     );
