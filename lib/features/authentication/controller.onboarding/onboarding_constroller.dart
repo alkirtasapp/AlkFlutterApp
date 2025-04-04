@@ -10,24 +10,23 @@ class OnboardingConstroller extends GetxController {
   final pageController = PageController();
   Rx<int> currentPageIndex = 0.obs;
 
-  // Update Current Index When Page Scroll 
+  // Getter to check if the current page is the last page
+  bool get isLastPage => currentPageIndex.value == 2;
+
+  // Update Current Index When Page Scroll
   void updatePageIndicator(index) => currentPageIndex.value = index;
-   
+
   // Jump to the specific dot selected page
   void dotNavigationClick(index) {
     currentPageIndex.value = index;
     pageController.jumpToPage(index);
   }
-   
+
   // Update Current Index & jump to next page
   void nextPage() async {
-    if (currentPageIndex.value == 2) {
-      // Set onboarding completion flag
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('hasSeenOnboarding', true);
-
-      // Navigate to LoginScreen and clear the navigation stack
-      Get.offAll(() => LoginScreen());
+    if (isLastPage) {
+      await completeOnboarding(); // Mark onboarding as complete
+      Get.offAll(() => LoginScreen()); // Navigate to LoginScreen
     } else {
       pageController.nextPage(duration: 300.milliseconds, curve: Curves.ease);
     }
@@ -35,11 +34,13 @@ class OnboardingConstroller extends GetxController {
 
   // Update Current Index & jump to last page
   void skipPage() async {
-    // Set onboarding completion flag
+    await completeOnboarding(); // Mark onboarding as complete
+    Get.offAll(() => LoginScreen()); // Navigate to LoginScreen
+  }
+
+  // Mark onboarding as complete in SharedPreferences
+  Future<void> completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasSeenOnboarding', true);
-
-    // Navigate to LoginScreen and clear the navigation stack
-    Get.offAll(() => LoginScreen());
   }
 }

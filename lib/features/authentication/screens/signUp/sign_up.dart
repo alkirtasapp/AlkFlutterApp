@@ -258,5 +258,5 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 }
 
-/// Screen to display the Terms and Conditions as part of the app
+
 

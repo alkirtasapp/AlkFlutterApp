@@ -149,7 +149,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
               ),
               
               Text(
-                "L''applicatin mobile Alkirtas est une publication de :\nALKIRTAS SARL,\nComplexe BIZERTE CENTRE N°30 7000\nBizerte Tunisie\nLes marques citées appartiennent à leurs propriétaires respectifs.",
+                "L'applicatin mobile Alkirtas est une publication de :\nALKIRTAS SARL,\nComplexe BIZERTE CENTRE N°30 7000\nBizerte Tunisie\nLes marques citées appartiennent à leurs propriétaires respectifs.",
                                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
