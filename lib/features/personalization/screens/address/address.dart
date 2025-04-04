@@ -4,6 +4,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/constants/size.dart';
+import 'package:alkirtas/data/controllers/addresses_controller.dart';
 
 class AddressScreen extends StatefulWidget {
   const AddressScreen({super.key});
@@ -13,15 +14,33 @@ class AddressScreen extends StatefulWidget {
 }
 
 class _AddressScreenState extends State<AddressScreen> {
+  final AddressController addressController = Get.put(AddressController());
   final _formKey = GlobalKey<FormState>();
 
   final firstNameController = TextEditingController(text: AddressData.firstname);
   final lastNameController = TextEditingController(text: AddressData.lastname);
   final phoneController = TextEditingController(text: AddressData.phone);
-  final addressController = TextEditingController(text: AddressData.address1);
+  final addressFieldController = TextEditingController(text: AddressData.address1); // Renamed
   final postalCodeController = TextEditingController(text: AddressData.postcode);
   final cityController = TextEditingController(text: AddressData.city);
   final gouvernoratController = TextEditingController(text: AddressData.id_state);
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch the existing address when the screen is initialized
+    addressController.fetchCustomerAddress().then((_) {
+      setState(() {
+        firstNameController.text = AddressData.firstname;
+        lastNameController.text = AddressData.lastname;
+        phoneController.text = AddressData.phone;
+        addressFieldController.text = AddressData.address1; // Updated
+        postalCodeController.text = AddressData.postcode;
+        cityController.text = AddressData.city;
+        gouvernoratController.text = AddressData.id_state;
+      });
+    });
+  }
 
   // Validator for required fields
   String? _validateField(String? value) {
@@ -110,7 +129,7 @@ class _AddressScreenState extends State<AddressScreen> {
 
                 // Address
                 TextFormField(
-                  controller: addressController,
+                  controller: addressFieldController, // Updated
                   decoration: const InputDecoration(
                     labelText: 'Adresse',
                     labelStyle: TextStyle(color: Colors.grey),
@@ -167,7 +186,7 @@ class _AddressScreenState extends State<AddressScreen> {
                         AddressData.firstname = firstNameController.text;
                         AddressData.lastname = lastNameController.text;
                         AddressData.phone = phoneController.text;
-                        AddressData.address1 = addressController.text;
+                        AddressData.address1 = addressFieldController.text; // Updated
                         AddressData.postcode = postalCodeController.text;
                         AddressData.city = cityController.text;
                         AddressData.id_state = gouvernoratController.text;
