@@ -49,7 +49,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "  C'est rapide et facile 👋..! ",
+                  "  C'est simple , facile et rapide! 👋 ",
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AlkSize.spaceBtwSections / 2),

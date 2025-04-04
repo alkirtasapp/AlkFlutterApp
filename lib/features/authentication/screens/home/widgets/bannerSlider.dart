@@ -40,7 +40,7 @@ class AlkBannerSlider extends StatelessWidget {
                AlkRoundedImage(imageUrl: AlkImages.banner5),
              ],
               options: CarouselOptions(
-               viewportFraction: 1.8,
+               viewportFraction: 1.4,
                onPageChanged: (index,_)=>controller.updatePageIndicator(index)
               ),
               ),
