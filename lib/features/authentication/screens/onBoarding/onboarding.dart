@@ -102,12 +102,12 @@ class OnBoardingScreen extends StatelessWidget {
               onBoardingPage(
                 image: AlkImages.onBoardingImage2,
                 title: AlkTexts.onBoardingTitle1,
-                subtitle: AlkTexts.onBoardingSsubtitle1,
+                subtitle: AlkTexts.onBoardingSsubtitle2,
               ),
               onBoardingPage(
                 image: AlkImages.onBoardingImage3,
                 title: AlkTexts.onBoardingTitle1,
-                subtitle: AlkTexts.onBoardingSsubtitle1,
+                subtitle: AlkTexts.onBoardingSsubtitle3,
               )
             ],
           ),

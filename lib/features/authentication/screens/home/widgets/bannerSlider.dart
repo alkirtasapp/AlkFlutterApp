@@ -19,62 +19,55 @@ class AlkBannerSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put (HomeController());
+    final controller = Get.put(HomeController());
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(100)
+        borderRadius: BorderRadius.circular(100),
       ),
       child: Column(
-        
         children: [
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(1000)
+              borderRadius: BorderRadius.circular(1000),
             ),
             child: CarouselSlider(
-             items: [
-               
-               AlkRoundedImage(imageUrl: AlkImages.banner2),
-               AlkRoundedImage(imageUrl: AlkImages.banner3),
-               AlkRoundedImage(imageUrl: AlkImages.banner4),
-               AlkRoundedImage(imageUrl: AlkImages.banner5),
-             ],
+              items: [
+                AlkRoundedImage(imageUrl: AlkImages.banner2),
+                AlkRoundedImage(imageUrl: AlkImages.banner3),
+                AlkRoundedImage(imageUrl: AlkImages.banner4),
+                AlkRoundedImage(imageUrl: AlkImages.banner5),
+              ],
               options: CarouselOptions(
-               viewportFraction: 1.4,
-               onPageChanged: (index,_)=>controller.updatePageIndicator(index)
+                viewportFraction: 1.2,
+                autoPlay: true, // Enable autoPlay
+                autoPlayInterval: const Duration(seconds: 3), // Set interval
+                onPageChanged: (index, _) =>
+                    controller.updatePageIndicator(index),
               ),
-              ),
+            ),
           ),
-            const SizedBox(height: AlkSize.spaceBtwItems),
-      
-            Center (
-              child: Obx(
-                ()=>  Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                   for(int i =0; i<4 ;i++)
-                   AlkCircularContainer(
-                     width: 20,
-                     height: 4,
-                     margin: const EdgeInsets.only(right: 10),
-                     backgroundColor: controller.carousalCurrentIndex.value == i ? AlkColors.primaryColor : AlkColors.grey,
-              
-                     
-                   
+          const SizedBox(height: AlkSize.spaceBtwItems),
+          Center(
+            child: Obx(
+              () => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (int i = 0; i < 4; i++)
+                    AlkCircularContainer(
+                      width: 20,
+                      height: 6,
+                      margin: const EdgeInsets.only(right: 10),
+                      backgroundColor: controller.carousalCurrentIndex.value ==
+                              i
+                          ? AlkColors.primaryColor
+                          : AlkColors.grey,
                     ),
-                    
-                    
-                    
-                  ],
-                ),
+                ],
               ),
-            )
+            ),
+          ),
         ],
       ),
     );
   }
 }
-// this Class is used to display the banner slider in the home screen
-// it enables u to swipe through the different banners which exist on the asset u 
-// have provided in the images_strings.dart file
-// have to provide the path of the images in pubspec.yaml file
