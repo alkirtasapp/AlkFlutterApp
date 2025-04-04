@@ -23,7 +23,7 @@ class _AddressScreenState extends State<AddressScreen> {
   final addressFieldController = TextEditingController(text: AddressData.address1); // Renamed
   final postalCodeController = TextEditingController(text: AddressData.postcode);
   final cityController = TextEditingController(text: AddressData.city);
-  final gouvernoratController = TextEditingController(text: AddressData.id_state);
+  final gouvernoratController = TextEditingController(text: AddressData.address2);
 
   @override
   void initState() {
@@ -37,7 +37,7 @@ class _AddressScreenState extends State<AddressScreen> {
         addressFieldController.text = AddressData.address1; // Updated
         postalCodeController.text = AddressData.postcode;
         cityController.text = AddressData.city;
-        gouvernoratController.text = AddressData.id_state;
+        gouvernoratController.text = AddressData.address2;
       });
     });
   }
