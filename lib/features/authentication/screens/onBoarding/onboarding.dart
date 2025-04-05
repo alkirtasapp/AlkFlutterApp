@@ -60,7 +60,7 @@ class OnBoardingScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 16),
                   Text(
-                    "Pour plus d'informations, veuillez consulter notre site web www.alkirtas.com ou notre tél 72 413 913.", 
+                    "Pour plus d'informations, veuillez consulter notre site web www.alkirtas.com ou nous contacter via notre tél 72 413 913.", 
                   ),
                 ],
               ),

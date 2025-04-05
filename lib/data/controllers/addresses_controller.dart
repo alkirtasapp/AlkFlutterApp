@@ -13,7 +13,7 @@ class AddressController extends GetxController {
       isLoading.value = true;
 
       String url =
-          "https://www.alkirtas.com/api/addresses?limit=1&filter[id_customer]=${UserData.id}&display=full&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+          "https://www.alkirtas.com/api/addresses?limit=1&filter[id_customer]=${UserData.id}&display=full&filter[deleted]=0&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
 
       var response = await http.get(Uri.parse(url));
 
@@ -27,7 +27,7 @@ class AddressController extends GetxController {
           // Store the address in AddressData
           AddressData.id = address["id"].toString();
           AddressData.id_customer = address["id_customer"].toString();
-          AddressData.alias = address["alias"] ?? 'My Address';
+          AddressData.alias = address["alias"] ?? 'Mon adresse';
           AddressData.lastname = address["lastname"] ?? '';
           AddressData.firstname = address["firstname"] ?? '';
           AddressData.address1 = address["address1"] ?? '';

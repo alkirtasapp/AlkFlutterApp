@@ -21,38 +21,41 @@ class ProductCardControllerTax {
 
   // Define categories and products per category
   final List<int> categoryIds = [2];
-  final int productsPerCategory = 18;
+  final int productsPerCategory = 20;
 
   Future<Map<String, dynamic>?> fetchProductData(int productIndex) async {
     try {
-      //  Step 1: Fetch product IDs if not already fetched
+      // Step 1: Fetch product IDs if not already fetched
       if (cachedProductIds == null) {
         if (_fetchingProductsFuture != null) {
           print("🔄 Waiting for existing fetch productIds...");
-          //  Wait for ongoing fetch instead of starting new one
           await _fetchingProductsFuture;
         } else {
           _fetchingProductsFuture = _fetchProductIds();
           await _fetchingProductsFuture;
-          //  Reset after fetch completes
           _fetchingProductsFuture = null;
         }
       }
-      //  Step 2: Wait for any ongoing product details fetch
+
+      // Step 2: Wait for any ongoing product details fetch
       if (_fetchingProductsDetailsFuture != null) {
         print("🔄 Waiting for existing fetch product details...");
         await _fetchingProductsDetailsFuture;
       }
 
-      print("🔍 Final Product IDs: $cachedProductIds"); //  Logs only ONCE per session
+      print("🔍 Final Product IDs: $cachedProductIds");
 
-      //  Step 3: Fetch all product details in one API request
+      // Step 3: Fetch all product details in one API request
       if (cachedProducts == null && cachedProductIds != null) {
         _fetchingProductsDetailsFuture =
             _fetchAndProcessAllProductDetails(cachedProductIds!);
         await _fetchingProductsDetailsFuture;
         _fetchingProductsDetailsFuture = null;
+
+        // Reverse the cachedProducts list to display the latest products first
+        cachedProducts = cachedProducts?.reversed.toList();
       }
+
       print("✅ Final Products details");
 
       // Use random index with productIndex
