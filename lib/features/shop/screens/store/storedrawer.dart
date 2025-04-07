@@ -374,51 +374,60 @@ class _StorePageState extends State<StoreDrawer> {
             Expanded(
               child: isLoading
                   ? Center(child: CircularProgressIndicator())
-                  : NotificationListener<ScrollNotification>(
-                      onNotification: (ScrollNotification scrollInfo) {
-                        if (scrollInfo.metrics.pixels ==
-                                scrollInfo.metrics.maxScrollExtent &&
-                            !isFetchingMore) {
-                          if (isSearching) {
-                            _loadMoreSearchResults();
-                          } else {
-                            _loadMoreProducts();
-                          }
-                        }
-                        return false;
-                      },
-                      child: Stack(
-                        children: [
-                          AlkStoreGridDrawer(
-                            key: productListKey,
-                            itemCount: products.length,
-                            categoryId:
-                                isSearching ? -1 : selectedCategoryId,
-                            preloadedProducts: products,
+                  : products.isEmpty
+                      ? Center(
+                          child: Text(
+                            isSearching
+                                ? "Aucun résultat trouvé pour votre recherche."
+                                : "Aucun produit disponible.",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
                           ),
-                          if (isFetchingMore)
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              child: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: SizedBox(
-                                    width: 10,
-                                    child: LinearProgressIndicator(
-                                      borderRadius: BorderRadius.circular(10),
-                                      minHeight: 10,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.purple),
+                        )
+                      : NotificationListener<ScrollNotification>(
+                          onNotification: (ScrollNotification scrollInfo) {
+                            if (scrollInfo.metrics.pixels ==
+                                    scrollInfo.metrics.maxScrollExtent &&
+                                !isFetchingMore) {
+                              if (isSearching) {
+                                _loadMoreSearchResults();
+                              } else {
+                                _loadMoreProducts();
+                              }
+                            }
+                            return false;
+                          },
+                          child: Stack(
+                            children: [
+                              AlkStoreGridDrawer(
+                                key: productListKey,
+                                itemCount: products.length,
+                                categoryId:
+                                    isSearching ? -1 : selectedCategoryId,
+                                preloadedProducts: products,
+                              ),
+                              if (isFetchingMore)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: SizedBox(
+                                        width: 10,
+                                        child: LinearProgressIndicator(
+                                          borderRadius: BorderRadius.circular(10),
+                                          minHeight: 10,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                              Colors.purple),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                            ],
+                          ),
+                        ),
             ),
           ],
         ),
