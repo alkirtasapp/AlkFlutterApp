@@ -28,6 +28,7 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _formKey = GlobalKey<FormState>(); // Form Key for validation
   bool isUsingExistingAddress = false;
+  bool isLoading = false; // Add loading state
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final phoneController = TextEditingController();
@@ -170,318 +171,336 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       appBar: AppBar(
         title: Text('Checkout'),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(AlkSize.defaultSpace),
-          child: Column(
-            children: [
-              // Suggest existing address if available
-              if (AddressData.hasAddress())
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Adresse de livraison", // Translated to French
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    ListTile(
-                      title: Text("Utiliser l'adresse existante"), // Translated to French
-                      subtitle: Text(
-                          "${AddressData.firstname} ${AddressData.lastname}, ${AddressData.address1}, ${AddressData.city}, ${AddressData.postcode}, ${AddressData.phone}, ${AddressData.id_state}"),
-                      leading: Radio<bool>(
-                        value: true,
-                        groupValue: isUsingExistingAddress,
-                        onChanged: (value) {
-                          setState(() {
-                            isUsingExistingAddress = value!;
-                          });
-                        },
-                      ),
-                    ),
-                    ListTile(
-                      title: Text("Créer une nouvelle adresse"), // Translated to French
-                      leading: Radio<bool>(
-                        value: false,
-                        groupValue: isUsingExistingAddress,
-                        onChanged: (value) {
-                          setState(() {
-                            isUsingExistingAddress = value!;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              if (!isUsingExistingAddress)
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: lastNameController,
-                              decoration: InputDecoration(
-                                labelText: 'Nom',
-                                labelStyle: const TextStyle(color: Colors.grey),
-                                prefixIcon: const Icon(Iconsax.user),
-                              ),
-                              validator: _validateField,
-                            ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(AlkSize.defaultSpace),
+              child: Column(
+                children: [
+                  // Suggest existing address if available
+                  if (AddressData.hasAddress())
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Adresse de livraison", // Translated to French
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        ListTile(
+                          title: Text("Utiliser l'adresse existante"), // Translated to French
+                          subtitle: Text(
+                              "${AddressData.firstname} ${AddressData.lastname}, ${AddressData.address1}, ${AddressData.city}, ${AddressData.postcode}, ${AddressData.phone}, ${AddressData.id_state}"),
+                          leading: Radio<bool>(
+                            value: true,
+                            groupValue: isUsingExistingAddress,
+                            onChanged: (value) {
+                              setState(() {
+                                isUsingExistingAddress = value!;
+                              });
+                            },
                           ),
-                          SizedBox(width: AlkSize.spaceBtwInputFields),
-                          Expanded(
-                            child: TextFormField(
-                              controller: firstNameController,
-                              decoration: InputDecoration(
-                                labelText: 'Prénom',
-                                labelStyle: const TextStyle(color: Colors.grey),
-                                prefixIcon: const Icon(Iconsax.user),
+                        ),
+                        ListTile(
+                          title: Text("Créer une nouvelle adresse"), // Translated to French
+                          leading: Radio<bool>(
+                            value: false,
+                            groupValue: isUsingExistingAddress,
+                            onChanged: (value) {
+                              setState(() {
+                                isUsingExistingAddress = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (!isUsingExistingAddress)
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: lastNameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Nom',
+                                    labelStyle: const TextStyle(color: Colors.grey),
+                                    prefixIcon: const Icon(Iconsax.user),
+                                  ),
+                                  validator: _validateField,
+                                ),
                               ),
-                              validator: _validateField,
+                              SizedBox(width: AlkSize.spaceBtwInputFields),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: firstNameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Prénom',
+                                    labelStyle: const TextStyle(color: Colors.grey),
+                                    prefixIcon: const Icon(Iconsax.user),
+                                  ),
+                                  validator: _validateField,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AlkSize.spaceBtwInputFields),
+                          TextFormField(
+                            controller: phoneController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Téléphone',
+                              labelStyle: TextStyle(color: Colors.grey),
+                              prefixIcon: Icon(Iconsax.mobile),
                             ),
+                            validator: _validatePhoneNumber, // Apply phone number validation
+                          ),
+                          const SizedBox(height: AlkSize.spaceBtwInputFields),
+                          TextFormField(
+                            controller: adressController,
+                            decoration: const InputDecoration(
+                              labelText: 'Adresse ',
+                              labelStyle: TextStyle(color: Colors.grey),
+                              prefixIcon: Icon(Iconsax.house),
+                            ),
+                            validator: _validateField,
+                          ),
+                          const SizedBox(height: AlkSize.spaceBtwInputFields),
+                          TextFormField(
+                            controller: postalCodeController,
+                            decoration: const InputDecoration(
+                              labelText: 'Code postale',
+                              labelStyle: TextStyle(color: Colors.grey),
+                              prefixIcon: Icon(Iconsax.direct),
+                            ),
+                            validator: _validatePostCode,
+                          ),
+                          const SizedBox(height: AlkSize.spaceBtwInputFields),
+                          TextFormField(
+                            controller: cityController,
+                            decoration: const InputDecoration(
+                              labelText: 'Ville ',
+                              labelStyle: TextStyle(color: Colors.grey),
+                              prefixIcon: Icon(Iconsax.building),
+                            ),
+                            validator: _validateField,
+                          ),
+                          const SizedBox(height: AlkSize.spaceBtwInputFields),
+                          TextFormField(
+                            controller: gouverneratController,
+                            decoration: const InputDecoration(
+                              labelText: 'Gouvernorat',
+                              labelStyle: TextStyle(color: Colors.grey),
+                              prefixIcon: Icon(Iconsax.map_1),
+                            ),
+                            validator: _validateField,
                           ),
                         ],
                       ),
-                      const SizedBox(height: AlkSize.spaceBtwInputFields),
-                      TextFormField(
-                        controller: phoneController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Téléphone',
-                          labelStyle: TextStyle(color: Colors.grey),
-                          prefixIcon: Icon(Iconsax.mobile),
-                        ),
-                        validator: _validatePhoneNumber, // Apply phone number validation
+                    ),
+                  const SizedBox(height: AlkSize.spaceBtwInputFields),
+
+                  // Delivery Method Selection
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Méthode de livraison", // Translated to French
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
-                      const SizedBox(height: AlkSize.spaceBtwInputFields),
-                      TextFormField(
-                        controller: adressController,
-                        decoration: const InputDecoration(
-                          labelText: 'Adresse ',
-                          labelStyle: TextStyle(color: Colors.grey),
-                          prefixIcon: Icon(Iconsax.house),
+                      ListTile(
+                        title: Text("Alkirtas corniche"),
+                        leading: Radio<String>(
+                          value: "Alkirtas corniche",
+                          groupValue: selectedDeliveryMethod,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedDeliveryMethod = value!;
+                              deliveryFee = 0.0; // No delivery fee for Alkirtas corniche
+                            });
+                          },
                         ),
-                        validator: _validateField,
                       ),
-                      const SizedBox(height: AlkSize.spaceBtwInputFields),
-                      TextFormField(
-                        controller: postalCodeController,
-                        decoration: const InputDecoration(
-                          labelText: 'Code postale',
-                          labelStyle: TextStyle(color: Colors.grey),
-                          prefixIcon: Icon(Iconsax.direct),
+                      ListTile(
+                        title: Text("First Delivery"),
+                        leading: Radio<String>(
+                          value: "First Delivery",
+                          groupValue: selectedDeliveryMethod,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedDeliveryMethod = value!;
+                              deliveryFee = 8.0; // Delivery fee for First Delivery
+                            });
+                          },
                         ),
-                        validator: _validatePostCode,
-                      ),
-                      const SizedBox(height: AlkSize.spaceBtwInputFields),
-                      TextFormField(
-                        controller: cityController,
-                        decoration: const InputDecoration(
-                          labelText: 'Ville ',
-                          labelStyle: TextStyle(color: Colors.grey),
-                          prefixIcon: Icon(Iconsax.building),
-                        ),
-                        validator: _validateField,
-                      ),
-                      const SizedBox(height: AlkSize.spaceBtwInputFields),
-                      TextFormField(
-                        controller: gouverneratController,
-                        decoration: const InputDecoration(
-                          labelText: 'Gouvernorat',
-                          labelStyle: TextStyle(color: Colors.grey),
-                          prefixIcon: Icon(Iconsax.map_1),
-                        ),
-                        validator: _validateField,
                       ),
                     ],
                   ),
-                ),
-              const SizedBox(height: AlkSize.spaceBtwInputFields),
+                  const SizedBox(height: AlkSize.spaceBtwInputFields),
 
-              // Delivery Method Selection
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Méthode de livraison", // Translated to French
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                 // Terms & Conditions Checkbox (Always Visible)
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: isTermsAccepted,
+                        onChanged: (value) {
+                          setState(() {
+                            isTermsAccepted = value!;
+                          });
+                        },
+                      ),
+                      AlkTOUCHeckbox(), // Reintroduced the AlkTOUCHeckbox
+                    ],
                   ),
-                  ListTile(
-                    title: Text("Alkirtas corniche"),
-                    leading: Radio<String>(
-                      value: "Alkirtas corniche",
-                      groupValue: selectedDeliveryMethod,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedDeliveryMethod = value!;
-                          deliveryFee = 0.0; // No delivery fee for Alkirtas corniche
-                        });
-                      },
-                    ),
-                  ),
-                  ListTile(
-                    title: Text("First Delivery"),
-                    leading: Radio<String>(
-                      value: "First Delivery",
-                      groupValue: selectedDeliveryMethod,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedDeliveryMethod = value!;
-                          deliveryFee = 8.0; // Delivery fee for First Delivery
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AlkSize.spaceBtwInputFields),
+                  const SizedBox(height: AlkSize.spaceBtwInputFields),
 
-             // Terms & Conditions Checkbox (Always Visible)
-              Row(
-                children: [
-                  Checkbox(
-                    value: isTermsAccepted,
-                    onChanged: (value) {
-                      setState(() {
-                        isTermsAccepted = value!;
-                      });
-                    },
-                  ),
-                  AlkTOUCHeckbox(), // Reintroduced the AlkTOUCHeckbox
-                ],
-              ),
-              const SizedBox(height: AlkSize.spaceBtwInputFields),
+                  // Confirm Order Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(
+                          isTermsAccepted ? Colors.purpleAccent[700] : Colors.grey, // Button color changes
+                        ),
+                      ),
+                      onPressed: isTermsAccepted && !isLoading
+                          ? () async {
+                              setState(() {
+                                isLoading = true; // Start loading
+                              });
 
-              // Confirm Order Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(
-                      isTermsAccepted ? Colors.purpleAccent[700] : Colors.grey, // Button color changes
-                    ),
-                  ),
-                  onPressed: isTermsAccepted
-                      ? () async {
-                          try {
-                            // Step 1: Create Address (if needed)
-                            if (!isUsingExistingAddress) {
-                              if (_formKey.currentState!.validate()) {
-                                _formKey.currentState!.save();
+                              try {
+                                // Step 1: Create Address (if needed)
+                                if (!isUsingExistingAddress) {
+                                  if (_formKey.currentState!.validate()) {
+                                    _formKey.currentState!.save();
 
-                                AddressData.id_customer = UserData.id;
-                                AddressData.lastname = lastNameController.text;
-                                AddressData.firstname = firstNameController.text;
-                                AddressData.address1 = adressController.text;
-                                AddressData.postcode = postalCodeController.text;
-                                AddressData.city = cityController.text;
-                                AddressData.phone = phoneController.text;
-                                AddressData.id_country = "208"; // Tunisia
+                                    AddressData.id_customer = UserData.id;
+                                    AddressData.lastname = lastNameController.text;
+                                    AddressData.firstname = firstNameController.text;
+                                    AddressData.address1 = adressController.text;
+                                    AddressData.postcode = postalCodeController.text;
+                                    AddressData.city = cityController.text;
+                                    AddressData.phone = phoneController.text;
+                                    AddressData.id_country = "208"; // Tunisia
 
-                                final AddressController addressController =
-                                    Get.put(AddressController(), permanent: true);
+                                    final AddressController addressController =
+                                        Get.put(AddressController(), permanent: true);
 
-                                await addressController.createCustomerAddress();
-                              }
-                            }
+                                    await addressController.createCustomerAddress();
+                                  }
+                                }
 
-                            if (AddressData.id.isNotEmpty) {
-                              print("✅ Address confirmed: ${AddressData.id}");
+                                if (AddressData.id.isNotEmpty) {
+                                  print("✅ Address confirmed: ${AddressData.id}");
 
-                              // Step 2: Create Cart
-                              final CartController cartController = Get.put(CartController());
-                              String cartId = await cartController.createCartWithAddress(
-                                cartItems: cartProvider.cartItems,
-                                idAddressDelivery: AddressData.id,
-                                idCarrier: selectedDeliveryMethod == "Alkirtas corniche" ? 4 : 6,
-                              );
+                                  // Step 2: Create Cart
+                                  final CartController cartController = Get.put(CartController());
+                                  String cartId = await cartController.createCartWithAddress(
+                                    cartItems: cartProvider.cartItems,
+                                    idAddressDelivery: AddressData.id,
+                                    idCarrier: selectedDeliveryMethod == "Alkirtas corniche" ? 4 : 6,
+                                  );
 
-                              print("✅ Cart created successfully with ID: $cartId");
+                                  print("✅ Cart created successfully with ID: $cartId");
 
-                              // Step 3: Create Order
-                              final OrderController orderController = OrderController();
+                                  // Step 3: Create Order
+                                  final OrderController orderController = OrderController();
 
-                              final totalProducts = await calculateTotalProducts(cartProvider.cartItems); // After discounts
-                              final totalProductsWt = await calculateTotalProductsWt(cartProvider); // With tax and discounts
-                              final totalPaid = totalProductsWt + deliveryFee;
+                                  final totalProducts = await calculateTotalProducts(cartProvider.cartItems); // After discounts
+                                  final totalProductsWt = await calculateTotalProductsWt(cartProvider); // With tax and discounts
+                                  final totalPaid = totalProductsWt + deliveryFee;
 
-                              final orderSuccess = await orderController.createOrder(
-                                idCart: cartId,
-                                deliveryMethod: selectedDeliveryMethod,
-                                cartTotal: totalPaid,
-                                totalProducts: totalProducts,
-                                totalProductsWt: totalProductsWt,
-                              );
+                                  final orderSuccess = await orderController.createOrder(
+                                    idCart: cartId,
+                                    deliveryMethod: selectedDeliveryMethod,
+                                    cartTotal: totalPaid,
+                                    totalProducts: totalProducts,
+                                    totalProductsWt: totalProductsWt,
+                                  );
 
-                              if (orderSuccess) {
-                                print("✅ Order created successfully!");
+                                  if (orderSuccess) {
+                                    print("✅ Order created successfully!");
 
-                                // Show success notification
-                                Get.snackbar(
-                                  "Succès",
-                                  "Votre commande a été passée avec succès !",
-                                  snackPosition: SnackPosition.TOP,
-                                  backgroundColor: Colors.green,
-                                  colorText: Colors.white,
-                                  duration: const Duration(seconds: 3),
-                                  isDismissible: true,
-                                  dismissDirection: DismissDirection.vertical
-                                  
-                                );
+                                    // Show success notification
+                                    Get.snackbar(
+                                      "Succès",
+                                      "Votre commande a été passée avec succès !",
+                                      snackPosition: SnackPosition.TOP,
+                                      backgroundColor: Colors.green,
+                                      colorText: Colors.white,
+                                      duration: const Duration(seconds: 3),
+                                      isDismissible: true,
+                                      dismissDirection: DismissDirection.vertical
+                                    );
 
-                                // Redirect to the home page
-                                Get.offAll(() => const NavigationMenu(selectedMenu: 0));
-                              } else {
-                                print("❌ Order creation failed!");
+                                    // Redirect to the home page
+                                    Get.offAll(() => const NavigationMenu(selectedMenu: 0));
+                                  } else {
+                                    print("❌ Order creation failed!");
+                                    Get.snackbar(
+                                      "Erreur",
+                                      "Échec de la création de la commande. Veuillez réessayer.",
+                                      snackPosition: SnackPosition.TOP,
+                                      backgroundColor: Colors.red,
+                                      colorText: Colors.white,
+                                       duration: const Duration(seconds: 3),
+                                      isDismissible: true,
+                                      dismissDirection: DismissDirection.horizontal
+                                    );
+                                  }
+                                } else {
+                                  print("❌ Address creation failed! Cannot proceed.");
+                                  Get.snackbar(
+                                    "Erreur",
+                                    "Échec de la création de l'adresse. Veuillez réessayer.",
+                                    snackPosition: SnackPosition.TOP,
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                     duration: const Duration(seconds: 3),
+                                      isDismissible: true,
+                                      dismissDirection: DismissDirection.horizontal
+                                  );
+                                }
+                              } catch (e) {
+                                print("❌ Error during checkout: $e");
                                 Get.snackbar(
                                   "Erreur",
-                                  "Échec de la création de la commande. Veuillez réessayer.",
+                                  "Une erreur s'est produite. Veuillez réessayer.",
                                   snackPosition: SnackPosition.TOP,
                                   backgroundColor: Colors.red,
                                   colorText: Colors.white,
                                    duration: const Duration(seconds: 3),
-                                  isDismissible: true,
-                                  dismissDirection: DismissDirection.horizontal
+                                      isDismissible: true,
+                                      dismissDirection: DismissDirection.horizontal
                                 );
+                              } finally {
+                                setState(() {
+                                  isLoading = false; // Stop loading
+                                });
                               }
-                            } else {
-                              print("❌ Address creation failed! Cannot proceed.");
-                              Get.snackbar(
-                                "Erreur",
-                                "Échec de la création de l'adresse. Veuillez réessayer.",
-                                snackPosition: SnackPosition.TOP,
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                                 duration: const Duration(seconds: 3),
-                                  isDismissible: true,
-                                  dismissDirection: DismissDirection.horizontal
-                              );
                             }
-                          } catch (e) {
-                            print("❌ Error during checkout: $e");
-                            Get.snackbar(
-                              "Erreur",
-                              "Une erreur s'est produite. Veuillez réessayer.",
-                              snackPosition: SnackPosition.TOP,
-                              backgroundColor: Colors.red,
-                              colorText: Colors.white,
-                               duration: const Duration(seconds: 3),
-                                  isDismissible: true,
-                                  dismissDirection: DismissDirection.horizontal
-                            );
-                          }
-                        }
-                      : null,
-                  child: const Text('Confirmer la commande'),
-                ),
+                          : null,
+                      child: const Text('Confirmer la commande'),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      )
+          if (isLoading)
+            Container(
+              color: Colors.purple.withOpacity(0.5),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

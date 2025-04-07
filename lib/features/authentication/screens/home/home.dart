@@ -50,7 +50,7 @@ class HomeScreen extends StatelessWidget {
                           textColor: Colors.white,
                           showActionButton: false,
                         ),
-                        const SizedBox(height: AlkSize.spaceBtwItems),
+                        const SizedBox(height: AlkSize.spaceBtwItems/2),
 
                         ///Catégories
                         AlkHomeCategories(),
