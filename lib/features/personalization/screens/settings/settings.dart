@@ -88,13 +88,53 @@ class SettingScreen extends StatelessWidget {
                       title: 'Mes Commandes',
                       subtitle: 'Commandes en cours et terminées', onPressed: () {  },),*/
                   AlkSettingMenuTile(
-                      icon: Iconsax.discount_shape,
-                      title: 'Mes Coupons',
-                      subtitle: 'Liste de tous les coupons de réduction', onPressed: () {  }, ),
+                    icon: Iconsax.discount_shape,
+                    title: 'Mes Coupons',
+                    subtitle: 'Liste de tous les coupons de réduction',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('Fonctionnalité indisponible'),
+                            content: Text('Cette fonctionnalité n\'est pas encore disponible.'),
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text('OK'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
                   AlkSettingMenuTile(
-                      icon: Iconsax.notification,
-                      title: 'Notifications',
-                      subtitle: 'Définir tout type de message de notification', onPressed: () {  }, ),
+                    icon: Iconsax.notification,
+                    title: 'Notifications',
+                    subtitle: 'Définir tout type de message de notification',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('Fonctionnalité indisponible'),
+                            content: Text('Cette fonctionnalité n\'est pas encore disponible.'),
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text('OK'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
                   SizedBox(height: AlkSize.spaceBtwSections),
                   // Log out
                   SizedBox(

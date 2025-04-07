@@ -369,6 +369,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                       onPressed: isTermsAccepted && !isLoading
                           ? () async {
+                              // Validate the form if the user is creating a new address
+                              if (!isUsingExistingAddress && !_formKey.currentState!.validate()) {
+                                // If validation fails, stop the process
+                                return;
+                              }
+
                               setState(() {
                                 isLoading = true; // Start loading
                               });
@@ -376,23 +382,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               try {
                                 // Step 1: Create Address (if needed)
                                 if (!isUsingExistingAddress) {
-                                  if (_formKey.currentState!.validate()) {
-                                    _formKey.currentState!.save();
+                                  _formKey.currentState!.save();
 
-                                    AddressData.id_customer = UserData.id;
-                                    AddressData.lastname = lastNameController.text;
-                                    AddressData.firstname = firstNameController.text;
-                                    AddressData.address1 = adressController.text;
-                                    AddressData.postcode = postalCodeController.text;
-                                    AddressData.city = cityController.text;
-                                    AddressData.phone = phoneController.text;
-                                    AddressData.id_country = "208"; // Tunisia
+                                  AddressData.id_customer = UserData.id;
+                                  AddressData.lastname = lastNameController.text;
+                                  AddressData.firstname = firstNameController.text;
+                                  AddressData.address1 = adressController.text;
+                                  AddressData.postcode = postalCodeController.text;
+                                  AddressData.city = cityController.text;
+                                  AddressData.phone = phoneController.text;
+                                  AddressData.id_country = "208"; // Tunisia
 
-                                    final AddressController addressController =
-                                        Get.put(AddressController(), permanent: true);
+                                  final AddressController addressController =
+                                      Get.put(AddressController(), permanent: true);
 
-                                    await addressController.createCustomerAddress();
-                                  }
+                                  await addressController.createCustomerAddress();
                                 }
 
                                 if (AddressData.id.isNotEmpty) {
@@ -435,7 +439,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       colorText: Colors.white,
                                       duration: const Duration(seconds: 3),
                                       isDismissible: true,
-                                      dismissDirection: DismissDirection.vertical
+                                      dismissDirection: DismissDirection.vertical,
                                     );
 
                                     // Redirect to the home page
@@ -448,9 +452,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       snackPosition: SnackPosition.TOP,
                                       backgroundColor: Colors.red,
                                       colorText: Colors.white,
-                                       duration: const Duration(seconds: 3),
+                                      duration: const Duration(seconds: 3),
                                       isDismissible: true,
-                                      dismissDirection: DismissDirection.horizontal
+                                      dismissDirection: DismissDirection.horizontal,
                                     );
                                   }
                                 } else {
@@ -461,9 +465,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     snackPosition: SnackPosition.TOP,
                                     backgroundColor: Colors.red,
                                     colorText: Colors.white,
-                                     duration: const Duration(seconds: 3),
-                                      isDismissible: true,
-                                      dismissDirection: DismissDirection.horizontal
+                                    duration: const Duration(seconds: 3),
+                                    isDismissible: true,
+                                    dismissDirection: DismissDirection.horizontal,
                                   );
                                 }
                               } catch (e) {
@@ -474,9 +478,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   snackPosition: SnackPosition.TOP,
                                   backgroundColor: Colors.red,
                                   colorText: Colors.white,
-                                   duration: const Duration(seconds: 3),
-                                      isDismissible: true,
-                                      dismissDirection: DismissDirection.horizontal
+                                  duration: const Duration(seconds: 3),
+                                  isDismissible: true,
+                                  dismissDirection: DismissDirection.horizontal,
                                 );
                               } finally {
                                 setState(() {
