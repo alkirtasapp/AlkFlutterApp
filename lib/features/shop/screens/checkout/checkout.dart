@@ -169,7 +169,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Checkout'),
+        title: Text('Confirmation de commande'), 
       ),
       body: Stack(
         children: [
@@ -190,7 +190,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ListTile(
                           title: Text("Utiliser l'adresse existante"), // Translated to French
                           subtitle: Text(
-                              "${AddressData.firstname} ${AddressData.lastname}, ${AddressData.address1}, ${AddressData.city}, ${AddressData.postcode}, ${AddressData.phone}, ${AddressData.id_state}"),
+                              "${AddressData.firstname} ${AddressData.lastname}, ${AddressData.address1}, ${AddressData.city}, ${AddressData.postcode}, ${AddressData.phone}"),
                           leading: Radio<bool>(
                             value: true,
                             groupValue: isUsingExistingAddress,

@@ -23,7 +23,7 @@ class App extends StatelessWidget {
         } else {
           final hasSeenOnboarding = snapshot.data ?? false;
           return GetMaterialApp(
-            debugShowCheckedModeBanner: true,
+            debugShowCheckedModeBanner: false,
             themeMode: ThemeMode.light,
             theme: TAppTheme.lightTheme,
             darkTheme: TAppTheme.darkTheme,
