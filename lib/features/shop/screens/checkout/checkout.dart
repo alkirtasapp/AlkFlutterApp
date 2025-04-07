@@ -202,7 +202,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         ListTile(
-                          title: Text("Créer une nouvelle adresse"), // Translated to French
+                          title: Text("Créer une nouvelle adresse"), 
                           leading: Radio<bool>(
                             value: false,
                             groupValue: isUsingExistingAddress,

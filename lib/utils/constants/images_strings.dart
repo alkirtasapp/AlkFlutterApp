@@ -15,9 +15,9 @@ class AlkImages {
   
 
   //home Banners
-  static const String banner1 = "lib/assets/images/banners/banner_1.jpg";
+ 
   static const String banner2 = "lib/assets/images/banners/banner_1.jpg";
-  static const String banner3 = "lib/assets/images/banners/banner_1.jpg";
-  static const String banner4 = "lib/assets/images/banners/banner_1.jpg";
+  static const String banner3 = "lib/assets/images/banners/banner_2.jpg";
+  static const String banner4 = "lib/assets/images/banners/banner_3.jpg";
   static const String banner5 = "lib/assets/images/banners/banner_1.jpg";
 }

@@ -17,18 +17,31 @@ import 'package:http/http.dart' as http;
 
 import '../../../../utils/backendData/userData.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   LoginScreen({super.key});
-  // handle user inputs 
+
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-   
+  bool isLoading = false;
+
   void signInUser(BuildContext context) async {
+    setState(() {
+      isLoading = true; // Show the progress indicator
+    });
+
     final email = emailController.text;
     final password = passwordController.text;
 
     // Check if the email and password fields are empty
     if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        isLoading = false; // Hide the progress indicator
+      });
       showErrorDialog(context, 'Veuillez remplir les deux champs.');
       return;
     }
@@ -39,6 +52,10 @@ class LoginScreen extends StatelessWidget {
         'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU',
       ),
     );
+
+    setState(() {
+      isLoading = false; // Hide the progress indicator
+    });
 
     // Check if the response status code is 200
     if (response.statusCode == 200) {
@@ -106,35 +123,46 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = AlkHelperFunctions.isDarkMode(context);
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.only(
-            top: AlkSize.appBarHeight,
-            left: AlkSize.defaultSpace,
-            bottom: AlkSize.defaultSpace,
-            right: AlkSize.defaultSpace,
-          ),
-          child: Column(
-            children: [
-              /// Logo title and subtitle
-              AlkLoginHeader(dark: dark),
-
-              /// Form with email/password input and login logic
-              AlkLoginForm(
-                emailController: emailController,
-                passwordController: passwordController,
-                onSignIn: (context) => signInUser(context),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: AlkSize.appBarHeight,
+                left: AlkSize.defaultSpace,
+                bottom: AlkSize.defaultSpace,
+                right: AlkSize.defaultSpace,
               ),
+              child: Column(
+                children: [
+                  /// Logo title and subtitle
+                  AlkLoginHeader(dark: dark),
 
-              /// Divider
-              //AlkLoginDivider(dark: dark), *will be used once FireBase is implemented*
-              const SizedBox(height: AlkSize.spaceBtwSections),
+                  /// Form with email/password input and login logic
+                  AlkLoginForm(
+                    emailController: emailController,
+                    passwordController: passwordController,
+                    onSignIn: (context) => signInUser(context),
+                  ),
 
-              /// Footer with social login buttons
-              //AlkLoginFooter()   *will be used once FireBase is implemented*
-            ],
+                  /// Divider
+                  //AlkLoginDivider(dark: dark), *will be used once FireBase is implemented*
+                  const SizedBox(height: AlkSize.spaceBtwSections),
+
+                  /// Footer with social login buttons
+                  //AlkLoginFooter()   *will be used once FireBase is implemented*
+                ],
+              ),
+            ),
           ),
-        ),
+          if (isLoading)
+            Container(
+              color: Colors.purple.withOpacity(0.5),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+        ],
       ),
     );
   }
