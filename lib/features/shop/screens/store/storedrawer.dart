@@ -8,7 +8,9 @@ import '../../controllers/categories_store_controller.dart';
 import '../../controllers/product_controller_store.dart';
 
 class StoreDrawer extends StatefulWidget {
-  const StoreDrawer({super.key});
+  final int? initialCategoryId ;
+  final String? initialCategoryName;
+  const StoreDrawer({super.key, this.initialCategoryId, this.initialCategoryName});
 
   @override
   State<StoreDrawer> createState() => _StorePageState();
@@ -19,6 +21,7 @@ class _StorePageState extends State<StoreDrawer> {
       CategoriesStoreController();
   final ProductControllerStore productController = ProductControllerStore();
   final AlkSearchController searchController = AlkSearchController();
+  
 
   String selectedCategory = "";
   int selectedCategoryId = -1;
@@ -45,8 +48,11 @@ class _StorePageState extends State<StoreDrawer> {
     await categoriesController.fetchAllCategories();
     if (categoriesController.mainCategories.isNotEmpty) {
       setState(() {
-        selectedCategory = categoriesController.mainCategories.keys.first;
-        selectedCategoryId = categoriesController.mainCategories.values.first;
+        // Use the initial category if provided, otherwise default to the first category
+        selectedCategory = widget.initialCategoryName ??
+            categoriesController.mainCategories.keys.first;
+        selectedCategoryId = widget.initialCategoryId ??
+            categoriesController.mainCategories.values.first;
       });
 
       _fetchProductsForCategory(selectedCategoryId);

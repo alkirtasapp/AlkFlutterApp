@@ -1,6 +1,9 @@
+import 'package:alkirtas/features/shop/screens/store/storedrawer.dart';
+import 'package:alkirtas/navigation_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:get/get.dart';
 
 import '../../../../../common/widgets/image_text_widgets/vertical_image_text.dart';
 import '../../../../../utils/constants/colors.dart';
@@ -48,8 +51,7 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator() ,
-);
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (categories.isEmpty) {
@@ -67,9 +69,15 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
           return AlkVerticalImageText(
             title: category['name'] ?? 'Unknown',
             textColor: AlkColors.white,
-            onTap: () {},
+            onTap: () {
+              // Use NavigationController to navigate to StoreDrawer
+              final navigationController = Get.find<NavigationController>();
+              navigationController.navigateToStoreDrawer(
+                categoryId: category['id'],
+                categoryName: category['name'],
+              );
+            },
             backgroundColor: Colors.white,
-            
           );
         },
       ),

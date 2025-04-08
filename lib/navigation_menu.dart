@@ -84,9 +84,12 @@ class NavigationMenu extends StatelessWidget {
 }
 
 class NavigationController extends GetxController {
-  /// The index of the selected tab
   final Rx<int> selectedIndex;
-  final PageController pageController; // PageController for PageView
+  final PageController pageController;
+
+  // StoreDrawer parameters
+  final Rx<int?> initialCategoryId = Rx<int?>(null);
+  final Rx<String?> initialCategoryName = Rx<String?>(null);
 
   NavigationController(int initialIndex)
       : selectedIndex = initialIndex.obs,
@@ -94,14 +97,24 @@ class NavigationController extends GetxController {
 
   final screens = [
     const HomeScreen(),
-    const StoreDrawer(),
+    Obx(() => StoreDrawer(
+          initialCategoryId: Get.find<NavigationController>().initialCategoryId.value,
+          initialCategoryName: Get.find<NavigationController>().initialCategoryName.value,
+        )),
     const CartScreen(),
     const SettingScreen(),
   ];
 
+  void navigateToStoreDrawer({int? categoryId, String? categoryName}) {
+    initialCategoryId.value = categoryId;
+    initialCategoryName.value = categoryName;
+    selectedIndex.value = 1; // Switch to the StoreDrawer tab
+    pageController.jumpToPage(1);
+  }
+
   @override
   void onClose() {
-    pageController.dispose(); // Dispose the PageController when the controller is closed
+    pageController.dispose();
     super.onClose();
   }
 }

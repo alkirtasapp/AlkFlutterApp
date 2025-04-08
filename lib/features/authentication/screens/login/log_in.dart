@@ -18,7 +18,7 @@ import 'package:http/http.dart' as http;
 import '../../../../utils/backendData/userData.dart';
 
 class LoginScreen extends StatefulWidget {
-  LoginScreen({super.key});
+  const LoginScreen({super.key});
 
   @override
   _LoginScreenState createState() => _LoginScreenState();

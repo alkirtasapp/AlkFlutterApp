@@ -14,7 +14,7 @@ class AlkLoginForm extends StatefulWidget {
   final TextEditingController passwordController;
   final void Function(BuildContext) onSignIn;
 
-  AlkLoginForm({
+  const AlkLoginForm({
     super.key,
     required this.emailController,
     required this.passwordController,
