@@ -96,7 +96,7 @@ class NavigationController extends GetxController {
         pageController = PageController(initialPage: initialIndex);
 
   final screens = [
-    const HomeScreen(),
+     HomeScreen(),
     Obx(() => StoreDrawer(
           initialCategoryId: Get.find<NavigationController>().initialCategoryId.value,
           initialCategoryName: Get.find<NavigationController>().initialCategoryName.value,

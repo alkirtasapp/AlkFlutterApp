@@ -1,3 +1,4 @@
+import 'package:alkirtas/features/shop/screens/store/widgets/home_brands.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:alkirtas/common/widgets/appbar/appbar.dart';
@@ -80,68 +81,7 @@ class _StoreScreenState extends State<StoreScreen>{
                         ),
                         SizedBox(height: AlkSize.spaceBtwItems / 1.5),
 
-                        AlkBrandGridLayout(
-                          itemCount: 8,
-                          mainAxisExtent: 60,
-                          
-                          itemBuilder: (_, index) {
-                            //adding fetching brands logic here
-                            return  FutureBuilder<Map<String, dynamic>?>(
-                              future: _brandController.fetchBrandData(index),
-                              builder: (context, snapshot) {
-                                if ( !snapshot.hasData){
-                                  return const Center(
-                                    child: CircularProgressIndicator() );
-                                }
-                                  final brand = snapshot.data!;
-                            return GestureDetector(
-                              onTap: () {},
-                              child: AlkRoundedContainer(
-                                padding: EdgeInsets.all(0),
-                                
-                                showBorder: true,
-                                backgroundColor: Colors.transparent,
-                                child: Row(
-                                  children: [
-                                    // brand Image
-                                    Flexible(
-                                      child: AlkCircularImage(
-                                        image: 'https://www.alkirtas.com/img/m/${brand['id']}.jpg', // logo brand li jebneh bessif 
-                                        backgroundColor: Colors.transparent,
-                                        isNetworkImage: true,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                    /*
-                                    const SizedBox(
-                                        width: AlkSize.spaceBtwItems / 2),
-
-
-
-                                    // Text
-                                    Expanded(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          AlkBrandTitleText(
-                                            title: brand['name'],
-                                            brandTextSize: TextSizes.medium,
-                                          ),
-                                          /* Text('256 produits',
-                               overflow: TextOverflow.ellipsis,
-                               style: Theme.of(context).textTheme.labelMedium ,),*/
-                                        ],
-                                      ),
-                                    )*/
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-          })],
+                        AlkHomeBrands(brandController: _brandController)],
                     ),
                   ),
 
@@ -183,5 +123,6 @@ class _StoreScreenState extends State<StoreScreen>{
     );
   }
 }
+
 
 

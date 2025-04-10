@@ -40,7 +40,7 @@ class AlkBannerSlider extends StatelessWidget {
               options: CarouselOptions(
                 viewportFraction: 1.2,
                 autoPlay: true, // Enable autoPlay
-                autoPlayInterval: const Duration(seconds: 3), // Set interval
+                autoPlayInterval: const Duration(seconds: 5), // Set interval
                 onPageChanged: (index, _) =>
                     controller.updatePageIndicator(index),
               ),

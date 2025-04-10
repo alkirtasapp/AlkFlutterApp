@@ -1,0 +1,136 @@
+import 'package:alkirtas/common/widgets/custom_shapes/containers/primary_header_container.dart';
+import 'package:alkirtas/common/widgets/custom_shapes/containers/searchContainer.dart';
+import 'package:alkirtas/common/widgets/custom_shapes/containers/second_header_container.dart';
+import 'package:alkirtas/common/widgets/layout/carousel_layout.dart';
+import 'package:alkirtas/common/widgets/texts/section_heading.dart';
+import 'package:alkirtas/features/authentication/screens/home/widgets/bannerSlider.dart';
+import 'package:alkirtas/features/authentication/screens/home/widgets/homeAppBar.dart';
+import 'package:alkirtas/features/authentication/screens/home/widgets/homeCategories.dart';
+import 'package:alkirtas/features/shop/controllers/brand_controller.dart';
+import 'package:alkirtas/features/shop/screens/store/widgets/home_brands.dart';
+import 'package:alkirtas/navigation_menu.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:alkirtas/utils/constants/size.dart';
+
+
+class HomeScreen extends StatelessWidget {
+  final BrandController _brandController = BrandController();
+
+  HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header --
+            AlkPrimaryHeaderContainer(
+              child: Column(
+                children: [
+                  // APP BAR
+                  const AlkHomeAppBar(showCartIcon: true),
+                  const SizedBox(height: AlkSize.spaceBtwSections),
+
+                  // SEARCH BAR
+                  AlkSearchContainer(
+                    text: 'Découvrir ma boutique',
+                    icon: Iconsax.search_normal,
+                    onPressed: () {
+                      // Navigate to NavigationMenu, setting the store as the active tab
+                      Get.offAll(() => const NavigationMenu(selectedMenu: 1));
+                    },
+                  ),
+                  const SizedBox(height: AlkSize.spaceBtwSections),
+
+                  // CATEGORIES
+                  Padding(
+                    padding: const EdgeInsets.only(left: AlkSize.defaultSpace),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// Heading
+                        const AlkSectionHeading(
+                          title: 'Nos Catégories : ',
+                          textColor: Colors.white,
+                          showActionButton: false,
+                        ),
+                        const SizedBox(height: AlkSize.spaceBtwItems / 2),
+
+                        /// Categories
+                        const AlkHomeCategories(),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AlkSize.spaceBtwSections * 1.2),
+                ],
+              ),
+            ),
+
+            /// Body
+            Padding(
+              padding: const EdgeInsets.all(AlkSize.sm),
+              child: Column(
+                children: [
+                  // Banner Slider
+                  const AlkBannerSlider(),
+                  const SizedBox(height: AlkSize.spaceBtwSections / 1.5),
+
+                  // Popular Products Section
+                  const AlkSectionHeading(
+                    title: 'Produits populaires :',
+                    showActionButton: false,
+                  ),
+                  const SizedBox(height: AlkSize.spaceBtwSections / 1.5),
+
+                  // Products Grid
+                  AlkCarouselLayout(itemCount: 8, productsPerPage: 2,),
+                  const SizedBox(height: AlkSize.spaceBtwSections),
+
+                  // Brands Section
+                  AlkSecondHeaderContainer(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AlkSize.defaultSpace),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const AlkSectionHeading(
+                            title: 'Marques populaires : ',
+                            textColor: Colors.white,
+                            showActionButton: false,
+                          ),
+                          const SizedBox(height: AlkSize.spaceBtwItems / 1.5),
+
+                          // Brands Grid
+                          AlkHomeBrands(brandController: _brandController),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AlkSize.spaceBtwSections/2),
+
+                  // New Products Section
+                  const AlkSectionHeading(
+                    title: 'Nouveaux produits :',
+                    showActionButton: false,
+                  ),
+                  const SizedBox(height: AlkSize.spaceBtwSections / 1.5),
+
+                  // New Products Grid
+                  AlkCarouselLayout(itemCount: 8, productsPerPage: 2,),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+

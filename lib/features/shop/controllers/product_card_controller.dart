@@ -21,7 +21,7 @@ class ProductCardControllerTax {
 
   // Define categories and products per category
   final List<int> categoryIds = [2];
-  final int productsPerCategory = 20;
+  final int productsPerCategory = 10;
 
   Future<Map<String, dynamic>?> fetchProductData(int productIndex) async {
     try {
