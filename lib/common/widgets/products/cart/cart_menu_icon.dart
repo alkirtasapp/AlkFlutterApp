@@ -33,7 +33,7 @@ class AlkCartCounterIcon extends StatelessWidget {
                 width: 18,
                 height: 18,
                 decoration: BoxDecoration(
-                  color: AlkColors.black.withOpacity(0.5),
+                  color: Colors.yellowAccent.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Center(

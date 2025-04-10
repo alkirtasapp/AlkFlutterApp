@@ -1,11 +1,16 @@
+// d:\flutter\test\lib\features\authentication\screens\splash_wrapper.dart (Modified for Preloading)
 import 'package:alkirtas/features/shop/screens/splashscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:alkirtas/app.dart';
-import 'package:alkirtas/features/shop/controllers/product_card_controller.dart';
+// Removed: import 'package:alkirtas/features/shop/controllers/product_card_controller.dart'; // No longer preloading this
 import 'package:alkirtas/features/shop/controllers/categories_store_controller.dart';
-// Import the store product controller
-import 'package:alkirtas/features/shop/controllers/product_controller_store.dart';
-import 'package:hive/hive.dart';
+// Import the category product controller for static cache and preloading
+import 'package:alkirtas/features/shop/controllers/category_product_controller.dart';
+// Import http and convert for fetching categories directly
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+// Removed: import 'package:alkirtas/features/shop/controllers/product_controller_store.dart'; // Not preloading store products here anymore unless needed
+// Removed: import 'package:hive/hive.dart'; // Not using Hive cache for this preload
 
 class SplashWrapper extends StatefulWidget {
   const SplashWrapper({super.key});
@@ -13,7 +18,6 @@ class SplashWrapper extends StatefulWidget {
   @override
   State<SplashWrapper> createState() => _SplashWrapperState();
 }
-
 
 class _SplashWrapperState extends State<SplashWrapper> {
   bool isReady = false;
@@ -27,79 +31,115 @@ class _SplashWrapperState extends State<SplashWrapper> {
   Future<void> preloadAppData() async {
     try {
       print("🚀 Starting App Preload...");
-      // Note: Cache clearing is also done in main.dart, might be redundant here
-      // but keeping it for explicitness during preload phase.
-      final box = await Hive.openBox('productCache');
-      // await box.clear(); // Consider if clearing here AND in main.dart is needed.
-      // print("🧹 Product cache cleared during preload (if not already cleared in main).");
 
-      // --- Preload Categories First (Needed for Store Controller) ---
-      print("⏳ Preloading Categories...");
-      final categoriesController = CategoriesStoreController();
-      await categoriesController.fetchAllCategories();
-      print("✅ Categories Preloaded.");
+      // Clear the static cache in CategoryProductController on each app start
+      CategoryProductController.clearCache();
 
-      // --- Preload Product Card Data (for Home Screen Carousels, if applicable) ---
-      print("⏳ Preloading Product Card Data (Tax)...");
-      final productControllerTax = ProductCardControllerTax();
-      // Fetching index 0 is likely for the first item in a carousel or initial view
-      await productControllerTax.fetchProductData(0);
-      print("✅ Product Card Data Preloaded.");
-
-
-      // --- Preload Initial Store Products (for StoreDrawer) ---
-      print("⏳ Preloading Initial Store Products...");
-      final storeProductController = ProductControllerStore();
-      // Check if categories were loaded successfully and get the first main category ID
-      if (categoriesController.mainCategories.isNotEmpty) {
-        // Determine the default category ID StoreDrawer would use
-        final int firstCategoryId = categoriesController.mainCategories.values.first;
-        final int initialLimit = 10; // Match the limit used in StoreDrawer's initial fetch
-        final int initialOffset = 0; // Match the offset used in StoreDrawer's initial fetch
-
-        print("   -> Fetching initial products for Category ID: $firstCategoryId (Offset: $initialOffset, Limit: $initialLimit)");
-        // Fetch the first 'page' of products for the default category
-        await storeProductController.fetchProductDataStore(firstCategoryId, initialOffset, initialLimit);
-        // The result is automatically cached by fetchProductDataStore if successful
-        print("✅ Initial Store Products Preloaded (and cached) for Category ID: $firstCategoryId.");
-      } else {
-        print("⚠️ Could not preload store products: No categories found.");
+      // --- Preload Categories for HomeScreen Carousels (level_depth=2) ---
+      print("⏳ Preloading HomeScreen Categories (level_depth=2)...");
+      List<dynamic> categoriesForCarousels = [];
+      try {
+        // API URL from HomeScreen
+        const categoriesApiUrl =
+            'https://www.alkirtas.com/api/categories?filter[level_depth]=2&filter[active]=1&display=[id,name]&sort=[id_ASC]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+        final response = await http.get(Uri.parse(categoriesApiUrl));
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          categoriesForCarousels = data['categories'] ?? [];
+          print(
+              "✅ HomeScreen Categories Preloaded (${categoriesForCarousels.length}).");
+        } else {
+          // Log error but continue preloading other things if possible
+          print(
+              "⚠️ Failed to preload HomeScreen categories (Status: ${response.statusCode})");
+        }
+      } catch (e) {
+        // Log error but continue
+        print("❌ Error preloading HomeScreen categories: $e");
       }
 
-      // Optional: Add a small delay for splash screen visibility if desired
+      // --- Preload Products for Fetched Categories + Promotions ---
+      print("⏳ Preloading Products for Categories...");
+      List<Future<void>> productPreloadTasks = [];
+      final Set<int> categoryIdsToPreload = {};
+
+      // Add IDs from fetched categories (excluding specified ones)
+      final Set<int> excludedIds = {707, 711, 763}; // From HomeScreen
+      for (var category in categoriesForCarousels) {
+        if (category['id'] is int &&
+            !excludedIds.contains(category['id'] as int)) {
+          categoryIdsToPreload.add(category['id'] as int);
+        }
+      }
+
+      // Add the Promotions category ID (hardcoded in HomeScreen)
+      categoryIdsToPreload.add(15);
+
+      print("   -> Will attempt to preload products for Category IDs: $categoryIdsToPreload");
+
+      // Create tasks to fetch products for each category ID
+      for (int catId in categoryIdsToPreload) {
+        // Create a temporary controller instance just to trigger the static fetch
+        // Use the limit defined in HomeScreen's AlkCategoryCarouselLayout (itemCount: 8)
+        final controller = CategoryProductController(categoryId: catId, limit: 8);
+        // Add the fetch future to the list of tasks
+        productPreloadTasks.add(controller.fetchCategoryProducts());
+      }
+
+      // Wait for all product fetching tasks to complete (or fail individually)
+      // Use Future.wait with eagerError: false to allow successful preloads even if some fail
+      await Future.wait(productPreloadTasks, eagerError: false);
+      print(
+          "✅ Product Preloading Tasks Initiated/Completed (check logs for individual results).");
+
+
+      // --- Preload AlkHomeCategories Data (Optional - if needed/possible) ---
+      // This depends on how AlkHomeCategories fetches its data. If it uses a
+      // controller with a static cache similar to CategoryProductController,
+      // you could trigger its preload here. Otherwise, it might load on demand.
+      // print("⏳ Preloading AlkHomeCategories Data (if applicable)...");
+      // Example:
+      // final homeCategoriesController = AlkHomeCategoriesController(); // Assuming it exists
+      // await homeCategoriesController.fetchData();
+      // print("✅ AlkHomeCategories Data Preloaded (if applicable).");
+
+
+      // --- Preload Categories for StoreDrawer (if needed) ---
+      // This was previously done, keep it if StoreDrawer relies on it being ready.
+      print("⏳ Preloading Categories for StoreDrawer...");
+      final categoriesController = CategoriesStoreController();
+      await categoriesController.fetchAllCategories();
+      print("✅ StoreDrawer Categories Preloaded.");
+
+
+      // Optional delay for splash screen visibility
       // await Future.delayed(const Duration(milliseconds: 300));
 
       print("👍 Preload Complete. App is Ready!");
-      if (mounted) { // Check if the widget is still in the tree before calling setState
-         setState(() => isReady = true);
+      if (mounted) {
+        setState(() => isReady = true);
       }
-
     } catch (e, stackTrace) {
-       print("❌ Error during app preload: $e");
-       print("   StackTrace: $stackTrace");
-       // Decide how to handle preload errors. Maybe still proceed?
-       // Or show an error message on the splash screen.
-       if (mounted) {
-          // Potentially show an error state or just proceed
-          setState(() => isReady = true);
-       }
+      print("❌❌ FATAL Error during app preload: $e");
+      print("   StackTrace: $stackTrace");
+      // Handle fatal preload errors - maybe show an error screen or retry?
+      // For now, we still proceed to the app.
+      if (mounted) {
+        setState(() => isReady = true); // Proceed even on error for now
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use AnimatedSwitcher for a smoother transition (optional)
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500), // Adjust duration as needed
+      duration: const Duration(milliseconds: 500),
       transitionBuilder: (Widget child, Animation<double> animation) {
-        // Example: Fade transition
         return FadeTransition(opacity: animation, child: child);
       },
       child: isReady
-          ? const App() // Show the main app when ready
-          : const MaterialApp( // Show the splash screen while loading
-              // Use a key to ensure the SplashScreen widget itself doesn't persist
-              // if you want animations within SplashScreen to reset if preload fails/retries.
+          ? const App() // Show the main app
+          : const MaterialApp( // Show splash screen
               key: ValueKey('SplashScreen'),
               home: SplashScreen(),
               debugShowCheckedModeBanner: false,

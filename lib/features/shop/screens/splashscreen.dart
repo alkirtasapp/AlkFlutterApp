@@ -30,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
     _quote = _quotes[Random().nextInt(_quotes.length)];
 
     // Start logo fade animation
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 4000), () {
       setState(() => _opacity = 1.0);
     });
   }
@@ -57,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               _quote,
               style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.center
             ),
           ],
         ),

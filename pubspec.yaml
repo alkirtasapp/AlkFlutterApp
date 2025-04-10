@@ -36,6 +36,9 @@ dependencies:
   provider: ^6.0.5  
 
   webview_flutter: ^4.10.0
+  shimmer: ^3.0.0
+  cached_network_image: ^3.3.1 # Add this line (use the latest version)
+
 
 
 # Development-only dependencies
