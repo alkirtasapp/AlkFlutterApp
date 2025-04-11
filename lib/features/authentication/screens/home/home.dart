@@ -1,10 +1,17 @@
-// d:\flutter\test\lib\features\authentication\screens\home\home.dart (Updated with Navigation)
+// d:\flutter\test\lib\features\authentication\screens\home\home.dart (Corrected Padding for Top PromotionsCarousel)
 import 'package:alkirtas/common/widgets/custom_shapes/containers/second_header_container.dart';
-import 'package:alkirtas/common/widgets/layout/category_carousel_layout.dart'; // Import NEW layout
+import 'package:alkirtas/common/widgets/layout/category_carousel_layout.dart';
+// *** Import the Grid Layout (Still needed for TopSalesLivres) ***
+import 'package:alkirtas/common/widgets/layout/category_product_grid_layout.dart';
+// *** Import the TopSalesLivres widget ***
+import 'package:alkirtas/features/authentication/screens/home/widgets/top_sales_books.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:alkirtas/utils/constants/size.dart';
+// *** Import helper functions and colors for styling ***
+import 'package:alkirtas/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
 import '../../../../common/widgets/custom_shapes/containers/primary_header_container.dart';
 import '../../../../common/widgets/custom_shapes/containers/searchContainer.dart';
 import '../../../../common/widgets/texts/section_heading.dart';
@@ -27,15 +34,26 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingCategories = true;
   String? _categoryError;
 
+  // --- Define Category IDs ---
+  // !!! IMPORTANT: Replace these with your actual Prestashop Category IDs !!!
+  static const int livresCategoryId = 10; // Example ID for "Livres"
+  static const int topSellingBooksCategoryId = 20; // Example ID for "Top Selling Books" (Content for Livres Grid)
+  static const int topPromotionsCategoryId =  544 ; // ID for "Offres Spéciales" (Triggers the special grid/carousel)
+  static const int bestOffersContentCategoryId = 545; // Example ID for "Best Offers" (Content for Promotions section)
+
   @override
   void initState() {
     super.initState();
     _fetchCategoriesForCarousels();
+    // Consider preloading for topSellingBooksCategoryId, topPromotionsCategoryId, bestOffersContentCategoryId in SplashWrapper
   }
 
   // Fetch categories specifically for the carousels (level_depth=2)
   Future<void> _fetchCategoriesForCarousels() async {
-    // Using the API URL provided in the last snippet for home.dart
+    if (mounted) {
+      setState(() { _isLoadingCategories = true; _categoryError = null; });
+    }
+    // Fetch categories sorted by ID ascending to maintain a consistent order
     const apiUrl =
         'https://www.alkirtas.com/api/categories?filter[level_depth]=2&filter[active]=1&display=[id,name]&sort=[id_ASC]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
@@ -46,24 +64,14 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) {
           setState(() {
             _categoriesForCarousels = data['categories'] ?? [];
-            _isLoadingCategories = false;
-            _categoryError = null;
-            print(
-                "Fetched ${_categoriesForCarousels.length} categories for carousels.");
+            _isLoadingCategories = false; _categoryError = null;
+            print("Fetched ${_categoriesForCarousels.length} categories for carousels.");
           });
         }
-      } else {
-        throw Exception(
-            'Failed to load categories (Status Code: ${response.statusCode})');
-      }
+      } else { throw Exception('Failed to load categories (Status Code: ${response.statusCode})'); }
     } catch (e) {
       print('Error fetching categories for carousels: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingCategories = false;
-          _categoryError = 'Could not load categories: $e';
-        });
-      }
+      if (mounted) { setState(() { _isLoadingCategories = false; _categoryError = 'Could not load categories: $e'; }); }
     }
   }
 
@@ -82,20 +90,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   AlkSearchContainer(
                       text: 'Découvrir ma boutique',
                       icon: Iconsax.search_normal,
-                      onPressed: () =>
-                          Get.offAll(() => const NavigationMenu(selectedMenu: 1))),
+                      onPressed: () => Get.offAll(() => const NavigationMenu(selectedMenu: 1))),
                   const SizedBox(height: AlkSize.spaceBtwSections),
                   Padding(
                     padding: const EdgeInsets.only(left: AlkSize.defaultSpace),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const AlkSectionHeading(
-                            title: 'Nos Catégories : ',
-                            textColor: Colors.white,
-                            showActionButton: false),
+                        const AlkSectionHeading(title: 'Nos Catégories : ', textColor: Colors.white, showActionButton: false),
                         const SizedBox(height: AlkSize.spaceBtwItems / 2),
-                        // This AlkHomeCategories fetches its own list for the horizontal scroll
                         const AlkHomeCategories(),
                       ],
                     ),
@@ -107,49 +110,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // --- Body ---
             Padding(
-              padding: const EdgeInsets.symmetric(
-                  vertical: 0), // Vertical padding for body sections
+              // Removed vertical padding here to let inner elements control it
+              padding: const EdgeInsets.symmetric(vertical: 0),
               child: Column(
                 children: [
                   // --- Banner Slider ---
                   Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AlkSize.sm), // Add horizontal padding
+                      padding: const EdgeInsets.symmetric(horizontal: AlkSize.sm,), // Added vertical padding
                       child: const AlkBannerSlider()),
-                  const SizedBox(height: AlkSize.spaceBtwSections),
+                  
 
-                  // --- Dynamic Product Carousels based on Categories ---
-                  _buildProductCarousels(), // Build carousels dynamically
+                  // --- Dynamic Product Carousels/Grids ---
+                  _buildProductCarousels(), // This builds all category sections
 
-                  // --- Example: Static Section (like Promotions in a container) ---
-                  // You might want a specific category ID for promotions
-                  const SizedBox(height: AlkSize.spaceBtwSections),
-                  AlkSecondHeaderContainer(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AlkSize.defaultSpace),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const AlkSectionHeading(
-                              title: 'Promotions : ', // Example Title
-                              textColor: Colors.white,
-                              // Keep false or implement specific navigation for promotions
-                              showActionButton: false
-                          ),
-                          const SizedBox(height: AlkSize.spaceBtwItems / 1.5),
-                          // Use the NEW AlkCategoryCarouselLayout here as well
-                          AlkCategoryCarouselLayout(
-                            categoryId: 15, 
-                            itemCount: 8,
-                            productsPerPage: 0, // Show 1 product per page for promotions
-                            horizontalPadding: 12.0,
-                            verticalPadding: 10.0,
-                            autoSwipeDuration: const Duration(milliseconds: 4500),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AlkSize.spaceBtwSections * 2), // Add more space at the end
+
+                  const SizedBox(height: AlkSize.spaceBtwSections * 2), // Space at the very bottom
                 ],
               ),
             ),
@@ -159,87 +134,201 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Helper widget to build the dynamic carousels with exclusions and navigation
+  // Helper widget to build the dynamic carousels with exclusions and special sections
   Widget _buildProductCarousels() {
     if (_isLoadingCategories) {
-      return const Center(child: CircularProgressIndicator());
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 50.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
-
     if (_categoryError != null) {
-      return Center(
-          child: Text(_categoryError!, style: const TextStyle(color: Colors.red)));
+      return Padding(
+        padding: const EdgeInsets.all(AlkSize.defaultSpace),
+        child: Center(child: Text(_categoryError!, style: const TextStyle(color: Colors.red))),
+      );
     }
-
     if (_categoriesForCarousels.isEmpty) {
-      return const Center(child: Text('No categories found to display products.'));
+      return const Padding(
+        padding: EdgeInsets.all(AlkSize.defaultSpace),
+        child: Center(child: Text('No categories found to display products.')),
+      );
     }
 
-    // Define the set of category IDs to exclude
-    final Set<int> excludedIds = {707, 711, 763}; // IDs to exclude
+    final Set<int> excludedIds = {707, 711, 763, 638, 17}; // IDs to exclude (Added 638 from context)
 
-    // Build a list of Widgets (Section Heading + Carousel) for each category
+
+    // Map each category to its corresponding widget section
     return Column(
       children: _categoriesForCarousels.map((category) {
         final categoryId = category['id'];
         final categoryName = category['name'] ?? 'Unnamed Category';
 
-        // Basic validation for category ID type
-        if (categoryId is! int) {
-          print("Skipping category due to invalid ID type: $category");
-          return const SizedBox.shrink(); // Skip if ID is not valid
+        // Skip excluded or invalid categories
+        if (categoryId is! int || excludedIds.contains(categoryId)) {
+          return const SizedBox.shrink();
         }
 
-        // *** Check if the current category ID is in the exclusion list ***
-        if (excludedIds.contains(categoryId)) {
-          print("Skipping excluded category ID: $categoryId ($categoryName)");
-          return const SizedBox.shrink(); // Return an empty widget to exclude it
+        // --- Build the list of widgets for this category section ---
+        List<Widget> categorySectionWidgets = [
+          // Section Heading for the Category
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AlkSize.sm),
+            child: AlkSectionHeading(
+              title: '$categoryName :',
+              showActionButton: true,
+              buttonTitle: 'Voir tout',
+              onPressed: () {
+                final navCtrl = Get.find<NavigationController>();
+                navCtrl.navigateToStoreDrawer(
+                    categoryId: categoryId, categoryName: categoryName);
+              },
+            ),
+          ),
+          const SizedBox(height: AlkSize.spaceBtwItems),
+          // Product Carousel for the Category
+          AlkCategoryCarouselLayout(
+            key: ValueKey(categoryId),
+            categoryId: categoryId,
+            itemCount: 8, // Fetch up to 8 products
+            productsPerPage: 2, // Show 2 per page view for standard carousels
+            horizontalPadding: 12.0, // Padding between items for standard carousels
+            verticalPadding: 8.0,
+            autoSwipeDuration: Duration(milliseconds: 5000 + (categoryId % 5 * 900)),
+          ),
+        ];
+
+        //  Add Special Grid Section if it's the "Livres" category
+        if (categoryId == livresCategoryId) {
+          categorySectionWidgets.add(
+            // Add spacing BEFORE the styled container
+            const SizedBox(height: AlkSize.spaceBtwSections * 0.8),
+          );
+          categorySectionWidgets.add(
+            // *** Styled Container for Top Selling Books with Purple Gradient ***
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: AlkSize.sm), // Margin around the container
+              padding: const EdgeInsets.only( // Adjusted padding
+                top: AlkSize.md,
+                left: AlkSize.md,
+                right: AlkSize.md,
+                bottom: AlkSize.lg,
+              ),
+              decoration: BoxDecoration(
+                // *** Apply Purple Gradient ***
+                gradient: LinearGradient(
+                  colors: [Colors.purple.shade300, Colors.deepPurple.shade400], // Lighter purples for light mode
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: const [0.2, 0.8], // Adjusted stops for a smoother gradient
+                ),
+                borderRadius: BorderRadius.circular(AlkSize.cardRadiusLg), // Keep rounded corners
+                boxShadow: [ // Keep shadow for depth
+                  BoxShadow(
+                    color:  AlkColors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Heading for Top Selling Books (Inside the container)
+                  AlkSectionHeading(
+                    title: 'Livres les plus vendus :',
+                    textColor: AlkColors.white, // White contrasts well with purple
+                    showActionButton: false, // No "Voir tout" for this specific grid
+                  ),
+                  Divider( // Divider
+                    color: AlkColors.white.withOpacity(0.4), // White with opacity
+                    height: AlkSize.spaceBtwSections * 0.8, // Controls space around divider
+                    thickness: 0.5, // Make it thin
+                  ),
+                  // Use TopSalesLivres widget (which now only contains the grid)
+                  TopSalesLivres(topSellingBooksCategoryId: topSellingBooksCategoryId),
+                ],
+              ),
+            )
+          );
+        }
+        // --- Add Special Carousel Section if it's the "Top Promotions" category ---
+        else if (categoryId == topPromotionsCategoryId) { // Use else if to avoid adding to Livres
+           categorySectionWidgets.add(
+            // Add spacing BEFORE the styled container
+            const SizedBox(height: AlkSize.spaceBtwSections * 0.8),
+          );
+          categorySectionWidgets.add(
+            // *** Styled Container for Best Offers ***
+            Container(
+              // This container provides the outer padding
+              margin: const EdgeInsets.symmetric(horizontal: AlkSize.sm),
+              padding: const EdgeInsets.only(top: AlkSize.md, left: AlkSize.md, right: AlkSize.md, bottom: AlkSize.lg), // <<< Outer padding
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors:[Colors.purple.shade300, Colors.deepPurple.shade400],
+                  begin: Alignment.bottomLeft,
+                  end: Alignment.topRight,
+                ),
+                borderRadius: BorderRadius.circular(AlkSize.cardRadiusLg),
+                boxShadow: [
+                  BoxShadow(
+                    color:  AlkColors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Heading for Best Offers (Inside the container)
+                  AlkSectionHeading(
+                    title: 'Top Promotions:',
+                    textColor: AlkColors.white,
+                    showActionButton: true, // Keep the button to see all offers
+                    buttonTitle: 'Voir tout',
+                    onPressed: () { // Keep the navigation logic
+                       final navCtrl = Get.find<NavigationController>();
+                       navCtrl.navigateToStoreDrawer(
+                           categoryId: bestOffersContentCategoryId, // Navigate to content category
+                           categoryName: "Meilleures Offres"
+                       );
+                    },
+                  ),
+                  Divider( // Divider
+                    color: AlkColors.white.withOpacity(0.4),
+                    height: AlkSize.spaceBtwSections * 0.8,
+                    thickness: 0.5,
+                  ),
+                  // *** Use AlkCategoryCarouselLayout ***
+                  AlkCategoryCarouselLayout(
+                     key: ValueKey(bestOffersContentCategoryId),
+                     categoryId: bestOffersContentCategoryId,
+                     itemCount: 8, // Fetch up to 8 best offers
+                     productsPerPage: 1, // Show exactly 1 product per page view
+                     // ***** CHANGE APPLIED HERE *****
+                     // Set to 0.0 so the item fills the space within the parent Container's padding
+                     horizontalPadding: 0.0,
+                     // ***************************
+                     verticalPadding: AlkSize.sm, // Keep vertical padding if needed for card spacing from top/bottom
+                     autoSwipeDuration: const Duration(milliseconds: 6000), // Slower swipe
+                  ),
+                ],
+              ),
+            )
+          );
         }
 
-        // If not excluded, build the category section
+        // Return the full section wrapped in Padding for bottom spacing
         return Padding(
-          // Add padding around each category section
-          padding: const EdgeInsets.only(bottom: AlkSize.spaceBtwSections ),
+          padding: const EdgeInsets.only(bottom: AlkSize.spaceBtwSections / 2), // Reduced bottom padding slightly
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Section Heading for the Category
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AlkSize.sm), // Padding for heading
-                child: AlkSectionHeading(
-                  title: '$categoryName :', // Use category name
-                  showActionButton: true, // *** Enable the action button ***
-                  buttonTitle: 'Voir tout', // Text for the button
-                  // *** Add the onPressed callback for navigation ***
-                  onPressed: () {
-                    // Find the NavigationController instance using GetX
-                    final navCtrl = Get.find<NavigationController>();
-                    // Call the navigation method with the current category's details
-                    navCtrl.navigateToStoreDrawer(
-                      categoryId: categoryId,
-                      categoryName: categoryName,
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: AlkSize.spaceBtwItems), // Space between heading and carousel
-
-              // Product Carousel for the Category
-              AlkCategoryCarouselLayout(
-                key: ValueKey(categoryId), // Add key for state preservation if needed
-                categoryId: categoryId,
-                itemCount: 8, // Max products to fetch/show per category
-                productsPerPage: 2, // Show 2 products per page
-                horizontalPadding: 12.0,
-                verticalPadding: 8.0,
-                autoSwipeDuration: Duration(
-                    milliseconds: 5000 +
-                        (categoryId % 5 * 900)), // Vary swipe duration slightly
-              ),
-            ],
+            children: categorySectionWidgets,
           ),
         );
-      }).toList(), // Convert map result to a list of widgets
+      }).toList(), // Convert the mapped widgets to a list for the Column
     );
   }
 }
