@@ -1,21 +1,17 @@
-// d:\flutter\test\lib\features\authentication\screens\home\home.dart (Corrected Padding for Top PromotionsCarousel)
 import 'package:alkirtas/common/widgets/custom_shapes/containers/second_header_container.dart';
 import 'package:alkirtas/common/widgets/layout/category_carousel_layout.dart';
-// *** Import the Grid Layout (Still needed for TopSalesLivres) ***
 import 'package:alkirtas/common/widgets/layout/category_product_grid_layout.dart';
-// *** Import the TopSalesLivres widget ***
 import 'package:alkirtas/features/authentication/screens/home/widgets/top_sales_books.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:alkirtas/utils/constants/size.dart';
-// *** Import helper functions and colors for styling ***
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import '../../../../common/widgets/custom_shapes/containers/primary_header_container.dart';
 import '../../../../common/widgets/custom_shapes/containers/searchContainer.dart';
 import '../../../../common/widgets/texts/section_heading.dart';
-import '../../../../navigation_menu.dart'; // Import NavigationMenu to access NavigationController
+import '../../../../navigation_menu.dart'; 
 import 'widgets/bannerSlider.dart';
 import 'widgets/homeAppBar.dart';
 import 'widgets/homeCategories.dart';
@@ -110,13 +106,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // --- Body ---
             Padding(
-              // Removed vertical padding here to let inner elements control it
               padding: const EdgeInsets.symmetric(vertical: 0),
               child: Column(
                 children: [
                   // --- Banner Slider ---
                   Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AlkSize.sm,), // Added vertical padding
+                      padding: const EdgeInsets.symmetric(horizontal: AlkSize.sm), 
                       child: const AlkBannerSlider()),
                   
 
@@ -124,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildProductCarousels(), // This builds all category sections
 
 
-                  const SizedBox(height: AlkSize.spaceBtwSections * 2), // Space at the very bottom
+                  const SizedBox(height: AlkSize.spaceBtwSections), // Space at the very bottom
                 ],
               ),
             ),
@@ -192,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
             categoryId: categoryId,
             itemCount: 8, // Fetch up to 8 products
             productsPerPage: 2, // Show 2 per page view for standard carousels
-            horizontalPadding: 12.0, // Padding between items for standard carousels
+            horizontalPadding: 4.0, // Padding between items for standard carousels
             verticalPadding: 8.0,
             autoSwipeDuration: Duration(milliseconds: 5000 + (categoryId % 5 * 900)),
           ),
@@ -236,7 +231,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   // Heading for Top Selling Books (Inside the container)
                   AlkSectionHeading(
-                    title: 'Livres les plus vendus :',
+                    icon: const Icon(Iconsax.ranking_1, color: AlkColors.white), // Optional icon
+                    title: '  Livres les plus vendus ',
                     textColor: AlkColors.white, // White contrasts well with purple
                     showActionButton: false, // No "Voir tout" for this specific grid
                   ),
@@ -284,17 +280,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   // Heading for Best Offers (Inside the container)
                   AlkSectionHeading(
-                    title: 'Top Promotions:',
+                    
+                    title: '   Top Promotions ',
                     textColor: AlkColors.white,
-                    showActionButton: true, // Keep the button to see all offers
-                    buttonTitle: 'Voir tout',
-                    onPressed: () { // Keep the navigation logic
-                       final navCtrl = Get.find<NavigationController>();
-                       navCtrl.navigateToStoreDrawer(
-                           categoryId: bestOffersContentCategoryId, // Navigate to content category
-                           categoryName: "Meilleures Offres"
-                       );
-                    },
+                    showActionButton: false, // Keep the button to see all offers
+                    icon: const Icon(Iconsax.star_1, color: AlkColors.white), // Optional icon
+                    
                   ),
                   Divider( // Divider
                     color: AlkColors.white.withOpacity(0.4),
@@ -304,13 +295,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   // *** Use AlkCategoryCarouselLayout ***
                   AlkCategoryCarouselLayout(
                      key: ValueKey(bestOffersContentCategoryId),
-                     categoryId: bestOffersContentCategoryId,
+                     categoryId: 763,
                      itemCount: 8, // Fetch up to 8 best offers
                      productsPerPage: 1, // Show exactly 1 product per page view
-                     // ***** CHANGE APPLIED HERE *****
-                     // Set to 0.0 so the item fills the space within the parent Container's padding
-                     horizontalPadding: 0.0,
-                     // ***************************
+                     horizontalPadding: 0,
                      verticalPadding: AlkSize.sm, // Keep vertical padding if needed for card spacing from top/bottom
                      autoSwipeDuration: const Duration(milliseconds: 6000), // Slower swipe
                   ),

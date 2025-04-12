@@ -14,7 +14,7 @@ class AlkCategoryCarouselLayout extends StatefulWidget {
     required this.categoryId,
     // horizontalPadding: Space BETWEEN items (or around if 1 item)
     // verticalPadding: Space ABOVE/BELOW items
-    this.horizontalPadding = AlkSize.sm, // Default space between items
+    required this.horizontalPadding , // Default space between items
     this.verticalPadding = AlkSize.sm, // Default vertical space
     this.autoSwipeDuration = const Duration(seconds: 5),
   });
