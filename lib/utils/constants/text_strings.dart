@@ -12,7 +12,7 @@ class AlkTexts {
   // HOME
 
   static const String homeAppBarTitle = "Alkirtas customer";
-  static const String homeAppBarSubitle="Content de te revoir ";
+  static const String homeAppBarSubitle="Content de vous revoir !";
 }
 
  

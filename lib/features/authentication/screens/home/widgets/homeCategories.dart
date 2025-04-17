@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:iconsax/iconsax.dart';
 
 import '../../../../../common/widgets/image_text_widgets/vertical_image_text.dart';
 import '../../../../../utils/constants/colors.dart';
+import '../../../../../config/home_sections_config.dart';
 
 class AlkHomeCategories extends StatefulWidget {
   const AlkHomeCategories({Key? key}) : super(key: key);
@@ -18,6 +20,41 @@ class AlkHomeCategories extends StatefulWidget {
 class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
   List<dynamic> categories = []; // Holds the categories data
   bool isLoading = true; // Loading state
+
+  // List of category IDs to exclude
+  final List<int> excludedCategoryIds = [711, 707, 763];
+
+  // Map category names (lowercase) to appropriate icons
+  IconData getIconForCategory(String categoryName) {
+    final name = categoryName.toLowerCase();
+    if (name.contains('livre') || name.contains('book')) {
+      return Iconsax.book_1;
+    } else if (name.contains('scolaire') || name.contains('école') || name.contains('school')) {
+      return Iconsax.teacher;
+    } else if (name.contains('bureau') || name.contains('office')) {
+      return Iconsax.monitor_mobbile;
+    } else if (name.contains('jeux') || name.contains('jouet') ) {
+      return Iconsax.game;
+    } else if (name.contains('cadeau') || name.contains('gift')) {
+      return Iconsax.gift;
+    } else if (name.contains('art') || name.contains('créatif')) {
+      return Iconsax.brush_1;
+    } else if (name.contains('papeterie') || name.contains('stationery')) {
+      return Iconsax.note_1;
+    } else if (name.contains('bagagerie') || name.contains('bag')) {
+      return Iconsax.bag_2;
+    } else if (name.contains('tech') || name.contains('électronique')) {
+      return Iconsax.mobile;
+    } else if (name.contains('beauté') || name.contains('beauty')) {
+      return Iconsax.mirror;
+    } else if (name.contains('fête') || name.contains('party')) {
+      return Iconsax.cake;
+    }
+    else if (name.contains('Fourniture') || name.contains('fourniture')) {
+      return Iconsax.rulerpen;
+    }
+    return Iconsax.category; // Default icon
+  }
 
   @override
   void initState() {
@@ -34,7 +71,10 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
-          categories = data['categories'] ?? [];
+          // Filter out excluded categories
+          categories = (data['categories'] as List?)?.where(
+            (category) => !excludedCategoryIds.contains(category['id'])
+          ).toList() ?? [];
           isLoading = false;
         });
       } else {
@@ -66,15 +106,18 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, index) {
           final category = categories[index];
+          final categoryId = category['id'] as int;
+          final categoryName = category['name'] as String;
           return AlkVerticalImageText(
-            title: category['name'] ?? 'Unknown',
+            title: categoryName,
             textColor: AlkColors.white,
+            icon: getIconForCategory(categoryName),
             onTap: () {
               // Use NavigationController to navigate to StoreDrawer
               final navigationController = Get.find<NavigationController>();
               navigationController.navigateToStoreDrawer(
-                categoryId: category['id'],
-                categoryName: category['name'],
+                categoryId: categoryId,
+                categoryName: categoryName,
               );
             },
             backgroundColor: Colors.white,

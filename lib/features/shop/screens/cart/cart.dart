@@ -35,7 +35,7 @@ class _CartScreenState extends State<CartScreen> {
 
   // Get total price with delivery
   double getTotalPriceWithDelivery(CartProvider cartProvider) {
-    return getTotalPrice(cartProvider) + 8.0; // Delivery fee is fixed at 8.0 TND
+    return getTotalPrice(cartProvider) + 9.0; // Delivery fee is fixed at 9.0 TND
   }
 
   // Checkout method will be activated once the button is clicked
@@ -216,7 +216,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
                 Text(
-                  "Total: ${getTotalPriceWithDelivery(cartProvider).toStringAsFixed(3)} TND (Livraison 8.000 TND)",
+                  "Total: ${getTotalPriceWithDelivery(cartProvider).toStringAsFixed(3)} TND (Livraison 9.000 TND)",
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: AlkColors.darkGrey,
                       ),
@@ -227,7 +227,7 @@ class _CartScreenState extends State<CartScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        Get.to(() => CheckoutScreen());
+                        checkout(cartProvider);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.purple[400],

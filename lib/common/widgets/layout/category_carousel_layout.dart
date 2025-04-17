@@ -136,56 +136,49 @@ class _AlkCategoryCarouselLayoutState extends State<AlkCategoryCarouselLayout> {
 
   @override
   Widget build(BuildContext context) {
-    // Define item height (can be dynamic later if needed)
     final double itemHeight = 280.0;
-    // Total height includes the item height plus vertical padding (top & bottom)
     final double totalHeight = itemHeight + (widget.verticalPadding * 2);
 
-    return SizedBox(
-      height: totalHeight,
-      // Use LayoutBuilder to get the available width for the ListView
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Pass the available width and calculated height to _buildContent
-          return _buildContent(constraints.maxWidth, itemHeight);
-        },
+    return ClipRect(  // Add ClipRect to prevent items from being partially visible
+      child: SizedBox(
+        height: totalHeight,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return _buildContent(constraints.maxWidth, itemHeight);
+          },
+        ),
       ),
     );
   }
 
   Widget _buildContent(double availableWidth, double itemHeight) {
-    // --- Calculate Item Width based on Available Width ---
+    // Recalculate item width to ensure exact fit
     double itemWidth;
     if (widget.productsPerPage <= 0) {
-      itemWidth = 150.0; // Fallback
+      itemWidth = 150.0;
+    } else if (widget.productsPerPage == 1) {
+      itemWidth = availableWidth * 0.9;
     } else {
-      // Total space taken by padding between items
-      // If productsPerPage is 1, there's no padding *between* items.
-      // If productsPerPage is > 1, there are (productsPerPage - 1) gaps.
-      final double totalPaddingSpace = widget.productsPerPage > 1
-          ? widget.horizontalPadding * (widget.productsPerPage - 1)
-          : 0;
-
-      // Calculate width per item
-      itemWidth = (availableWidth - totalPaddingSpace) / widget.productsPerPage;
+      // Calculate width to ensure exact number of products are visible
+      final double totalHorizontalPadding = widget.horizontalPadding * (widget.productsPerPage - 1);
+      itemWidth = (availableWidth - totalHorizontalPadding) / widget.productsPerPage;
     }
-    // Ensure itemWidth is not negative or too small
     itemWidth = itemWidth > 50.0 ? itemWidth : 50.0;
 
     // --- Loading State ---
     if (_isLoading) {
-      return ListView.separated(
+      return ListView.builder(
         scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(), // Disable scroll while loading
-        itemCount: widget.productsPerPage, // Show placeholders
-        // No padding on ListView itself, handled by separator and item padding
-        padding: EdgeInsets.zero,
-        separatorBuilder: (context, index) =>
-            SizedBox(width: widget.horizontalPadding), // Space between items
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: widget.productsPerPage,
+        padding: EdgeInsets.zero,  // Remove padding from ListView
         itemBuilder: (_, index) {
           return Padding(
-            // Apply vertical padding around each item
-            padding: EdgeInsets.symmetric(vertical: widget.verticalPadding),
+            padding: EdgeInsets.only(
+              left: index == 0 ? 0 : widget.horizontalPadding,
+              top: widget.verticalPadding,
+              bottom: widget.verticalPadding
+            ),
             child: SizedBox(
               width: itemWidth,
               height: itemHeight,
@@ -214,22 +207,22 @@ class _AlkCategoryCarouselLayoutState extends State<AlkCategoryCarouselLayout> {
     }
 
     // --- Content Loaded State ---
-    return ListView.separated(
+    return ListView.builder(
       controller: _scrollController,
       scrollDirection: Axis.horizontal,
       itemCount: _products!.length,
-      // No padding on ListView itself, handled by separator and item padding
-      padding: EdgeInsets.zero,
-      separatorBuilder: (context, index) =>
-          SizedBox(width: widget.horizontalPadding), // Space between items
+      padding: EdgeInsets.zero,  // Remove padding from ListView
       itemBuilder: (_, index) {
         final productData = _products![index];
         return Padding(
-          // Apply vertical padding around each item
-          padding: EdgeInsets.symmetric(vertical: widget.verticalPadding),
+          padding: EdgeInsets.only(
+            left: index == 0 ? 0 : widget.horizontalPadding,
+            top: widget.verticalPadding,
+            bottom: widget.verticalPadding
+          ),
           child: SizedBox(
-            width: itemWidth, // Use the calculated width
-            height: itemHeight, // Use the fixed height
+            width: itemWidth,
+            height: itemHeight,
             child: CategoryProductCard(productData: productData),
           ),
         );
