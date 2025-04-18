@@ -129,7 +129,7 @@ class HomeScreen extends StatelessWidget {
                                 color: AlkColors.white), 
                               title:
                                   '   Top Promotions ',
-                              productsPerPage: 3,
+                              productsPerPage: 2,
                               ),
                                    // Add the special section below
                         ],

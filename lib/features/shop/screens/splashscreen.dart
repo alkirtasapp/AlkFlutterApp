@@ -9,12 +9,13 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   double _opacity = 0.0;
   late final String _quote;
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
 
   final List<String> _quotes = [
-    
     "Chargement...",
     "Préparation de votre expérience...",
     "Chargement des nouveautés...",
@@ -29,10 +30,27 @@ class _SplashScreenState extends State<SplashScreen> {
     // Random quote
     _quote = _quotes[Random().nextInt(_quotes.length)];
 
-    // Start logo fade animation
-    Future.delayed(const Duration(milliseconds: 4000), () {
+    // Initialize animation controller
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    // Start animations
+    Future.delayed(const Duration(milliseconds: 500), () {
       setState(() => _opacity = 1.0);
+      _controller.forward();
     });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -45,19 +63,36 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             AnimatedOpacity(
               opacity: _opacity,
-              duration: const Duration(milliseconds: 1000),
-              child: Image.asset(
-                AlkImages.darkAppLogo,
-                height: 150,
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeInOut,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Hero(
+                  tag: 'app_logo',
+                  child: Image.asset(
+                    AlkImages.darkAppLogo,
+                    height: 150,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 30),
-            const CircularProgressIndicator(color: Colors.purple),
+            AnimatedOpacity(
+              opacity: _opacity,
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeIn,
+              child: const CircularProgressIndicator(color: Colors.purple),
+            ),
             const SizedBox(height: 16),
-            Text(
-              _quote,
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center
+            AnimatedOpacity(
+              opacity: _opacity,
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeIn,
+              child: Text(
+                _quote,
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center
+              ),
             ),
           ],
         ),
