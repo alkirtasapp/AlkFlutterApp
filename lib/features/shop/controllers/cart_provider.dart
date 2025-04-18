@@ -22,23 +22,33 @@ class CartProvider with ChangeNotifier {
     List<String>? productFeatures,
     required int quantity,
   }) {
-    _cartItems.add({
-      'productId': productId,
-      'productName': productName,
-      'productBrand': productBrand ?? '',
-      'productPrice': productPrice,
-      'productDiscount': productDiscount ?? '',
-      'productOldPrice': productOldPrice ?? '',
-      'productNewPrice': productNewPrice ?? '',
-      'productImage': productImage ?? '',
-      'productReference': productReference ?? '',
-      'productStock': productStock ?? '',
-      'productDescription': productDescription ?? '',
-      'productBrandId': productBrandId ?? '',
-      'productImageList': productImageList?.join(',') ?? '',
-      'productFeatures': productFeatures?.join(',') ?? '',
-      'productQuantity': quantity.toString(),
-    });
+    // Check if the product already exists in the cart
+    int existingIndex = _cartItems.indexWhere((item) => item['productId'] == productId);
+
+    if (existingIndex != -1) {
+      // If product exists, update its quantity
+      int currentQuantity = int.parse(_cartItems[existingIndex]['productQuantity'] ?? '0');
+      _cartItems[existingIndex]['productQuantity'] = (currentQuantity + quantity).toString();
+    } else {
+      // If product doesn't exist, add it as a new item
+      _cartItems.add({
+        'productId': productId,
+        'productName': productName,
+        'productBrand': productBrand ?? '',
+        'productPrice': productPrice,
+        'productDiscount': productDiscount ?? '',
+        'productOldPrice': productOldPrice ?? '',
+        'productNewPrice': productNewPrice ?? '',
+        'productImage': productImage ?? '',
+        'productReference': productReference ?? '',
+        'productStock': productStock ?? '',
+        'productDescription': productDescription ?? '',
+        'productBrandId': productBrandId ?? '',
+        'productImageList': productImageList?.join(',') ?? '',
+        'productFeatures': productFeatures?.join(',') ?? '',
+        'productQuantity': quantity.toString(),
+      });
+    }
 
     notifyListeners();
   }
