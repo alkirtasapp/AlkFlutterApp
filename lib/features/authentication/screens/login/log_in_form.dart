@@ -105,7 +105,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> {
                             isRememberMeChecked.value = value ?? false;
                           },
                         ),
-                        const Text('Remember Me'),
+                        const Text('Mémoriser info'),
                       ],
                     )),
                 Flexible(

@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 class CategoriesStoreController {
   final String apiKey = "Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
   final String apiUrl =
-      "https://www.alkirtas.com/api/categories?sort=[id_parent_ASC]&display=[id,id_parent,name,level_depth]&filter[active]=1&output_format=JSON&ws_key=";
+      "https://www.alkirtas.com/api/categories?display=[id,id_parent,name,level_depth]&filter[active]=1&output_format=JSON&ws_key=";
 
   /// ✅ Store main categories dynamically (Level 2)
   Map<String, int> mainCategories = {};
@@ -60,25 +60,60 @@ class CategoriesStoreController {
     mainCategories.clear();
     categoryTree.clear();
 
+    // Define the desired order of categories with their corresponding names
+    final orderedCategories = [
+      "Livres",
+      "Parascolaires",
+      "Livres Scolaires",
+      "Fournitures",
+      "Papeterie",
+      "Bagagerie",
+      "Bureautique",
+      "Art et Loisirs",
+      "Jeux et jouets",
+      "Cadeaux et fetes",
+      "Déstockage" 
+    ];
+
+    // First, collect all level 2 categories in a temporary map
+    Map<String, int> tempCategories = {};
     for (var category in categories) {
       int id = category['id'];
-      int parentId = category['id_parent'];
-      String name = category['name'];
       int level = category['level_depth'];
+      String name = category['name'];
 
-      if (level == 2) {
-        // ✅ Level 2: Main Categories
-        mainCategories[name] = id;
+      // Replace "PROMO 50%" with "Déstockage" if found
+      if (name == "PROMO 50%") {
+        name = "Déstockage";
       }
 
-      // ✅ Organize categories into a structured tree
+      if (level == 2) {
+        tempCategories[name] = id;
+      }
+
+      // Build category tree regardless of order
+      int parentId = category['id_parent'];
       if (!categoryTree.containsKey(parentId)) {
         categoryTree[parentId] = [];
       }
       categoryTree[parentId]!.add({"id": id, "name": name});
     }
 
-    _logSuccess("✅ Processed ${categories.length} categories into a structured tree.");
+    // Add categories in the specified order
+    for (String categoryName in orderedCategories) {
+      if (tempCategories.containsKey(categoryName)) {
+        mainCategories[categoryName] = tempCategories[categoryName]!;
+      }
+    }
+
+    // Add any remaining categories that weren't in the ordered list
+    tempCategories.forEach((name, id) {
+      if (!mainCategories.containsKey(name)) {
+        mainCategories[name] = id;
+      }
+    });
+
+    _logSuccess("✅ Processed ${categories.length} categories into a structured tree with custom ordering.");
   }
 
   /// Log info messages

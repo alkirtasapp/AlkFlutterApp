@@ -24,7 +24,7 @@ class HomeScreen extends StatelessWidget {
   static const String espaceBureauSectionTitle = "Espace Bureaux";
   // Category ID for the *content* of the "Livres les plus vendus" grid
   // !!! IMPORTANT: Replace '20' with the actual Prestashop Category ID for your top-selling books !!!
-  static const int topSellingBooksCategoryId = 20;
+  static const int topSellingBooksCategoryId =  763;
 
   @override
   Widget build(BuildContext context) {
@@ -106,9 +106,9 @@ class HomeScreen extends StatelessWidget {
                           BestSellersSection(
                             
                             categoryId:
-                                topSellingBooksCategoryId,
+                                60,
                             context: context,
-                            title: '   Livres les plus vendus ',
+                            title: '   Best Sellers ',
                             icon: Icon(Iconsax.ranking_1,
                                 color: AlkColors.white),
                             productsPerPage: 2, 
@@ -128,7 +128,7 @@ class HomeScreen extends StatelessWidget {
                               icon: Icon(Iconsax.star_1,
                                 color: AlkColors.white), 
                               title:
-                                  '   Top Promotions ',
+                                  '   Déstockage ',
                               productsPerPage: 2,
                               ),
                                    // Add the special section below
