@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
+import 'package:provider/provider.dart';
 import '../../../../features/shop/controllers/product_controller_store.dart';
 import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/size.dart';
@@ -215,10 +217,47 @@ class ProductCardStore extends StatelessWidget {
                             child: Center(
                                 child: IconButton(
                                     color: AlkColors.white,
-                                    onPressed: () {},
-                                    icon: const Icon(
-                                      Iconsax.add,
-                                    ))),
+                                    onPressed: () {
+                                        final cartProvider = Provider.of<CartProvider>(context, listen: false);
+                                        cartProvider.addToCart(
+                                            productId: id,
+                                            productName: title,
+                                            productBrand: brandName,
+                                            productImage: imageUrl,
+                                            productPrice: discountValue > 0
+                                                ? (double.parse(displayPrice) * (1 - discountValue / 100))
+                                                    .toStringAsFixed(2)
+                                                : displayPrice,
+                                            productDiscount: discountText ?? '',
+                                            productBrandId: brandId,
+                                            productOldPrice: discountText != null ? displayPrice : '',
+                                            productNewPrice: discountValue > 0
+                                                ? (double.parse(displayPrice) * (1 - discountValue / 100))
+                                                    .toStringAsFixed(2)
+                                                : displayPrice,
+                                            productStock: productStock,
+                                            productDescription: description,
+                                            productReference: reference,
+                                            productImageList: imageList,
+                                            productFeatures: [],
+                                            quantity: 1,
+                                        );
+                                        
+                                        Get.snackbar(
+                                            "Produit ajouté",
+                                            "$title a été ajouté au panier.",
+                                            snackPosition: SnackPosition.TOP,
+                                            isDismissible: true,
+                                            dismissDirection: DismissDirection.horizontal,
+                                            duration: const Duration(seconds: 2),
+                                            backgroundColor: Colors.purple.shade300,
+                                            colorText: AlkColors.white,
+                                            margin: const EdgeInsets.all(10),
+                                            borderRadius: 8
+                                        );
+                                    },
+                                    icon: const Icon(Iconsax.add),
+                                )),
                           ),
                         ),
                       ],

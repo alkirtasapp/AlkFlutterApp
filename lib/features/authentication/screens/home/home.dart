@@ -20,8 +20,8 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   // --- Constants for Special Section ---
-  static const String livresSectionTitle = "Sélection de Livres";
-  static const String espaceBureauSectionTitle = "Espace Bureaux";
+  static const String livresSectionTitle = "Alkirtas Books";
+  static const String espaceBureauSectionTitle = "Alkirtas Office";
   // Category ID for the *content* of the "Livres les plus vendus" grid
   // !!! IMPORTANT: Replace '20' with the actual Prestashop Category ID for your top-selling books !!!
   static const int topSellingBooksCategoryId =  763;
@@ -40,7 +40,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: AlkSize.spaceBtwSections),
                   AlkSearchContainer(
                     text: 'Découvrir ma boutique',
-                    icon: Iconsax.search_normal,
+                    icon: Icons.search,
                     onPressed: () =>
                         Get.offAll(() => const NavigationMenu(selectedMenu: 1)),
                   ),
@@ -104,9 +104,10 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           standardCarousel,
                           BestSellersSection(
+                            itemCount: 10,
                             
                             categoryId:
-                                60,
+                                901,
                             context: context,
                             title: '   Best Sellers ',
                             icon: Icon(Iconsax.ranking_1,
@@ -122,8 +123,9 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           standardCarousel,
                           BestSellersSection(
+                            itemCount: 6,
                               categoryId:
-                                  topSellingBooksCategoryId,
+                                  763,
                               context: context,
                               icon: Icon(Iconsax.star_1,
                                 color: AlkColors.white), 

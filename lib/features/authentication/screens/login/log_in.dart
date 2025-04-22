@@ -4,6 +4,7 @@ import 'package:alkirtas/features/authentication/screens/login/log_in_footer.dar
 import 'package:alkirtas/features/authentication/screens/login/log_in_form.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in_header.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -31,52 +32,50 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void signInUser(BuildContext context) async {
     setState(() {
-      isLoading = true; // Show the progress indicator
+      isLoading = true;
     });
 
-    final email = emailController.text;
+    final email = emailController.text.trim();
     final password = passwordController.text;
 
-    // Check if the email and password fields are empty
     if (email.isEmpty || password.isEmpty) {
       setState(() {
-        isLoading = false; // Hide the progress indicator
+        isLoading = false;
       });
       showErrorDialog(context, 'Veuillez remplir les deux champs.');
       return;
     }
 
-    // Make the API call
-    final response = await http.get(
-      Uri.parse(
-        'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU',
-      ),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU',
+        ),
+      );
 
-    setState(() {
-      isLoading = false; // Hide the progress indicator
-    });
+      setState(() {
+        isLoading = false;
+      });
 
-    // Check if the response status code is 200
-    if (response.statusCode == 200) {
-      try {
-        var data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
 
-        // Ensure 'customers' exists and is a list
         if (data['customers'] != null && data['customers'] is List && data['customers'].isNotEmpty) {
-          var customer = data['customers'][0];
+          final customer = data['customers'][0];
 
-          // Check if the email matches
           if (customer['email'] == email) {
-            bool passwordMatch = BCrypt.checkpw(password, customer['passwd']);
+            final bool passwordMatch = BCrypt.checkpw(password, customer['passwd']);
             if (passwordMatch) {
-              UserData.email = customer['email'];
-              UserData.firstname = customer['firstname'];
-              UserData.lastname = customer['lastname'];
+              // Convert the ID to string when storing
+              UserData.email = customer['email'].toString();
+              UserData.firstname = customer['firstname'].toString();
+              UserData.lastname = customer['lastname'].toString();
               UserData.id = customer['id'].toString();
 
-              // Navigate to NavigationMenu and clear the navigation stack
-              Get.offAll(() => NavigationMenu());
+              // Pass the ID as integer to Firebase
+              await registerAppUser(customer['id'] as int);
+
+              Get.offAll(() => const NavigationMenu());
               return;
             } else {
               showErrorDialog(context, 'Mot de passe invalide');
@@ -85,16 +84,29 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
 
-        // If no customers found or invalid structure
         showErrorDialog(context, 'Aucun utilisateur trouvé avec cet e-mail.');
-      } catch (e) {
-        // Handle JSON decoding or other unexpected errors
-        showErrorDialog(context, 'Aucun utilisateur trouvé avec cet e-mail.');
-        print('Error decoding response: $e');
+      } else {
+        showErrorDialog(context, 'Erreur de connexion.');
       }
-    } else {
-      // Handle non-200 response
-      showErrorDialog(context, 'Erreur de connexion.');
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      print('Login error: $e');
+      showErrorDialog(context, 'Une erreur est survenue. Veuillez réessayer.');
+    }
+  }
+
+  Future<void> registerAppUser(int prestashopId) async {
+    final usersRef = FirebaseFirestore.instance.collection('app_users');
+
+    final existingUser = await usersRef.where('prestashop_id', isEqualTo: prestashopId).get();
+
+    if (existingUser.docs.isEmpty) {
+      await usersRef.add({
+        'prestashop_id': prestashopId,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
     }
   }
 

@@ -1,12 +1,13 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+def kotlinVersion = '1.8.22'
+
 android {
-    namespace = "com.example.test"
+    namespace = "com.example.test"  // This should match your Firebase config
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.test"
+        applicationId "com.example.test"  // This should match your Firebase config
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutter.versionCode
@@ -31,7 +32,7 @@ android {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.debug
         }
     }
 }
@@ -39,3 +40,14 @@ android {
 flutter {
     source = "../.."
 }
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    implementation platform('com.google.firebase:firebase-bom:32.7.4')
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+}
+
+apply plugin: 'com.google.gms.google-services'

@@ -12,7 +12,8 @@ class BestSellersSection extends StatelessWidget {
     required this.context,
     required this.title,
     required this.icon,
-    required this.productsPerPage
+    required this.productsPerPage,
+    required this.itemCount,
   });
 
   final int categoryId;
@@ -20,6 +21,7 @@ class BestSellersSection extends StatelessWidget {
   final String title;
   final Icon icon;
   final int productsPerPage;
+  final int itemCount;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +74,7 @@ class BestSellersSection extends StatelessWidget {
             AlkCategoryCarouselLayout(
               key: ValueKey('grid_$categoryId'),
               categoryId: categoryId,
-              itemCount: 6,
+              itemCount: itemCount,
              
               productsPerPage: productsPerPage, 
               horizontalPadding: AlkSize.sm,

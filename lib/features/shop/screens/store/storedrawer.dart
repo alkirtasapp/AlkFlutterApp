@@ -67,6 +67,8 @@ class _StorePageState extends State<StoreDrawer> {
       offset = 0;
       isSearching = false;
       selectedSortOption = "None"; // Reset the filter here
+      isSearchVisible = false; // Hide search box
+      searchTextController.clear(); // Clear search text
     });
 
     print("📡 Fetching products for Category ID: $categoryId, Offset: $offset");
@@ -241,7 +243,7 @@ class _StorePageState extends State<StoreDrawer> {
       appBar: AppBar(
         actions: [
           IconButton(
-            icon: const Icon(Iconsax.search_favorite),
+            icon: const Icon(Icons.search),
             onPressed: () {
               setState(() {
                 isSearchVisible = !isSearchVisible;

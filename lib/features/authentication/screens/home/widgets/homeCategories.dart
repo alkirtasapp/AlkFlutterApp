@@ -22,7 +22,7 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
   bool isLoading = true; // Loading state
 
   // List of category IDs to exclude
-  final List<int> excludedCategoryIds = [711, 707, 763];
+  final List<int> excludedCategoryIds = [711, 707, 763,901];
 
   // Map category names (lowercase) to appropriate icons
   IconData getIconForCategory(String categoryName) {
@@ -31,23 +31,23 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
       return Iconsax.book_1;
     } else if (name.contains('scolaire') || name.contains('école') || name.contains('school')) {
       return Iconsax.teacher;
-    } else if (name.contains('bureau') || name.contains('office')) {
+    } else if (name.contains('bureau') ) {
       return Iconsax.monitor_mobbile;
     } else if (name.contains('jeux') || name.contains('jouet') ) {
       return Iconsax.game;
-    } else if (name.contains('cadeau') || name.contains('gift')) {
+    } else if (name.contains('cadeau') ) {
       return Iconsax.gift;
     } else if (name.contains('art') || name.contains('créatif')) {
       return Iconsax.brush_1;
-    } else if (name.contains('papeterie') || name.contains('stationery')) {
+    } else if (name.contains('papeterie') ) {
       return Iconsax.note_1;
     } else if (name.contains('bagagerie') || name.contains('bag')) {
       return Iconsax.bag_2;
-    } else if (name.contains('tech') || name.contains('électronique')) {
+    } else if (name.contains('tech') ) {
       return Iconsax.mobile;
-    } else if (name.contains('beauté') || name.contains('beauty')) {
+    } else if (name.contains('beauté') ) {
       return Iconsax.mirror;
-    } else if (name.contains('fête') || name.contains('party')) {
+    } else if (name.contains('fête') ) {
       return Iconsax.cake;
     }
     else if (name.contains('Fourniture') || name.contains('fourniture')) {
@@ -66,6 +66,20 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
     const apiUrl =
         'https://www.alkirtas.com/api/categories?filter[level_depth]=2&display=[id,name]&limit=20&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
 
+    // Predefined order of categories
+    const List<String> categoryOrder = [
+      "Livres",
+      "Parascolaires",
+      "Livres Scolaires",
+      "Fournitures",
+      "Papeterie",
+      "Bagagerie",
+      "Bureautique",
+      "Art et Loisirs",
+      "Jeux et jouets",
+      "Cadeaux et fetes",
+    ];
+
     try {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
@@ -75,6 +89,16 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
           categories = (data['categories'] as List?)?.where(
             (category) => !excludedCategoryIds.contains(category['id'])
           ).toList() ?? [];
+
+          // Sort categories based on the predefined order
+          categories.sort((a, b) {
+            final nameA = a['name'] as String;
+            final nameB = b['name'] as String;
+            final indexA = categoryOrder.indexOf(nameA);
+            final indexB = categoryOrder.indexOf(nameB);
+            return indexA.compareTo(indexB);
+          });
+
           isLoading = false;
         });
       } else {

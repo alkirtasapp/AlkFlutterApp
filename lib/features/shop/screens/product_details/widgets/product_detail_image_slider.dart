@@ -11,7 +11,8 @@ class AlkProductImageSlider extends StatefulWidget {
 
   const AlkProductImageSlider({
     super.key,
-    required this.productImages, required this.productName,
+    required this.productImages,
+    required this.productName,
   });
 
   @override
@@ -23,72 +24,83 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the screen size to make the container height responsive
+    final screenHeight = MediaQuery.of(context).size.height;
+    
     return AlkCurvedEdgeswidget(
-      
       child: Container(
         color: AlkColors.white,
-        child: Stack(
+        child: Column(
           children: [
-             AlkAppBar( showBackArrow: true,title:Text(widget.productName)),
-             const SizedBox(height: AlkSize.spaceBtwSections,),
-            // **Main Large Image**
+            // App Bar
+            AlkAppBar(showBackArrow: true, title: Text(widget.productName)),
+            
+            // Main Content
             SizedBox(
-              height: 450,
-              child: Padding(
-                padding: const EdgeInsets.all(AlkSize.productImageRadius * 2),
-                child: Center(
-                  child: Image.network(
-                    widget.productImages.isNotEmpty
-                        ? widget.productImages[selectedIndex] // Show selected image
-                        : 'https://www.alkirtas.com/img/p/placeholder.jpg', // Default image
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(child: Icon(Icons.image_not_supported));
-                    },
-                  ),
-                ),
-              ),
-            ),
-
-            // **Image Slider Thumbnails**
-            Positioned(
-              right: 0,
-              bottom: 30,
-              left: AlkSize.defaultSpace,
-              child: SizedBox(
-                height: 80,
-                child: ListView.separated(
-                  separatorBuilder: (_, __) => const SizedBox(width: AlkSize.spaceBtwItems),
-                  itemCount: widget.productImages.length, // Dynamic thumbnail count
-                  shrinkWrap: true,
-                  scrollDirection: Axis.horizontal,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemBuilder: (_, index) => GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIndex = index;
-                      });
-                    },
-                    child: AlkRoundedImage(
-                      imageUrl: widget.productImages[index],
-                      width: 80,
-                      backgroundColor: AlkColors.white,
-                      border: Border.all(
-                        color: selectedIndex == index ? AlkColors.primaryColor : Colors.grey,
-                        width: selectedIndex == index ? 2 : 1,
+              height: screenHeight * 0.45, // Make height 40% of screen height
+              child: Stack(
+                children: [
+                  // Main Large Image
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AlkSize.productImageRadius),
+                      child: Center(
+                        child: Image.network(
+                          widget.productImages.isNotEmpty
+                              ? widget.productImages[selectedIndex]
+                              : 'https://www.alkirtas.com/img/p/placeholder.jpg',
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(child: CircularProgressIndicator());
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(child: Icon(Icons.image_not_supported));
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
+
+                  // Thumbnail Slider
+                  if (widget.productImages.length > 1) // Only show if there are multiple images
+                    Positioned(
+                      right: 0,
+                      bottom: 20,
+                      left: AlkSize.defaultSpace,
+                      child: SizedBox(
+                        height: 60,
+                        child: ListView.separated(
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: AlkSize.spaceBtwItems),
+                          itemCount: widget.productImages.length,
+                          shrinkWrap: true,
+                          scrollDirection: Axis.horizontal,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemBuilder: (_, index) => GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedIndex = index;
+                              });
+                            },
+                            child: AlkRoundedImage(
+                              imageUrl: widget.productImages[index],
+                              width: 60,
+                              backgroundColor: AlkColors.white,
+                              border: Border.all(
+                                color: selectedIndex == index
+                                    ? AlkColors.primaryColor
+                                    : Colors.grey,
+                                width: selectedIndex == index ? 2 : 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-
-            // **App Bar Icon**
-          const AlkAppBar( showBackArrow: true,),
           ],
         ),
       ),

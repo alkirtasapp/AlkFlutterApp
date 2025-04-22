@@ -98,9 +98,9 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Iconsax.coin_15, color: Colors.purple.shade300, size: 25),
+               // Icon(Iconsax.coin1, color: Colors.purple.shade300, size: 25),
                 Text(
-                  '${widget.productNewPrice} ',
+                  '${widget.productNewPrice}  TND',
                   style: Theme.of(context)
                       .textTheme
                       .headlineMedium!
@@ -163,7 +163,7 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
                     overlayColor: Colors.purple,
                   ),
             AlkBrandTitleTextVerifIcon(
-              title: widget.productBrand == 'False' ? 'A L K I R T A S' : widget.productBrand,
+              title:( widget.productBrand == 'False')|| ( widget.productBrand == 'false') ? 'A L K I R T A S' : widget.productBrand,
               brandTextSize: TextSizes.medium,
             ),
             SizedBox(height: AlkSize.spaceBtwSections),

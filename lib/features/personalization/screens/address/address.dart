@@ -189,12 +189,12 @@ class _AddressScreenState extends State<AddressScreen> {
                         AddressData.address1 = addressFieldController.text; // Updated
                         AddressData.postcode = postalCodeController.text;
                         AddressData.city = cityController.text;
-                        AddressData.id_state = gouvernoratController.text;
+                        AddressData.address2 = gouvernoratController.text;
 
                         Get.snackbar(
                           'Succès',
                           'Votre adresse a été mise à jour avec succès !',
-                          snackPosition: SnackPosition.BOTTOM,
+                          snackPosition: SnackPosition.TOP,
                           backgroundColor: AlkColors.primaryColor,
                           colorText: Colors.white,
                         );

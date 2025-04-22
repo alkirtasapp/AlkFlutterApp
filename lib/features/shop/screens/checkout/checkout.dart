@@ -313,7 +313,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       ListTile(
-                        title: Text("Alkirtas corniche (Gratuit)"),
+                        title: Text("Alkirtas-Corniche Bizerte (Gratuit)"),
                         leading: Radio<String>(
                           value: "Alkirtas corniche",
                           groupValue: selectedDeliveryMethod,

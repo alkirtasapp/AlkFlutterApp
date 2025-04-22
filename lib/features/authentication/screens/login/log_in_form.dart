@@ -72,8 +72,8 @@ class _AlkLoginFormState extends State<AlkLoginForm> {
             TextFormField(
               controller: widget.emailController,
               decoration: const InputDecoration(
-                prefixIcon: Icon(Iconsax.direct_right),
-                label: Text('Email'),
+                prefixIcon: Icon(Iconsax.direct),
+                label: Text('E-mail'),
               ),
             ),
             const SizedBox(height: AlkSize.spaceBtwInputFields),

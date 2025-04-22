@@ -4,7 +4,7 @@ import 'package:iconsax/iconsax.dart';
 final List<HomeSection> homeSections = [
   HomeSection(
     icon: Iconsax.book_1,
-    title: "Sélection de Livres",
+    title: "Alkirtas Books",
     
     tabs: [
       CategoryTab(name: "Français", categoryId: 14),
@@ -14,7 +14,7 @@ final List<HomeSection> homeSections = [
   ),
   HomeSection(
     icon: Iconsax.teacher,
-    title: "Scolarité & Spécial Rentrée",
+    title: "Alkirtas School",
     
     tabs: [
       CategoryTab(name: "Parascolaires", categoryId: 17),
@@ -26,7 +26,7 @@ final List<HomeSection> homeSections = [
   ),
   HomeSection(
     icon: Iconsax.monitor_mobbile,
-    title: "Espace Bureaux",
+    title: "Alkirtas Office",
     
     tabs: [
       CategoryTab(name: "Accessoires  Bureau ", categoryId: 558),
@@ -40,7 +40,7 @@ final List<HomeSection> homeSections = [
   ),
   HomeSection(
     icon: Iconsax.game,
-    title: "Jeux & Créativité",
+    title: "Alkirtas Fun",
     
     tabs: [
       CategoryTab(name: "Jeux et Jouets", categoryId: 590),
@@ -50,7 +50,7 @@ final List<HomeSection> homeSections = [
   ),
   HomeSection(
     icon: Iconsax.gift,
-    title: "Cadeaux & Fêtes",
+    title: "Alkirtas Gifts",
     
     tabs: [
       CategoryTab(name: "Décorations de fêtes" , categoryId:  587),
