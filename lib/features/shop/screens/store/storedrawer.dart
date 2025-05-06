@@ -38,6 +38,9 @@ class _StorePageState extends State<StoreDrawer> {
   String currentSearchQuery = "";
   String selectedSortOption = "None"; // Track selected sorting option
 
+  List<String> navigationStack = [];
+  List<int> categoryIdStack = [];
+
   @override
   void initState() {
     super.initState();
@@ -241,6 +244,40 @@ class _StorePageState extends State<StoreDrawer> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: navigationStack.isNotEmpty
+            ? IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.black,
+                ),
+                onPressed: () {
+                  setState(() {
+                    // Get the parent category before removing from stack
+                    String parentCategory = navigationStack.last;
+                    int parentCategoryId = categoryIdStack.last;
+                    
+                    // Remove current level from navigation stack
+                    navigationStack.removeLast();
+                    categoryIdStack.removeLast();
+                    
+                    // Set the selected category to parent
+                    selectedCategory = parentCategory;
+                    selectedCategoryId = parentCategoryId;
+                  });
+                  // Fetch products for the parent category
+                  _fetchProductsForCategory(selectedCategoryId);
+                },
+              )
+            : Builder(
+                builder: (context) {
+                  return IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  );
+                },
+              ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -270,84 +307,133 @@ class _StorePageState extends State<StoreDrawer> {
         ],
         title: Text(
             selectedCategory.isNotEmpty ? selectedCategory : "Chargement..."),
-        leading: Builder(builder: (context) {
-          return IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-          );
-        }),
       ),
       drawer: Drawer(
         child: isLoading
             ? Center(child: CircularProgressIndicator())
-            : ListView(
+            : Column(
                 children: [
-                  for (var category
-                      in categoriesController.mainCategories.entries)
-                    ExpansionTile(
-                      title: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            selectedCategory = category.key;
-                            selectedCategoryId = category.value;
-                            productListKey = UniqueKey();
-                          });
-
-                          _fetchProductsForCategory(selectedCategoryId);
-                          Navigator.pop(context);
-                        },
-                        child: Text(category.key,
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                  // Breadcrumb navigation
+                  if (navigationStack.isNotEmpty)
+                    ListTile(
+                      leading: Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.black,
                       ),
+                      title: Text(
+                        'Retour vers ${navigationStack.last}',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        setState(() {
+                          navigationStack.removeLast();
+                          categoryIdStack.removeLast();
+                          if (categoryIdStack.isNotEmpty) {
+                            selectedCategory = navigationStack.last;
+                            selectedCategoryId = categoryIdStack.last;
+                          } else {
+                            selectedCategory = categoriesController.mainCategories.keys.first;
+                            selectedCategoryId = categoriesController.mainCategories.values.first;
+                          }
+                        });
+                        _fetchProductsForCategory(selectedCategoryId);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  Expanded(
+                    child: ListView(
                       children: [
-                        if (categoriesController.categoryTree
-                            .containsKey(category.value))
-                          for (var subcategory in categoriesController
-                              .categoryTree[category.value]!)
-                            ExpansionTile(
-                              title: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    selectedCategory = subcategory['name'];
-                                    selectedCategoryId = subcategory['id'];
-                                    productListKey = UniqueKey();
-                                  });
+                        for (var category
+                            in categoriesController.mainCategories.entries)
+                          ExpansionTile(
+                            title: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedCategory = category.key;
+                                  selectedCategoryId = category.value;
+                                  productListKey = UniqueKey();
+                                  // Clear navigation stack when selecting main category
+                                  navigationStack.clear();
+                                  categoryIdStack.clear();
+                                });
 
-                                  _fetchProductsForCategory(selectedCategoryId);
-                                  Navigator.pop(context);
-                                },
-                                child: Text("• ${subcategory['name']}",
-                                    style: TextStyle(fontSize: 14)),
-                              ),
-                              children: [
-                                if (categoriesController.categoryTree
-                                    .containsKey(subcategory['id']))
-                                  for (var subSubcategory
-                                      in categoriesController
-                                          .categoryTree[subcategory['id']]!)
-                                    ListTile(
-                                      title:
-                                          Text("→ ${subSubcategory['name']}"),
+                                _fetchProductsForCategory(selectedCategoryId);
+                                Navigator.pop(context);
+                              },
+                              child: Text(category.key,
+                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                            children: [
+                              if (categoriesController.categoryTree
+                                  .containsKey(category.value))
+                                for (var subcategory in categoriesController
+                                    .categoryTree[category.value]!)
+                                  ExpansionTile(
+                                    title: GestureDetector(
                                       onTap: () {
                                         setState(() {
-                                          selectedCategory =
-                                              subSubcategory['name'];
-                                          selectedCategoryId =
-                                              subSubcategory['id'];
+                                          selectedCategory = subcategory['name'];
+                                          selectedCategoryId = subcategory['id'];
                                           productListKey = UniqueKey();
+                                          
+                                          // Clear previous navigation if any
+                                          navigationStack.clear();
+                                          categoryIdStack.clear();
+                                          
+                                          // Add the parent category to navigation stack
+                                          navigationStack.add(category.key);
+                                          categoryIdStack.add(category.value);
                                         });
 
-                                        _fetchProductsForCategory(
-                                            selectedCategoryId);
+                                        _fetchProductsForCategory(selectedCategoryId);
                                         Navigator.pop(context);
                                       },
-                                    )
-                              ],
-                            )
+                                      child: Text("• ${subcategory['name']}",
+                                          style: TextStyle(fontSize: 14)),
+                                    ),
+                                    children: [
+                                      if (categoriesController.categoryTree
+                                          .containsKey(subcategory['id']))
+                                        for (var subSubcategory
+                                            in categoriesController
+                                                .categoryTree[subcategory['id']]!)
+                                          ListTile(
+                                            title:
+                                                Text("→ ${subSubcategory['name']}"),
+                                            onTap: () {
+                                              setState(() {
+                                                selectedCategory =
+                                                    subSubcategory['name'];
+                                                selectedCategoryId =
+                                                    subSubcategory['id'];
+                                                productListKey = UniqueKey();
+                                                
+                                                // Clear previous navigation if any
+                                                navigationStack.clear();
+                                                categoryIdStack.clear();
+                                                
+                                                // Add both parent and current category to navigation stack
+                                                navigationStack.add(category.key);
+                                                categoryIdStack.add(category.value);
+                                                navigationStack.add(subcategory['name']);
+                                                categoryIdStack.add(subcategory['id']);
+                                              });
+
+                                              _fetchProductsForCategory(
+                                                  selectedCategoryId);
+                                              Navigator.pop(context);
+                                            },
+                                          )
+                                    ],
+                                  )
+                            ],
+                          ),
                       ],
                     ),
+                  ),
                 ],
               ),
       ),

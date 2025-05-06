@@ -21,6 +21,49 @@ class AlkProductImageSlider extends StatefulWidget {
 
 class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
   int selectedIndex = 0;
+  final TransformationController _transformationController = TransformationController();
+
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              // Fullscreen InteractiveViewer
+              InteractiveViewer(
+                minScale: 1.0,
+                maxScale: 5.0,
+                child: Center(
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+              ),
+              // Close button
+              Positioned(
+                top: 40,
+                right: 20,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,28 +80,53 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
             
             // Main Content
             SizedBox(
-              height: screenHeight * 0.45, // Make height 40% of screen height
+              height: screenHeight * 0.45, 
               child: Stack(
                 children: [
                   // Main Large Image
                   Positioned.fill(
                     child: Padding(
                       padding: const EdgeInsets.all(AlkSize.productImageRadius),
-                      child: Center(
-                        child: Image.network(
+                      child: GestureDetector(
+                        onTap: () => _showFullScreenImage(
+                          context,
                           widget.productImages.isNotEmpty
                               ? widget.productImages[selectedIndex]
                               : 'https://www.alkirtas.com/img/p/placeholder.jpg',
-                          fit: BoxFit.contain,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return const Center(child: CircularProgressIndicator());
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Center(child: Icon(Icons.image_not_supported));
-                          },
+                        ),
+                        child: InteractiveViewer(
+                          transformationController: _transformationController,
+                          minScale: 1.0,
+                          maxScale: 4.0,
+                          child: Center(
+                            child: Image.network(
+                              widget.productImages.isNotEmpty
+                                  ? widget.productImages[selectedIndex]
+                                  : 'https://www.alkirtas.com/img/p/placeholder.jpg',
+                              fit: BoxFit.contain,
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return const Center(child: CircularProgressIndicator());
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(child: Icon(Icons.image_not_supported));
+                              },
+                            ),
+                          ),
                         ),
                       ),
+                    ),
+                  ),
+
+                  // Reset zoom button (optional)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: IconButton(
+                      icon: const Icon(Icons.restart_alt),
+                      onPressed: () {
+                        _transformationController.value = Matrix4.identity();
+                      },
                     ),
                   ),
 
