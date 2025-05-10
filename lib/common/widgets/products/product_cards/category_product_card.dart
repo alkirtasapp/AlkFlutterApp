@@ -79,6 +79,13 @@ class CategoryProductCard extends StatelessWidget {
 
     final dark = AlkHelperFunctions.isDarkMode(context);
 
+    // Check if product is in stock by parsing the productStock string
+    final int? realStock = int.tryParse(productStock);
+    final bool isInStock = realStock != null && realStock > 0;
+
+
+
+
     // Widget Structure (GestureDetector, Container, Column are unchanged)
     return GestureDetector(
       onTap: () => Get.to(() => ProductDetails(
@@ -160,7 +167,7 @@ class CategoryProductCard extends StatelessWidget {
 
             // --- Details Section (Unchanged) ---
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AlkSize.sm),
+              padding: const EdgeInsets.only(left: AlkSize.sm, right: AlkSize.xs),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,55 +202,57 @@ class CategoryProductCard extends StatelessWidget {
                         ],
                       ),
                       Container(
-                        decoration: const BoxDecoration(
-                          color: AlkColors.primaryColor,
+                        decoration: BoxDecoration(
+                          color: isInStock ? AlkColors.primaryColor : AlkColors.grey,
                           borderRadius: BorderRadius.only(
                               topLeft: Radius.circular(AlkSize.cardRadiusMd),
                               bottomRight: Radius.circular(
                                   AlkSize.productImageRadius)),
                         ),
                         child: SizedBox(
-                          width: AlkSize.iconLg * 1.2,
-                          height: AlkSize.iconLg * 1.2,
+                          width: AlkSize.iconLg *1.2,
+                          height: AlkSize.iconLg *1.2,
                           child: Center(
                             child: IconButton(
                               padding: EdgeInsets.zero,
-                              iconSize: AlkSize.iconMd,
-                              color: AlkColors.white,
-                              onPressed: () {
-                                final cartProvider = Provider.of<CartProvider>(
-                                    context,
-                                    listen: false);
-                                cartProvider.addToCart(
-                                  // ... (unchanged parameters)
-                                  productId: id,
-                                  productName: title,
-                                  productBrand: brandName,
-                                  productImage: imageUrl,
-                                  productPrice: finalPrice,
-                                  productDiscount: discountText ?? '',
-                                  productBrandId: brandId,
-                                  productOldPrice:
-                                      discountText != null ? displayPrice : '',
-                                  productNewPrice: finalPrice,
-                                  productStock: productStock,
-                                  productDescription: descriptionShort,
-                                  productReference: reference,
-                                  productImageList: imageList,
-                                  productFeatures: [],
-                                  quantity: 1,
-                                );
-                                Get.snackbar("Produit ajouté",
-                                    "$title a été ajouté au panier.",
-                                    snackPosition: SnackPosition.TOP,
-                                    isDismissible: true,
-                                    dismissDirection: DismissDirection.horizontal,
-                                    duration: const Duration(seconds: 2),
-                                    backgroundColor:Colors.purple.shade300,
-                                    colorText: AlkColors.white,
-                                    margin: const EdgeInsets.all(10),
-                                    borderRadius: 8);
-                              },
+                              iconSize: AlkSize.iconMd,                              
+                              color: isInStock ? AlkColors.white : AlkColors.grey,
+                              onPressed: isInStock
+                                  ? () {
+                                      final cartProvider =
+                                          Provider.of<CartProvider>(context,
+                                              listen: false);
+                                      cartProvider.addToCart(
+                                        productId: id,
+                                        productName: title,
+                                        productBrand: brandName,
+                                        productImage: imageUrl,
+                                        productPrice: finalPrice,
+                                        productDiscount: discountText ?? '',
+                                        productBrandId: brandId,
+                                        productOldPrice: discountText != null
+                                            ? displayPrice
+                                            : '',
+                                        productNewPrice: finalPrice,
+                                        productStock: productStock, // Use the original string
+                                        productDescription: descriptionShort,
+                                        productReference: reference,
+                                        productImageList: imageList,
+                                        productFeatures: [],
+                                        quantity: 1,
+                                      );
+                                      Get.snackbar("Produit ajouté",
+                                          "$title a été ajouté au panier.",
+                                          snackPosition: SnackPosition.TOP,
+                                          isDismissible: true,
+                                          dismissDirection: DismissDirection.horizontal,
+                                          duration: const Duration(seconds: 2),
+                                          backgroundColor: Colors.purple.shade300,
+                                          colorText: AlkColors.white,
+                                          margin: const EdgeInsets.all(10),
+                                          borderRadius: 8);
+                                    }
+                                  : null,
                               icon: const Icon(Iconsax.add),
                             ),
                           ),

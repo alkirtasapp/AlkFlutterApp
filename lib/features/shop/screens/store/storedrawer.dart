@@ -305,8 +305,11 @@ class _StorePageState extends State<StoreDrawer> {
             ],
           ),
         ],
-        title: Text(
-            selectedCategory.isNotEmpty ? selectedCategory : "Chargement..."),
+        title: Text(isSearching
+            ?  currentSearchQuery
+            : selectedCategory.isNotEmpty
+                ? selectedCategory
+                : "Chargement..."),
       ),
       drawer: Drawer(
         child: isLoading
@@ -460,6 +463,9 @@ class _StorePageState extends State<StoreDrawer> {
                     ),
                     onSubmitted: (query) {
                       _searchProducts(query);
+                      setState(() {
+                        isSearchVisible = false; // Hide search bar after search
+                      });
                     },
                   ),
                 ),

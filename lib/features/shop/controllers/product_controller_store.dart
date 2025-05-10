@@ -110,6 +110,7 @@ class ProductControllerStore {
         processingTasks.add(_processProductDetails(product, fetchedProducts));
       }
     }
+    
 
     await Future.wait(processingTasks);
   }
@@ -177,8 +178,9 @@ class ProductControllerStore {
     try {
       // Ensure product has stock
       product['id'] = int.tryParse(product['id'].toString()) ?? 0;
-      product['price'] = double.tryParse(product['price'].toString()) ?? 0.0;
-      product['quantity'] = int.tryParse(product['quantity'].toString()) ?? 0;
+      product['price'] = double.tryParse(product['price'].toString()) ?? 0.0;      
+      // Fetch actual quantity using QuantityController
+      product['quantity'] = await quantityController.fetchQuantity(product['id']) ?? 0;
 
       final discount = await discountController.fetchDiscount(product['id']);
 
@@ -206,9 +208,6 @@ class ProductControllerStore {
       } else {
         product['image_urls'] = [];
       }
-
-      //product['quantity'] =
-      //    await quantityController.fetchQuantity(product['id']) ?? 0;
 
   
 
@@ -294,4 +293,3 @@ class ProductControllerStore {
       - StockID
       - StockQuantity      
 */
-

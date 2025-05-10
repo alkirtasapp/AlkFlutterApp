@@ -15,6 +15,7 @@ import 'package:alkirtas/utils/constants/images_strings.dart';
 import 'package:alkirtas/utils/constants/size.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../utils/backendData/userData.dart';
 
@@ -60,11 +61,14 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        if (data['customers'] != null && data['customers'] is List && data['customers'].isNotEmpty) {
+        if (data['customers'] != null &&
+            data['customers'] is List &&
+            data['customers'].isNotEmpty) {
           final customer = data['customers'][0];
 
           if (customer['email'] == email) {
-            final bool passwordMatch = BCrypt.checkpw(password, customer['passwd']);
+            final bool passwordMatch =
+                BCrypt.checkpw(password, customer['passwd']);
             if (passwordMatch) {
               // Convert the ID to string when storing
               UserData.email = customer['email'].toString();
@@ -76,6 +80,22 @@ class _LoginScreenState extends State<LoginScreen> {
               await registerAppUser(customer['id'] as int);
 
               Get.offAll(() => const NavigationMenu());
+              final prefs = await SharedPreferences.getInstance();
+              final pending = prefs.getString('pendingNavigation');
+              if (pending != null) {
+                prefs.remove('pendingNavigation');
+                print('Redirecting after login to: $pending');
+
+                // Small delay to make sure NavigationMenu is fully built
+                Future.delayed(Duration(milliseconds: 100), () {
+                  if (pending == 'Promos') {
+                    Get.offAll(() => const NavigationMenu(selectedMenu: 1));
+                  }
+
+                  // Add more cases if needed
+                });
+              }
+
               return;
             } else {
               showErrorDialog(context, 'Mot de passe invalide');
@@ -100,7 +120,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> registerAppUser(int prestashopId) async {
     final usersRef = FirebaseFirestore.instance.collection('app_users');
 
-    final existingUser = await usersRef.where('prestashop_id', isEqualTo: prestashopId).get();
+    final existingUser =
+        await usersRef.where('prestashop_id', isEqualTo: prestashopId).get();
 
     if (existingUser.docs.isEmpty) {
       await usersRef.add({
@@ -179,9 +200,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
-
-
-
-
-

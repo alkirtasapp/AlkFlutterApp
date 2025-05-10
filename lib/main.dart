@@ -1,3 +1,4 @@
+import 'package:alkirtas/api/firebase_api.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/features/authentication/screens/splash_wrapper.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
@@ -25,6 +26,7 @@ Future<void> main() async {
       storageBucket: "app-tracking-4a895.firebasestorage.app",
     ),
   );
+  await FirebaseApi().initNotifications();
 
   // Initialize Firebase Analytics
   final analytics = FirebaseAnalytics.instance;

@@ -6,6 +6,7 @@ import 'package:alkirtas/data/controllers/product_list_Category.dart';
 import 'dart:async';
 import 'package:alkirtas/data/controllers/discount_controller.dart';
 import 'package:alkirtas/data/controllers/tax_controller.dart';
+import 'package:alkirtas/data/controllers/quantity_controller.dart'; // Import QuantityController
 
 class CategoryProductController {
   // --- Static Cache and State Management ---
@@ -21,6 +22,7 @@ class CategoryProductController {
   // --- Instantiate Dedicated Controllers ---
   final DiscountController _discountController = DiscountController();
   final TaxController _taxController = TaxController();
+  final QuantityController _quantityController = QuantityController(); // Add QuantityController
 
   CategoryProductController({required this.categoryId, this.limit = 8});
 
@@ -304,6 +306,12 @@ class CategoryProductController {
         product['default_image_url'] = constructImageUrl(product['id_default_image']);
       }));
 
+      // Fetch actual quantity
+      tasks.add(_quantityController.fetchQuantity(productId).then((fetchedStock) {
+        // Store as string to match existing data structure expectations
+        product['quantity'] = fetchedStock?.toString() ?? '0';
+      }));
+
       await Future.wait(tasks);
 
     } catch (e) {
@@ -312,6 +320,7 @@ class CategoryProductController {
       product['discount'] ??= 0.0;
       product['ttc_price'] ??= double.tryParse(product['price'].toString()) ?? 0.0;
       product['image_urls'] ??= <String>[];
+      product['quantity'] ??= '0'; // Ensure quantity has a default if fetch failed
       product['default_image_url'] ??= constructImageUrl(product['id_default_image']);
     }
     // Return the modified product map

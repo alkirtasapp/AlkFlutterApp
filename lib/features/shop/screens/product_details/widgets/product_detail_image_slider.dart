@@ -48,7 +48,7 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
                 top: 40,
                 right: 20,
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                  icon: const Icon(Icons.close, color: Colors.black, size: 30),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
@@ -118,17 +118,6 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
                     ),
                   ),
 
-                  // Reset zoom button (optional)
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: IconButton(
-                      icon: const Icon(Icons.restart_alt),
-                      onPressed: () {
-                        _transformationController.value = Matrix4.identity();
-                      },
-                    ),
-                  ),
 
                   // Thumbnail Slider
                   if (widget.productImages.length > 1) // Only show if there are multiple images

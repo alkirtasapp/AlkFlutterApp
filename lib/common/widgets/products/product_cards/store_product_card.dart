@@ -78,6 +78,11 @@ class ProductCardStore extends StatelessWidget {
         ProductControllerStore().constructImageUrl(productData['id_default_image']);
     final dark = Theme.of(context).brightness == Brightness.dark;
 
+      // Check if product is in stock by parsing the productStock string
+    final int? realStock = int.tryParse(productStock);
+    final bool isInStock = realStock != null && realStock > 0;
+
+
     return GestureDetector(
       onTap: () => Get.to(() => ProductDetails(
             productId: id,
@@ -203,7 +208,7 @@ class ProductCardStore extends StatelessWidget {
                         ),
                         Container(
                           decoration: BoxDecoration(
-                            color: AlkColors.primaryColor,
+                            color: isInStock ? AlkColors.primaryColor : AlkColors.grey,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(AlkSize.cardRadiusMd),
                               bottomRight:
@@ -216,8 +221,8 @@ class ProductCardStore extends StatelessWidget {
                             height: AlkSize.iconLg * 1.2,
                             child: Center(
                                 child: IconButton(
-                                    color: AlkColors.white,
-                                    onPressed: () {
+                                    color:isInStock ? AlkColors.white : AlkColors.grey,
+                                    onPressed:isInStock? () {
                                         final cartProvider = Provider.of<CartProvider>(context, listen: false);
                                         cartProvider.addToCart(
                                             productId: id,
@@ -255,7 +260,7 @@ class ProductCardStore extends StatelessWidget {
                                             margin: const EdgeInsets.all(10),
                                             borderRadius: 8
                                         );
-                                    },
+                                    }:null,
                                     icon: const Icon(Iconsax.add),
                                 )),
                           ),
