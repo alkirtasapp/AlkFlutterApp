@@ -14,12 +14,14 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.alkirtas.alkirtas"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+
+    // Use an NDK that supports 16 KB memory pages (Play requirement from Nov 1, 2025)
+    ndkVersion "26.3.11579264"   // ← was: ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        coreLibraryDesugaringEnabled = true   // ← REQUIRED for flutter_local_notifications
+        coreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -60,7 +62,6 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:32.7.4')
     implementation 'com.google.firebase:firebase-analytics-ktx'
 
-    // ↓ Needed when coreLibraryDesugaringEnabled = true
+    // Needed when coreLibraryDesugaringEnabled = true
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
-    // (You can bump to 2.1.x later if you like.)
 }
