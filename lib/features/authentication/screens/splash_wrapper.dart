@@ -4,9 +4,13 @@ import 'package:alkirtas/app.dart';
 import 'package:alkirtas/features/shop/screens/splashscreen.dart';
 import 'package:alkirtas/features/shop/controllers/category_product_controller.dart';
 import 'package:alkirtas/config/home_sections_config.dart';
+import 'package:alkirtas/api/banner_api.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SplashWrapper extends StatefulWidget {
   const SplashWrapper({super.key});
+
+  static List<String> preloadedBannerUrls = [];
 
   @override
   State<SplashWrapper> createState() => _SplashWrapperState();
@@ -53,7 +57,14 @@ class _SplashWrapperState extends State<SplashWrapper> {
       
       print("✅ Priority categories preloaded!");
 
-      // Set app as ready after priority categories are loaded
+      // Prefetch banner images
+      print("⏳ Fetching and prefetching banner images...");
+      final bannerUrls = await BannerApi.fetchBannerUrls();
+      await Future.wait(bannerUrls.map((url) => precacheImage(CachedNetworkImageProvider(url), context)));
+      SplashWrapper.preloadedBannerUrls = bannerUrls;
+      print("✅ Banner images prefetched!");
+
+      // Set app as ready after priority categories and banners are loaded
       if (mounted) {
         setState(() => isReady = true);
       }

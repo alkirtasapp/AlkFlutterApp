@@ -1,10 +1,9 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
+    id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
 }
-
-def kotlinVersion = '1.8.22'
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
@@ -13,21 +12,22 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.test"  // This should match your Firebase config
+    namespace = "com.alkirtas.alkirtas"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled = true   // ← REQUIRED for flutter_local_notifications
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "17"
     }
 
     defaultConfig {
-        applicationId "com.example.test"  // This should match your Firebase config
+        applicationId "com.alkirtas.alkirtas"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutter.versionCode
@@ -57,9 +57,10 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation platform('com.google.firebase:firebase-bom:32.7.4')
     implementation 'com.google.firebase:firebase-analytics-ktx'
-}
 
-apply plugin: 'com.google.gms.google-services'
+    // ↓ Needed when coreLibraryDesugaringEnabled = true
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    // (You can bump to 2.1.x later if you like.)
+}

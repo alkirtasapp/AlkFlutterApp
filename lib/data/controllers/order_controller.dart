@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
+import 'package:alkirtas/providers/coupon_provider.dart';
 
 class OrderController {
   final String apiKey = 'Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
@@ -13,6 +14,8 @@ class OrderController {
     required double cartTotal,
     required double totalProducts,
     required double totalProductsWt,
+    Coupon? coupon,
+    double discountAmount = 0.0,
   }) async {
     try {
       // Determine the carrier ID and shipping cost based on the delivery method
@@ -20,7 +23,7 @@ class OrderController {
       double shippingCost = (deliveryMethod == "Alkirtas corniche") ? 0.0 : 8.0;
 
       // Dynamically calculate total_paid
-      double totalPaid = totalProductsWt + shippingCost;
+      double totalPaid = totalProductsWt + shippingCost - discountAmount;
 
       // Set the correct current_state
       int currentState = 13;
@@ -33,6 +36,9 @@ class OrderController {
       print("Total Paid Real: $totalPaid");
       print("Total Products: $totalProducts");
       print("Total Products WT: $totalProductsWt");
+      if (coupon != null) {
+        print("Coupon code: ${coupon.code}, Discount: $discountAmount");
+      }
 
       String xmlBody = '''
       <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -55,6 +61,7 @@ class OrderController {
           <total_shipping_tax_incl>${shippingCost.toStringAsFixed(6)}</total_shipping_tax_incl>
           <total_shipping_tax_excl>${shippingCost.toStringAsFixed(6)}</total_shipping_tax_excl>
           <conversion_rate>1</conversion_rate>
+          ${coupon != null ? '<note>Coupon utilisé : id=${coupon.id}, code=${coupon.code}, nom=${coupon.name}, réduction=${discountAmount.toStringAsFixed(2)}</note>' : ''}
         </order>
       </prestashop>
       ''';
@@ -68,6 +75,42 @@ class OrderController {
       if (response.statusCode == 201) {
         print("✅ Order created successfully!");
         print("Response Body: ${response.body}");
+
+        // Extract order ID from response
+        final orderIdMatch = RegExp(r'<id><!\[CDATA\[(\d+)\]\]></id>').firstMatch(response.body);
+        final orderId = orderIdMatch?.group(1);
+
+        // If a coupon was used, update the note field with a PUT request
+        if (coupon != null && orderId != null) {
+          // Fetch the created order XML
+          final getResponse = await http.get(
+            Uri.parse('$baseUrl/$orderId?ws_key=$apiKey'),
+            headers: {'Content-Type': 'application/xml'},
+          );
+          if (getResponse.statusCode == 200) {
+            String orderXml = getResponse.body;
+            // Insert or update the <note> field
+            // Remove any existing <note>...</note>
+            orderXml = orderXml.replaceAll(RegExp(r'<note>.*?</note>', dotAll: true), '');
+            // Prepare discount details
+            String percentText = (coupon.reductionPercent != null && coupon.reductionPercent! > 0)
+              ? ', pourcentage=${coupon.reductionPercent!.toStringAsFixed(2)}%'
+              : '';
+            // Insert <note> before </order>
+            orderXml = orderXml.replaceFirst(
+              '</order>',
+              '<note>Coupon utilisé : id=${coupon.id}, code=${coupon.code}, nom=${coupon.name}, réduction=${discountAmount.toStringAsFixed(2)}${percentText}</note>\n</order>'
+            );
+            // Send PUT request to update the order
+            final putResponse = await http.put(
+              Uri.parse('$baseUrl/$orderId?ws_key=$apiKey'),
+              headers: {'Content-Type': 'application/xml'},
+              body: orderXml,
+            );
+            print('Order note update status: ${putResponse.statusCode}');
+            print('Order note update body: ${putResponse.body}');
+          }
+        }
         return true;
       } else {
         print("❌ Failed to create order: ${response.body}");

@@ -70,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: Hero(
                   tag: 'app_logo',
                   child: Image.asset(
-                    AlkImages.darkAppLogo,
+                    AlkImages.splashLogo,
                     height: 150,
                   ),
                 ),

@@ -35,7 +35,6 @@ class ProductControllerStore {
         return null;
       }
 
-      // Ensure we start from the correct offset
       if (offset >= productIds.length) {
         print(
             "❌ Offset ($offset) is beyond available products (${productIds.length}) for Category ID: $categoryId");
@@ -46,8 +45,9 @@ class ProductControllerStore {
       int currentOffset = offset;
       Set<int> processedProductIds = {};
 
-      const int batchSize = 10; // Adjust the batch size as needed
+      const int batchSize = 10; // Adjust as needed
 
+      // Keep fetching batches until we have enough active products or reach the end
       while (fetchedProducts.length < limit && currentOffset < productIds.length) {
         List<int> batchProductIds = [];
 
@@ -57,7 +57,6 @@ class ProductControllerStore {
           currentOffset++;
 
           if (productId == null || productId <= 0 || processedProductIds.contains(productId)) {
-            print("⚠️ Invalid or duplicate product ID at index $currentOffset");
             continue;
           }
 
@@ -69,7 +68,22 @@ class ProductControllerStore {
           break;
         }
 
-        await _fetchAndProcessProducts(batchProductIds, fetchedProducts);
+        // Fetch and process products for the batch
+        List<Map<String, dynamic>> tempProducts = [];
+        await _fetchAndProcessProducts(batchProductIds, tempProducts);
+
+        // Only add active products
+        fetchedProducts.addAll(tempProducts.where((p) => p['active'].toString() == '1'));
+
+        // If we reach the end of productIds, break
+        if (currentOffset >= productIds.length) {
+          break;
+        }
+      }
+
+      // If we have more than limit, trim the list
+      if (fetchedProducts.length > limit) {
+        fetchedProducts = fetchedProducts.take(limit).toList();
       }
 
       // Cache the results

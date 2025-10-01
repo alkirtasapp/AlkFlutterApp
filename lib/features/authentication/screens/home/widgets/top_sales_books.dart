@@ -41,8 +41,7 @@ class BestSellersSection extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [const Color.fromARGB(255, 202, 117, 218), Colors.deepPurple.shade400],
-            begin: Alignment.topLeft,
+            colors: [Colors.purple.shade400,const Color(0xFF7F2461)],
             end: Alignment.bottomRight,
             stops: const [0.2, 0.8],
           ),

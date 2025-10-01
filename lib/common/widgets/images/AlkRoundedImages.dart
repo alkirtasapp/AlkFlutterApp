@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/size.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class AlkRoundedImage extends StatelessWidget {
   const AlkRoundedImage({
@@ -46,18 +47,13 @@ class AlkRoundedImage extends StatelessWidget {
           borderRadius:
               applyImageRadius ? BorderRadius.circular(borderRadius) : BorderRadius.zero,
           child: isNetwork
-              ? Image.network(
-                  imageUrl,
+              ? CachedNetworkImage(
+                  imageUrl: imageUrl,
                   fit: fit ?? BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(child: CircularProgressIndicator());
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(Icons.image_not_supported, color: Colors.grey),
-                    );
-                  },
+                  placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                  errorWidget: (context, url, error) => const Center(
+                    child: Icon(Icons.image_not_supported, color: Colors.grey),
+                  ),
                 )
               : Image.asset(
                   imageUrl,

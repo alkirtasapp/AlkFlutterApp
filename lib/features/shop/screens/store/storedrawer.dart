@@ -100,36 +100,49 @@ class _StorePageState extends State<StoreDrawer> {
     setState(() => isLoading = false);
   }
 
-  Future<void> _loadMoreProducts() async {
-    if (isFetchingMore) return;
+ Future<void> _loadMoreProducts() async {
+  if (isFetchingMore) return;
 
-    setState(() => isFetchingMore = true);
+  setState(() => isFetchingMore = true);
 
-    print(
-        "📡 Loading more products for Category ID: $selectedCategoryId, Offset: $offset");
+  final List<int> allProductIds = await productController.productListCategory.fetchProductIdsFromCategory(selectedCategoryId);
 
-    final List<Map<String, dynamic>>? moreProducts = await productController
-        .fetchProductDataStore(selectedCategoryId, offset, limit);
+  int remaining = allProductIds.length - offset;
+  print("🔎 Found $remaining products remaining on category ID $selectedCategoryId");
 
-    if (moreProducts != null && moreProducts.isNotEmpty) {
-      setState(() {
-        for (var product in moreProducts) {
-          if (!fetchedProductIds.contains(product['id'])) {
-            products.add(product);
-            fetchedProductIds.add(product['id']);
-          }
-        }
-        offset += moreProducts.length;
-        _applySorting(); // Apply sorting after loading more products
-      });
-      print(
-          "✅ Loaded ${moreProducts.length} more products for Category ID: $selectedCategoryId");
-    } else {
-      print("⚠️ No more products found for Category ID: $selectedCategoryId");
-    }
+  // Get the next batch of product IDs
+  final List<int> nextBatchIds = allProductIds.skip(offset).take(limit * 5).toList(); // Fetch a bigger batch to filter more
 
+  if (nextBatchIds.isEmpty) {
+    print("⚠️ No more products to load for Category ID: $selectedCategoryId");
     setState(() => isFetchingMore = false);
+    return;
   }
+
+  final List<Map<String, dynamic>>? moreProducts = await productController.fetchProductsByIds(nextBatchIds);
+
+  // Only add active products
+  final activeProducts = moreProducts?.where((p) => p['active'].toString() == '1').toList() ?? [];
+
+  if (activeProducts.isNotEmpty) {
+    setState(() {
+      for (var product in activeProducts) {
+        if (!fetchedProductIds.contains(product['id'])) {
+          products.add(product);
+          fetchedProductIds.add(product['id']);
+        }
+      }
+      offset += nextBatchIds.length; // Move offset by batch size, not just limit
+      _applySorting();
+    });
+    print("✅ Displayed ${activeProducts.length} products, ${allProductIds.length - offset} remaining on category ID $selectedCategoryId");
+  } else {
+    print("⚠️ No more active products found for Category ID: $selectedCategoryId");
+    offset += nextBatchIds.length; // Still move offset forward
+  }
+
+  setState(() => isFetchingMore = false);
+}
 
   Future<void> _searchProducts(String query) async {
     setState(() {

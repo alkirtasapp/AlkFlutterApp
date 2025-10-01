@@ -15,6 +15,8 @@ import 'package:alkirtas/utils/constants/size.dart';
 
 import '../../../../common/widgets/list_tiles/userProfile_tile.dart';
 import '../../../../utils/backendData/userData.dart';
+import 'package:provider/provider.dart';
+import '../../../../providers/coupon_provider.dart';
 
 class SettingScreen extends StatelessWidget {
   const SettingScreen({super.key});
@@ -94,20 +96,7 @@ class SettingScreen extends StatelessWidget {
                     onPressed: () {
                       showDialog(
                         context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text('Fonctionnalité indisponible'),
-                            content: Text('Cette fonctionnalité n\'est pas encore disponible.'),
-                            actions: <Widget>[
-                              TextButton(
-                                child: Text('OK'),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            ],
-                          );
-                        },
+                        builder: (context) => CouponPopup(),
                       );
                     },
                   ),
@@ -175,4 +164,188 @@ class SettingScreen extends StatelessWidget {
 ///   - My Coupons
 /// }
 /// Add a log out button at the end of the screen
+
+class CouponPopup extends StatefulWidget {
+  const CouponPopup({super.key});
+
+  @override
+  _CouponPopupState createState() => _CouponPopupState();
+}
+
+class _CouponPopupState extends State<CouponPopup> {
+  final TextEditingController _controller = TextEditingController();
+  String? _error;
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final couponProvider = Provider.of<CouponProvider>(context);
+    return AlertDialog(
+      title: Text('Mes Coupons'),
+      content: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 450,
+            maxHeight: 500,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  labelText: 'Ajouter un code',
+                  errorText: _error,
+                ),
+              ),
+              SizedBox(height: 8),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: () async {
+                        setState(() {
+                          _isLoading = true;
+                          _error = null;
+                        });
+                        final code = _controller.text.trim();
+                        if (code.isEmpty) {
+                          setState(() {
+                            _error = 'Veuillez entrer un code.';
+                            _isLoading = false;
+                          });
+                          return;
+                        }
+                        final success = await couponProvider.addCoupon(code);
+                        setState(() {
+                          _isLoading = false;
+                          _error = success ? null : 'Code invalide ou déjà utilisé.';
+                          if (success) _controller.clear();
+                        });
+                      },
+                      child: Text('Ajouter'),
+                    ),
+              Divider(),
+              Text('Coupons collectés :'),
+              SizedBox(
+                height: 280,
+                child: ListView.builder(
+                  itemCount: couponProvider.coupons.length,
+                  itemBuilder: (context, i) {
+                    final coupon = couponProvider.coupons[i];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.local_offer, color: Colors.orange, size: 32),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 4,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange.shade100,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            coupon.code,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              letterSpacing: 1.2,
+                                              color: Colors.orange.shade900,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (coupon.reductionPercent != null && coupon.reductionPercent! > 0)
+                                          Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.shade100,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              '-${coupon.reductionPercent!.toStringAsFixed(0)}%',
+                                              style: TextStyle(
+                                                color: Colors.green.shade800,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          )
+                                        else if (coupon.reductionAmount != null && coupon.reductionAmount! > 0)
+                                          Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue.shade100,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              '-${coupon.reductionAmount!.toStringAsFixed(2)} MAD',
+                                              style: TextStyle(
+                                                color: Colors.blue.shade800,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      coupon.name,
+                                      style: TextStyle(fontSize: 14, color: Colors.black87),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Expire le : ${coupon.expiryDate != null
+                                          ? '${coupon.expiryDate.day.toString().padLeft(2, '0')}/'
+                                            '${coupon.expiryDate.month.toString().padLeft(2, '0')}/'
+                                            '${coupon.expiryDate.year}'
+                                          : 'Inconnue'}',
+                                      style: TextStyle(fontSize: 12, color: Colors.redAccent),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.redAccent),
+                                onPressed: () {
+                                  couponProvider.removeCoupon(coupon);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Fermer'),
+        ),
+      ],
+    );
+  }
+}
 

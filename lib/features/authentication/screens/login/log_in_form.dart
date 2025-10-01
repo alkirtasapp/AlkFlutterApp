@@ -104,6 +104,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> {
                           onChanged: (value) {
                             isRememberMeChecked.value = value ?? false;
                           },
+                          activeColor: const Color(0xFF7F2461),
                         ),
                         const Text('Mémoriser info'),
                       ],
@@ -127,7 +128,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purpleAccent[700],
+                  backgroundColor: const Color.fromARGB(255, 151, 46, 116),
                 ),
                 onPressed: () async {
                   await _saveCredentials();
@@ -146,7 +147,9 @@ class _AlkLoginFormState extends State<AlkLoginForm> {
               child: OutlinedButton(
                 onPressed: () => Get.to(() => const SignUpScreen()),
                 child: const Text('Créer un compte'),
+                
               ),
+                
             ),
           ],
         ),

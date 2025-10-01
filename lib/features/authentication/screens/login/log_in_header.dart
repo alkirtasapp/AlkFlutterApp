@@ -17,7 +17,7 @@ class AlkLoginHeader extends StatelessWidget {
           child: Image(
             height: 150,
             image: AssetImage(
-                dark ? AlkImages.darkAppLogo : AlkImages.lighAppLogo),
+                dark ? AlkImages.splashLogo : AlkImages.splashLogo),
           ),
         ),
         const SizedBox(height: AlkSize.lg),

@@ -17,6 +17,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
+import 'package:alkirtas/providers/coupon_provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key}); // Remove cartId
@@ -39,12 +40,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   bool isTermsAccepted = false; // Checkbox state
   String selectedDeliveryMethod = "First Delivery"; 
-  double deliveryFee = 8.000; 
+  double deliveryFee = 9.000; 
 
   void updateDeliveryMethod(String method) {
     setState(() {
       selectedDeliveryMethod = method;
-      deliveryFee = (method == "Alkirtas corniche") ? 0.0 : 8.000;
+      deliveryFee = (method == "Alkirtas corniche") ? 0.0 : 9.000;
     });
   }
 
@@ -164,8 +165,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
+    final couponProvider = Provider.of<CouponProvider>(context);
+    final selectedCoupon = couponProvider.selectedCoupon;
 
     print("🛒 CartProvider is available. Cart items: ${cartProvider.cartItems.length}");
+
+    double subtotal = cartProvider.cartItems.isNotEmpty ? cartProvider.cartItems.fold(0.0, (sum, item) {
+      final price = double.tryParse(item['productPrice'] ?? '0') ?? 0.0;
+      final quantity = int.tryParse(item['productQuantity'] ?? '1') ?? 1;
+      return sum + price * quantity;
+    }) : 0.0;
+
+    double discountAmount = 0.0;
+    if (selectedCoupon != null) {
+      if (selectedCoupon.reductionPercent != null && selectedCoupon.reductionPercent! > 0) {
+        discountAmount = subtotal * (selectedCoupon.reductionPercent! / 100);
+      } else if (selectedCoupon.reductionAmount != null && selectedCoupon.reductionAmount! > 0) {
+        discountAmount = selectedCoupon.reductionAmount!;
+      }
+    }
+    double subtotalAfterDiscount = subtotal - discountAmount;
+    double totalWithDelivery = subtotalAfterDiscount + deliveryFee;
 
     return Scaffold(
       appBar: AppBar(
@@ -333,7 +353,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           onChanged: (value) {
                             setState(() {
                               selectedDeliveryMethod = value!;
-                              deliveryFee = 8.0; // Delivery fee for First Delivery
+                              deliveryFee = 9.0; // Delivery fee for First Delivery
                             });
                           },
                         ),
@@ -358,6 +378,77 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(height: AlkSize.spaceBtwInputFields),
 
+                  // Coupon selection section
+                  if (couponProvider.coupons.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Code de réduction', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        DropdownButton<Coupon>(
+                          value: selectedCoupon,
+                          hint: Text('Sélectionner un coupon'),
+                          isExpanded: true,
+                          items: couponProvider.coupons.map((coupon) {
+                            return DropdownMenuItem<Coupon>(
+                              value: coupon,
+                              child: Text('${coupon.code} - ${coupon.name}'),
+                            );
+                          }).toList(),
+                          onChanged: (coupon) {
+                            couponProvider.selectCoupon(coupon);
+                          },
+                        ),
+                        if (selectedCoupon != null)
+                          TextButton(
+                            onPressed: () => couponProvider.selectCoupon(null),
+                            child: Text('Retirer le coupon'),
+                          ),
+                      ],
+                    ),
+                  // Price breakdown
+                  if (selectedCoupon != null)
+                    Card(
+                      margin: EdgeInsets.symmetric(vertical: 12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Récapitulatif du prix', style: TextStyle(fontWeight: FontWeight.bold)),
+                            SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Prix original:'),
+                                Text('${subtotal.toStringAsFixed(2)} TND'),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Réduction:'),
+                                Text('-${discountAmount.toStringAsFixed(2)} TND'),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Livraison:'),
+                                Text('${deliveryFee.toStringAsFixed(2)} TND'),
+                              ],
+                            ),
+                            Divider(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Total:'),
+                                Text('${totalWithDelivery.toStringAsFixed(2)} TND', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   // Confirm Order Button
                   SizedBox(
                     width: double.infinity,
@@ -404,13 +495,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                                   // Step 2: Create Cart
                                   final CartController cartController = Get.put(CartController());
-                                  String cartId = await cartController.createCartWithAddress(
+                                  final cartId = await cartController.createCartWithAddress(
                                     cartItems: cartProvider.cartItems,
                                     idAddressDelivery: AddressData.id,
                                     idCarrier: selectedDeliveryMethod == "Alkirtas corniche" ? 4 : 6,
+                                   
                                   );
 
                                   print("✅ Cart created successfully with ID: $cartId");
+
+                                  // No need to call addCouponToCart anymore
 
                                   // Step 3: Create Order
                                   final OrderController orderController = OrderController();
@@ -425,6 +519,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     cartTotal: totalPaid,
                                     totalProducts: totalProducts,
                                     totalProductsWt: totalProductsWt,
+                                    coupon: selectedCoupon, // Pass coupon
+                                    discountAmount: discountAmount, // Pass discount
                                   );
 
                                   if (orderSuccess) {

@@ -4,7 +4,7 @@ import 'package:alkirtas/features/authentication/screens/login/log_in_footer.dar
 import 'package:alkirtas/features/authentication/screens/login/log_in_form.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in_header.dart';
 import 'package:bcrypt/bcrypt.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+//import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -16,6 +16,8 @@ import 'package:alkirtas/utils/constants/size.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../../../utils/backendData/userData.dart';
 
@@ -48,11 +50,26 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      final response = await http.get(
-        Uri.parse(
-          'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU',
-        ),
-      );
+       // Create the request with CORS-friendly headers for web platform
+       final request = http.Request(
+         'GET',
+         Uri.parse(
+           'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU',
+         ),
+       );
+
+       // Add headers to handle CORS issues on web platform
+       request.headers.addAll({
+         'Content-Type': 'application/json',
+         'Accept': 'application/json',
+         'User-Agent': 'Flutter-Web-App/1.0',
+         // Add Origin header for web platform
+         if (kIsWeb)
+           'Origin': 'https://www.alkirtas.com', // Match the API domain
+       });
+
+       final streamedResponse = await request.send();
+       final response = await http.Response.fromStream(streamedResponse);
 
       setState(() {
         isLoading = false;
@@ -77,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
               UserData.id = customer['id'].toString();
 
               // Pass the ID as integer to Firebase
-              await registerAppUser(customer['id'] as int);
+     //         await registerAppUser(customer['id'] as int);
 
               Get.offAll(() => const NavigationMenu());
               final prefs = await SharedPreferences.getInstance();
@@ -109,27 +126,39 @@ class _LoginScreenState extends State<LoginScreen> {
         showErrorDialog(context, 'Erreur de connexion.');
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      print('Login error: $e');
-      showErrorDialog(context, 'Une erreur est survenue. Veuillez réessayer.');
-    }
+       setState(() {
+         isLoading = false;
+       });
+       print('Login error: $e');
+
+       // Provide more specific error messages based on the error type
+       String errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
+
+       if (e.toString().contains('XMLHttpRequest')) {
+         errorMessage = 'Erreur de connexion réseau. Vérifiez votre connexion internet ou essayez sur l\'application mobile.';
+       } else if (e.toString().contains('CORS')) {
+         errorMessage = 'Erreur CORS. Cette fonctionnalité nécessite l\'application mobile ou un serveur configuré.';
+       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed to connect')) {
+         errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion internet.';
+       }
+
+       showErrorDialog(context, errorMessage);
+     }
   }
 
-  Future<void> registerAppUser(int prestashopId) async {
-    final usersRef = FirebaseFirestore.instance.collection('app_users');
-
-    final existingUser =
-        await usersRef.where('prestashop_id', isEqualTo: prestashopId).get();
-
-    if (existingUser.docs.isEmpty) {
-      await usersRef.add({
-        'prestashop_id': prestashopId,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    }
-  }
+//  Future<void> registerAppUser(int prestashopId) async {
+//    final usersRef = FirebaseFirestore.instance.collection('app_users');
+//
+//    final existingUser =
+//        await usersRef.where('prestashop_id', isEqualTo: prestashopId).get();
+//
+//    if (existingUser.docs.isEmpty) {
+//      await usersRef.add({
+//        'prestashop_id': prestashopId,
+//        'timestamp': FieldValue.serverTimestamp(),
+//      });
+//    }
+ // }
 
   // Show error dialog
   void showErrorDialog(BuildContext context, String message) {

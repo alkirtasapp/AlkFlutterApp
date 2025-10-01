@@ -183,6 +183,7 @@ class CartController extends GetxController {
     required List<Map<String, String>> cartItems,
     required String idAddressDelivery,
     required int idCarrier,
+    // Removed couponId
   }) async {
     try {
       String url = "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
@@ -199,6 +200,8 @@ class CartController extends GetxController {
         """;
       }).join();
 
+      // Removed cartRulesXml
+
       String xmlBody = '''
       <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
         <cart>
@@ -208,7 +211,7 @@ class CartController extends GetxController {
           <id_carrier>$idCarrier</id_carrier>
           <id_address_delivery><![CDATA[$idAddressDelivery]]></id_address_delivery>
           <id_address_invoice><![CDATA[$idAddressDelivery]]></id_address_invoice>
-          <delivery_option>{"$idAddressDelivery":"$idCarrier,"}</delivery_option> <!-- Set delivery_option -->
+          <delivery_option>{"$idAddressDelivery":"$idCarrier,"}</delivery_option>
           <associations>
             <cart_rows>
               $cartRowsXml

@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:807654268134:android:e8f2385f4ae1245c2e6f27",
+        "android_client_info": {
+          "package_name": "com.alkirtas.alkirtas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4SAK_0VrCxV9lAXDShgUu1cR-gn8F3Zo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:807654268134:android:76749e2db7d4b7d02e6f27",
         "android_client_info": {
           "package_name": "com.example.test"

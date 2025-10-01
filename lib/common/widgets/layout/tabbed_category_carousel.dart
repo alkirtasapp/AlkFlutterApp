@@ -70,7 +70,7 @@ class _TabbedCategoryCarouselState extends State<TabbedCategoryCarousel>
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.purple.shade300, Colors.deepPurple.shade500],
+                colors: [Colors.purple.shade400,const Color(0xFF7F2461)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 stops: const [0.2, 1],

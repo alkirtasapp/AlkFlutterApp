@@ -2,6 +2,8 @@ class AlkImages {
   // logos
   static const String darkAppLogo = "lib/assets/logos/alkirtaslogo.png";
   static const String lighAppLogo = "lib/assets/logos/alkirtaslogo.png";
+  static const String splashLogo = "lib/assets/logos/splashlogo.png";
+
 
   //facebook and google login icons 
   static const String google = "lib/assets/logos/google-icon.png";
