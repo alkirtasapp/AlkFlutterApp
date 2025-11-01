@@ -1,0 +1,42 @@
+[
+  {
+    "id": 2,
+    "name": "Livres"
+  },
+  {
+    "id": 709,
+    "name": "Parascolaires"
+  },
+  {
+    "id": 710,
+    "name": "Livres Scolaires"
+  },
+  {
+    "id": 3,
+    "name": "Fournitures"
+  },
+  {
+    "id": 712,
+    "name": "Papeterie"
+  },
+  {
+    "id": 713,
+    "name": "Bagagerie"
+  },
+  {
+    "id": 714,
+    "name": "Bureautique"
+  },
+  {
+    "id": 715,
+    "name": "Art et Loisirs"
+  },
+  {
+    "id": 716,
+    "name": "Jeux et jouets"
+  },
+  {
+    "id": 717,
+    "name": "Cadeaux et fetes"
+  }
+]

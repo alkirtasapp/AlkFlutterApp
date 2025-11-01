@@ -1,62 +1,22 @@
 import 'package:alkirtas/models/home_section.dart';
-import 'package:iconsax/iconsax.dart';
+import 'package:alkirtas/api/sections_api.dart';
 
-final List<HomeSection> homeSections = [
-  HomeSection(
-    icon: Iconsax.book_1,
-    title: "Alkirtas Books",
-    
-    tabs: [
-      CategoryTab(name: "Français", categoryId: 14),
-      CategoryTab(name: "English", categoryId: 15),
-      CategoryTab(name: "عربي", categoryId: 13),
-    ],
-  ),
-  HomeSection(
-    icon: Iconsax.teacher,
-    title: "Alkirtas School",
-    
-    tabs: [
-      CategoryTab(name: "Parascolaires", categoryId: 17),
-      CategoryTab(name: "Bagagerie", categoryId: 12),
-      CategoryTab(name: "Ecriture & Correction", categoryId: 122),
-      CategoryTab(name: "Papetrie", categoryId: 120),
-     
-    ],
-  ),
-  HomeSection(
-    icon: Iconsax.monitor_mobbile,
-    title: "Alkirtas Office",
-    
-    tabs: [
-      CategoryTab(name: "Accessoires  Bureau ", categoryId: 558),
-      CategoryTab(name: "High-Tech" , categoryId: 569),
-      CategoryTab(name: "Agendas & Calendriers " , categoryId: 121),
-      CategoryTab(name: "Ecriture & Correction", categoryId: 122),
-      
-      
-      
-    ],
-  ),
-  HomeSection(
-    icon: Iconsax.game,
-    title: "Alkirtas Fun",
-    
-    tabs: [
-      CategoryTab(name: "Jeux et Jouets", categoryId: 590),
-      CategoryTab(name: "Art & Loisirs ", categoryId: 743),
-      
-    ],
-  ),
-  HomeSection(
-    icon: Iconsax.gift,
-    title: "Alkirtas Gifts",
-    
-    tabs: [
-      CategoryTab(name: "Décorations de fêtes" , categoryId:  587),
-      CategoryTab(name: "Idées Cadeaux ", categoryId:  838 ),
-      
-      CategoryTab(name: "Accessoires de Beauté" , categoryId: 877),
-    ],
-  ),
-];
+// This list is now loaded dynamically from the server
+// Use getHomeSections() to fetch the sections
+List<HomeSection> _cachedHomeSections = [];
+
+// Getter for accessing home sections
+List<HomeSection> get homeSections => _cachedHomeSections;
+
+// Function to load home sections from server
+Future<List<HomeSection>> getHomeSections() async {
+  try {
+    final sections = await SectionsApi.fetchHomeSections();
+    _cachedHomeSections = sections;
+    return sections;
+  } catch (e) {
+    print('Error loading home sections: $e');
+    // Return empty list if loading fails
+    return [];
+  }
+}

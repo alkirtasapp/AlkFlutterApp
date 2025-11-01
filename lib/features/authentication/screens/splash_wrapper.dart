@@ -5,6 +5,7 @@ import 'package:alkirtas/features/shop/screens/splashscreen.dart';
 import 'package:alkirtas/features/shop/controllers/category_product_controller.dart';
 import 'package:alkirtas/config/home_sections_config.dart';
 import 'package:alkirtas/api/banner_api.dart';
+import 'package:alkirtas/api/category_api.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class SplashWrapper extends StatefulWidget {
@@ -32,12 +33,33 @@ class _SplashWrapperState extends State<SplashWrapper> {
       // Clear the static cache
       CategoryProductController.clearCache();
 
-      // Collect all category IDs from sections and prioritize them
-      final List<int> priorityCategories = [13,14, 15,]; // Books categories (most important)
+      // Load sections and categories from server first (in parallel)
+      print("⏳ Loading sections and categories from server...");
+      final sectionsResult = getHomeSections();
+      final categoriesResult = CategoryApi.fetchHomeCategories();
+
+      final sections = await sectionsResult;
+      await categoriesResult; // Just wait for it to cache
+
+      print("✅ Sections loaded! Found ${sections.length} sections.");
+      print("✅ Categories loaded!");
+
+      // Collect all category IDs from sections and prioritize the FIRST section
+      final List<int> priorityCategories = [];
       final Set<int> remainingCategories = {};
-      
-      for (var section in homeSections) {
-        for (var tab in section.tabs) {
+
+      // Get priority categories from the first section (if available)
+      if (sections.isNotEmpty) {
+        final firstSection = sections.first;
+        for (var tab in firstSection.tabs) {
+          priorityCategories.add(tab.categoryId);
+        }
+        print("🎯 Priority section: ${firstSection.title} with ${priorityCategories.length} categories");
+      }
+
+      // Collect remaining categories from other sections
+      for (var i = 1; i < sections.length; i++) {
+        for (var tab in sections[i].tabs) {
           if (!priorityCategories.contains(tab.categoryId)) {
             remainingCategories.add(tab.categoryId);
           }

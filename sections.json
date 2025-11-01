@@ -1,0 +1,96 @@
+[
+  {
+    "icon": "book_1",
+    "title": "Alkirtas Books",
+    "tabs": [
+      {
+        "name": "Français",
+        "categoryId": 14
+      },
+      {
+        "name": "English",
+        "categoryId": 15
+      },
+      {
+        "name": "عربي",
+        "categoryId": 13
+      }
+    ]
+  },
+  {
+    "icon": "teacher",
+    "title": "Alkirtas School",
+    "tabs": [
+      {
+        "name": "Parascolaires",
+        "categoryId": 17
+      },
+      {
+        "name": "Bagagerie",
+        "categoryId": 12
+      },
+      {
+        "name": "Ecriture & Correction",
+        "categoryId": 122
+      },
+      {
+        "name": "Papetrie",
+        "categoryId": 120
+      }
+    ]
+  },
+  {
+    "icon": "monitor_mobbile",
+    "title": "Alkirtas Office",
+    "tabs": [
+      {
+        "name": "Accessoires  Bureau ",
+        "categoryId": 558
+      },
+      {
+        "name": "High-Tech",
+        "categoryId": 569
+      },
+      {
+        "name": "Agendas & Calendriers ",
+        "categoryId": 121
+      },
+      {
+        "name": "Ecriture & Correction",
+        "categoryId": 122
+      }
+    ]
+  },
+  {
+    "icon": "game",
+    "title": "Alkirtas Fun",
+    "tabs": [
+      {
+        "name": "Jeux et Jouets",
+        "categoryId": 590
+      },
+      {
+        "name": "Art & Loisirs ",
+        "categoryId": 743
+      }
+    ]
+  },
+  {
+    "icon": "gift",
+    "title": "Alkirtas Gifts",
+    "tabs": [
+      {
+        "name": "Décorations de fêtes",
+        "categoryId": 587
+      },
+      {
+        "name": "Idées Cadeaux ",
+        "categoryId": 838
+      },
+      {
+        "name": "Accessoires de Beauté",
+        "categoryId": 877
+      }
+    ]
+  }
+]

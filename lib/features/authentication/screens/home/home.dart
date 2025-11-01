@@ -12,19 +12,49 @@ import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/size.dart';
 import '../../../../config/home_sections_config.dart';
 import '../../../../common/widgets/layout/tabbed_category_carousel.dart';
+import '../../../../models/home_section.dart';
 import 'widgets/homeAppBar.dart';
 import 'widgets/homeCategories.dart';
 import 'widgets/bannerSlider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   // --- Constants for Special Section ---
   static const String livresSectionTitle = "Alkirtas Books";
   static const String espaceBureauSectionTitle = "Alkirtas Office";
   // Category ID for the *content* of the "Livres les plus vendus" grid
   // !!! IMPORTANT: Replace '20' with the actual Prestashop Category ID for your top-selling books !!!
-  static const int topSellingBooksCategoryId =  763;
+  static const int topSellingBooksCategoryId = 763;
+
+  List<HomeSection> sections = [];
+  bool isLoadingSections = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadSections();
+  }
+
+  Future<void> loadSections() async {
+    try {
+      final loadedSections = await getHomeSections();
+      setState(() {
+        sections = loadedSections;
+        isLoadingSections = false;
+      });
+    } catch (e) {
+      print('Error loading sections: $e');
+      setState(() {
+        isLoadingSections = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,8 +113,12 @@ class HomeScreen extends StatelessWidget {
                           .spaceBtwItems), // Was AlkSize.spaceBtwItems * 1.5
 
                   // --- Product Sections (with conditional special section) ---
-                  // Use map to potentially return multiple widgets per section
-                  ...homeSections.map((section) {
+                  // Show loading indicator while sections are loading
+                  if (isLoadingSections)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    // Use map to potentially return multiple widgets per section
+                    ...sections.map((section) {
                     // 1. Create the standard TabbedCategoryCarousel widget
                     final standardCarousel = Padding(
                       // Further reduced bottom padding below standard carousels

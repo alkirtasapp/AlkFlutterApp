@@ -10,6 +10,7 @@ import '../../../../../common/widgets/image_text_widgets/vertical_image_text.dar
 import '../../../../../utils/constants/colors.dart';
 import '../../../../../config/home_sections_config.dart';
 import '../../../../../common/widgets/shimmer/shimmer_category_horizontal.dart';
+import '../../../../../api/category_api.dart';
 
 class AlkHomeCategories extends StatefulWidget {
   const AlkHomeCategories({Key? key}) : super(key: key);
@@ -21,9 +22,6 @@ class AlkHomeCategories extends StatefulWidget {
 class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
   List<dynamic> categories = []; // Holds the categories data
   bool isLoading = true; // Loading state
-
-  // List of category IDs to exclude
-  final List<int> excludedCategoryIds = [711, 707, 763,901];
 
   // Map category names (lowercase) to appropriate icons
   IconData getIconForCategory(String categoryName) {
@@ -64,47 +62,14 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
   }
 
   Future<void> fetchCategories() async {
-    const apiUrl =
-        'https://www.alkirtas.com/api/categories?filter[level_depth]=2&display=[id,name]&limit=20&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
-
-    // Predefined order of categories
-    const List<String> categoryOrder = [
-      "Livres",
-      "Parascolaires",
-      "Livres Scolaires",
-      "Fournitures",
-      "Papeterie",
-      "Bagagerie",
-      "Bureautique",
-      "Art et Loisirs",
-      "Jeux et jouets",
-      "Cadeaux et fetes",
-    ];
-
     try {
-      final response = await http.get(Uri.parse(apiUrl));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          // Filter out excluded categories
-          categories = (data['categories'] as List?)?.where(
-            (category) => !excludedCategoryIds.contains(category['id'])
-          ).toList() ?? [];
+      // Fetch categories from server (with caching)
+      final fetchedCategories = await CategoryApi.fetchHomeCategories();
 
-          // Sort categories based on the predefined order
-          categories.sort((a, b) {
-            final nameA = a['name'] as String;
-            final nameB = b['name'] as String;
-            final indexA = categoryOrder.indexOf(nameA);
-            final indexB = categoryOrder.indexOf(nameB);
-            return indexA.compareTo(indexB);
-          });
-
-          isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load categories');
-      }
+      setState(() {
+        categories = fetchedCategories;
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         isLoading = false;
