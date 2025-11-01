@@ -41,6 +41,7 @@ class HomeScreen extends StatelessWidget {
                   AlkSearchContainer(
                     text: 'Découvrir ma boutique',
                     icon: Icons.search,
+                    showQrButton: true,
                     onPressed: () =>
                         Get.offAll(() => const NavigationMenu(selectedMenu: 1)),
                   ),

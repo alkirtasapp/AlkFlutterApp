@@ -38,6 +38,7 @@ class HomeScreen extends StatelessWidget {
                   AlkSearchContainer(
                     text: 'Découvrir ma boutique',
                     icon: Iconsax.search_normal,
+                    showQrButton: true,
                     onPressed: () {
                       // Navigate to NavigationMenu, setting the store as the active tab
                       Get.offAll(() => const NavigationMenu(selectedMenu: 1));

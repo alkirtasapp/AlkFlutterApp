@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:get/get.dart';
 import 'package:alkirtas/common/widgets/custom_shapes/containers/searchContainer.dart';
 import 'package:alkirtas/data/controllers/search_controller.dart';
 import 'package:alkirtas/utils/constants/size.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
 import '../../../../common/widgets/layout/store_grid_drawer.dart';
 import '../../controllers/categories_store_controller.dart';
 import '../../controllers/product_controller_store.dart';
+import '../../../../common/widgets/qr_scanner/qr_scanner_widget.dart';
+import '../../../../controllers/qr_navigation_controller.dart';
+import '../../../../navigation_menu.dart';
+import '../../../../common/widgets/shimmer/shimmer_product_grid.dart';
+import '../../../../common/widgets/shimmer/shimmer_list_tile.dart';
 
 class StoreDrawer extends StatefulWidget {
   final int? initialCategoryId ;
@@ -300,6 +307,11 @@ class _StorePageState extends State<StoreDrawer> {
               });
             },
           ),
+          IconButton(
+            icon: const Icon(Iconsax.scan),
+            onPressed: () => _showQrScanner(context),
+            tooltip: 'Scanner QR Code',
+          ),
           PopupMenuButton<String>(
             icon: Icon(Iconsax.filter),
             onSelected: (String value) {
@@ -326,7 +338,10 @@ class _StorePageState extends State<StoreDrawer> {
       ),
       drawer: Drawer(
         child: isLoading
-            ? Center(child: CircularProgressIndicator())
+            ? ListView.builder(
+                itemCount: 8,
+                itemBuilder: (_, __) => const AlkShimmerListTile(),
+              )
             : Column(
                 children: [
                   // Breadcrumb navigation
@@ -486,7 +501,10 @@ class _StorePageState extends State<StoreDrawer> {
             ),
             Expanded(
               child: isLoading
-                  ? Center(child: CircularProgressIndicator())
+                  ? const Padding(
+                      padding: EdgeInsets.all(AlkSize.defaultSpace),
+                      child: AlkShimmerProductGrid(itemCount: 6),
+                    )
                   : products.isEmpty
                       ? Center(
                           child: Text(
@@ -545,6 +563,59 @@ class _StorePageState extends State<StoreDrawer> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Show QR scanner dialog
+  void _showQrScanner(BuildContext context) {
+    // Get NavigationController instance
+    NavigationController? navigationController;
+    try {
+      navigationController = Get.find<NavigationController>();
+    } catch (e) {
+      navigationController = null;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.8),
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.zero,
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            child: AlkQrScannerWidget(
+              onQrCodeScanned: (String qrCode) async {
+                // Close the scanner
+                Navigator.of(context).pop();
+
+                debugPrint('📱 QR Code scanned in Store: $qrCode');
+
+                // Process the QR code
+                if (navigationController != null) {
+                  final qrController = QrNavigationController(navigationController);
+                  final success = await qrController.processScannedCode(qrCode);
+                  debugPrint('📱 QR Processing result: ${success ? "Success" : "Failed"}');
+                } else {
+                  debugPrint('❌ NavigationController not available');
+                  // Show error message if NavigationController is not available
+                  Get.snackbar(
+                    'Erreur',
+                    'Navigation non disponible',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red.withOpacity(0.8),
+                    colorText: Colors.white,
+                  );
+                }
+              },
+              onClose: () => Navigator.of(context).pop(),
+            ),
+          ),
+        );
+      },
     );
   }
 }

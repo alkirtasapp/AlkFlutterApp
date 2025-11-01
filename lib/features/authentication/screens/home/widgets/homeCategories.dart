@@ -9,6 +9,7 @@ import 'package:iconsax/iconsax.dart';
 import '../../../../../common/widgets/image_text_widgets/vertical_image_text.dart';
 import '../../../../../utils/constants/colors.dart';
 import '../../../../../config/home_sections_config.dart';
+import '../../../../../common/widgets/shimmer/shimmer_category_horizontal.dart';
 
 class AlkHomeCategories extends StatefulWidget {
   const AlkHomeCategories({Key? key}) : super(key: key);
@@ -115,7 +116,7 @@ class _AlkHomeCategoriesState extends State<AlkHomeCategories> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AlkShimmerCategoryHorizontal();
     }
 
     if (categories.isEmpty) {

@@ -113,6 +113,63 @@ class NavigationController extends GetxController {
     pageController.jumpToPage(1);
   }
 
+  /// Navigate to store tab without specific category (for product search)
+  void navigateToStore() {
+    selectedIndex.value = 1; // Switch to the StoreDrawer tab
+    pageController.jumpToPage(1);
+    // Clear any existing category filter
+    initialCategoryId.value = null;
+    initialCategoryName.value = null;
+  }
+
+  /// Navigate to home tab
+  void navigateToHome() {
+    selectedIndex.value = 0;
+    pageController.jumpToPage(0);
+  }
+
+  /// Navigate to cart tab
+  void navigateToCart() {
+    selectedIndex.value = 2;
+    pageController.jumpToPage(2);
+  }
+
+  /// Navigate to settings tab
+  void navigateToSettings() {
+    selectedIndex.value = 3;
+    pageController.jumpToPage(3);
+  }
+
+  /// Get current tab name in French
+  String getCurrentTabName() {
+    switch (selectedIndex.value) {
+      case 0:
+        return 'Accueil';
+      case 1:
+        return 'Boutique';
+      case 2:
+        return 'Panier';
+      case 3:
+        return 'Profil';
+      default:
+        return 'Inconnu';
+    }
+  }
+
+  /// Check if currently on store tab
+  bool isOnStoreTab() {
+    return selectedIndex.value == 1;
+  }
+
+  /// Get current category info
+  Map<String, dynamic> getCurrentCategoryInfo() {
+    return {
+      'id': initialCategoryId.value,
+      'name': initialCategoryName.value,
+      'isSet': initialCategoryId.value != null,
+    };
+  }
+
   @override
   void onClose() {
     pageController.dispose();

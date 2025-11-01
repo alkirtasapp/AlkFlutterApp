@@ -66,13 +66,14 @@ class _StoreScreenState extends State<StoreScreen>{
                       physics: const NeverScrollableScrollPhysics(),
                       children: [
                         // search bar
-                        AlkSearchContainer(
-                          text: 'Recherche',
-                          showBorder: true,
-                          showBackground: false,
-                          icon: Iconsax.search_normal,
-                          padding: EdgeInsets.zero,
-                        ),
+                         AlkSearchContainer(
+                           text: 'Recherche',
+                           showBorder: true,
+                           showBackground: false,
+                           icon: Iconsax.search_normal,
+                           padding: EdgeInsets.zero,
+                           showQrButton: true,
+                         ),
                         SizedBox(height: AlkSize.spaceBtwSections / 2),
                         // Featured  Brands
                         AlkSectionHeading(
