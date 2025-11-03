@@ -261,6 +261,70 @@ class ProductControllerStore {
       return null;
     }
   }
+
+  // Search product by barcode (EAN13)
+  Future<Map<String, dynamic>?> searchProductByBarcode(String barcode) async {
+    try {
+      print("🔍 Searching for product with barcode: $barcode");
+
+      // Search by EAN13 in PrestaShop API
+      final String productApi =
+          'https://www.alkirtas.com/api/products?display=full&filter[ean13]=$barcode&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+
+      final response = await http.get(Uri.parse(productApi));
+
+      if (response.statusCode != 200) {
+        print("❌ API Error: ${response.statusCode}");
+        return null;
+      }
+
+      final productData = json.decode(utf8.decode(response.bodyBytes));
+
+      if (productData['products'] == null || productData['products'].isEmpty) {
+        print("⚠️ No product found with barcode: $barcode");
+        return null;
+      }
+
+      // PrestaShop returns products as either a List or a Map depending on the number of results
+      dynamic productsData = productData['products'];
+      Map<String, dynamic> product;
+
+      if (productsData is List) {
+        // Multiple products or array format
+        if (productsData.isEmpty) {
+          print("⚠️ No product found with barcode: $barcode");
+          return null;
+        }
+        product = productsData[0];
+      } else if (productsData is Map) {
+        // Single product returned as Map with product ID as key
+        final productKeys = productsData.keys.toList();
+        if (productKeys.isEmpty) {
+          print("⚠️ No product found with barcode: $barcode");
+          return null;
+        }
+        product = Map<String, dynamic>.from(productsData[productKeys.first]);
+      } else {
+        print("❌ Unexpected products data format: ${productsData.runtimeType}");
+        return null;
+      }
+
+      // Process the product details (discount, price, images, etc.)
+      List<Map<String, dynamic>> tempProducts = [];
+      await _processProductDetails(product, tempProducts);
+
+      if (tempProducts.isEmpty) {
+        print("❌ Error processing product with barcode: $barcode");
+        return null;
+      }
+
+      print("✅ Product found with barcode: $barcode - ${tempProducts[0]['name']}");
+      return tempProducts[0];
+    } catch (e) {
+      print('❌ Error searching product by barcode: $e');
+      return null;
+    }
+  }
   // Construct Image URL from image ID
   String constructImageUrl(dynamic imageId) {
     if (imageId == null) return 'placeholder_image_url';

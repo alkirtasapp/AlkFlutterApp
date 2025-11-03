@@ -232,7 +232,7 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                       ),
                       const SizedBox(width: AlkSize.sm / 2),
                       Text(
-                        'Scanner un QR Code',
+                        'Scanner Code QR / Code-barres',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w500,
@@ -282,7 +282,7 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                     ),
                     const SizedBox(height: AlkSize.spaceBtwItems / 2),
                     Text(
-                      'Placez le QR code dans le cadre',
+                      'Placez le code dans le cadre',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
@@ -291,7 +291,7 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                     ),
                     const SizedBox(height: AlkSize.sm),
                     Text(
-                      'Le code sera automatiquement détecté',
+                      'QR code ou code-barres produit\nDétection automatique',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.white70,
                       ),

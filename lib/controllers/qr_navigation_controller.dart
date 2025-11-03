@@ -12,39 +12,41 @@ class QrNavigationController extends GetxController {
 
   QrNavigationController(this._navigationController);
 
-  /// Process scanned QR code and navigate accordingly
-  Future<bool> processScannedCode(String qrCode) async {
+  /// Process scanned QR code or barcode and navigate accordingly
+  Future<bool> processScannedCode(String scannedCode) async {
     try {
-      // Parse the URL to extract type and ID
-      final parsedData = UrlParserService.parseAlkirtasUrl(qrCode);
+      // Try to parse as URL first (QR code with Alkirtas URL)
+      final parsedData = UrlParserService.parseAlkirtasUrl(scannedCode);
 
-      if (parsedData == null) {
-        _showErrorSnackBar(UrlParserService.getErrorMessage(qrCode));
-        return false;
-      }
+      if (parsedData != null) {
+        // It's a valid Alkirtas URL (QR Code)
+        final String type = parsedData['type'];
+        final int id = parsedData['id'];
 
-      final String type = parsedData['type'];
-      final int id = parsedData['id'];
-
-      // Validate the ID
-      if (!_isValidId(id)) {
-        _showErrorSnackBar('ID invalide détecté');
-        return false;
-      }
-
-      // Navigate based on type
-      switch (type) {
-        case 'category':
-          return await _navigateToCategory(id);
-        case 'product':
-          return await _navigateToProduct(id);
-        default:
-          _showErrorSnackBar('Type de navigation non reconnu');
+        // Validate the ID
+        if (!_isValidId(id)) {
+          _showErrorSnackBar('ID invalide détecté');
           return false;
+        }
+
+        // Navigate based on type
+        switch (type) {
+          case 'category':
+            return await _navigateToCategory(id);
+          case 'product':
+            return await _navigateToProduct(id);
+          default:
+            _showErrorSnackBar('Type de navigation non reconnu');
+            return false;
+        }
+      } else {
+        // Not a valid URL, treat as product barcode (EAN13)
+        debugPrint('No valid URL found, treating as barcode: $scannedCode');
+        return await _searchProductByBarcode(scannedCode);
       }
     } catch (e) {
-      debugPrint('Error processing QR code: $e');
-      _showErrorSnackBar('Erreur lors du traitement du QR code');
+      debugPrint('Error processing scanned code: $e');
+      _showErrorSnackBar('Erreur lors du traitement du code');
       return false;
     }
   }
@@ -83,6 +85,12 @@ class QrNavigationController extends GetxController {
         }
       }
 
+      // Close the QR scanner first
+      Get.back(); // Close the scanner
+
+      // Small delay to ensure the scanner is closed before navigating
+      await Future.delayed(const Duration(milliseconds: 100));
+
       // Use the existing navigation controller to navigate to store with category
       _navigationController?.navigateToStoreDrawer(
         categoryId: categoryId,
@@ -117,6 +125,12 @@ class QrNavigationController extends GetxController {
 
       final product = productData.first;
 
+      // Close the QR scanner first, then navigate to product details
+      Get.back(); // Close the scanner
+
+      // Small delay to ensure the scanner is closed before navigating
+      await Future.delayed(const Duration(milliseconds: 100));
+
       // Navigate to ProductDetails screen
       Get.to(() => ProductDetails(
         productId: product['id'].toString(),
@@ -141,6 +155,63 @@ class QrNavigationController extends GetxController {
     } catch (e) {
       debugPrint('Error navigating to product: $e');
       _showErrorSnackBar('Erreur lors du chargement du produit: ${e.toString()}');
+      return false;
+    }
+  }
+
+  /// Search for product by barcode and navigate
+  Future<bool> _searchProductByBarcode(String barcode) async {
+    try {
+      // Show loading indicator
+      _showLoadingSnackBar('Recherche du produit par code-barres...');
+
+      // Search product by barcode
+      final productController = ProductControllerStore();
+      final product = await productController.searchProductByBarcode(barcode);
+
+      if (product == null) {
+        _showErrorSnackBar('Aucun produit trouvé avec ce code-barres');
+        return false;
+      }
+
+      // Check if product is active
+      if (product['active']?.toString() != '1') {
+        _showErrorSnackBar('Ce produit n\'est plus disponible');
+        return false;
+      }
+
+      // Close the QR scanner first, then navigate to product details
+      Get.back(); // Close the scanner
+
+      // Small delay to ensure the scanner is closed before navigating
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Navigate to ProductDetails screen
+      Get.to(() => ProductDetails(
+        productId: product['id'].toString(),
+        productName: product['name'] ?? 'Produit',
+        productReference: product['reference'] ?? '',
+        productDiscount: product['discount']?.toString() ?? '0',
+        productBrand: product['brand'] ?? '',
+        productBrandId: product['id_manufacturer']?.toString() ?? '0',
+        productImage: product['image_urls']?.isNotEmpty == true
+            ? product['image_urls'][0]
+            : '',
+        productImageList: List<String>.from(product['image_urls'] ?? []),
+        productStock: product['quantity']?.toString() ?? '0',
+        productDescription: product['description'] ?? '',
+        productOldPrice: product['price']?.toString() ?? '0',
+        productNewPrice: product['ttc_price']?.toString() ?? product['price']?.toString() ?? '0',
+        productFeatures: [],
+      ));
+
+      // Show success message
+      _showSuccessSnackBar('Produit trouvé : ${product['name']}');
+
+      return true;
+    } catch (e) {
+      debugPrint('Error searching product by barcode: $e');
+      _showErrorSnackBar('Erreur lors de la recherche du produit');
       return false;
     }
   }
