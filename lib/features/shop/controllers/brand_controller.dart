@@ -35,4 +35,28 @@ class BrandController {
     }
     return null;
   }
+
+  /// Fetch brand/manufacturer name by ID
+  Future<String?> fetchBrandNameById(int brandId) async {
+    try {
+      if (brandId == 0) return null;
+
+      final brandApi =
+          'https://www.alkirtas.com/api/manufacturers/$brandId?output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+
+      final response = await http.get(Uri.parse(brandApi));
+
+      if (response.statusCode == 200) {
+        final brandData = json.decode(utf8.decode(response.bodyBytes));
+
+        if (brandData['manufacturer'] != null) {
+          final manufacturer = brandData['manufacturer'];
+          return manufacturer['name'] ?? 'Unknown';
+        }
+      }
+    } catch (e) {
+      print('❌ Error fetching brand name for ID $brandId: $e');
+    }
+    return null;
+  }
 }

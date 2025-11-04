@@ -141,10 +141,10 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
           ),
           ElevatedButton(
             onPressed: isInStock
-                ? () {
+                ? () async {
                     final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
-                    cartProvider.addToCart(
+                    await cartProvider.addToCart(
                       productId: widget.productId,
                       productName: widget.productName,
                       productPrice: widget.productPrice,

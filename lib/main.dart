@@ -37,14 +37,32 @@ Future<void> main() async {
   Hive.registerAdapter(CouponAdapter());
   await Hive.openBox<Coupon>('couponsBox');
 
-  var box = await Hive.openBox('productCache');
-  await box.clear();
-  print("Product cache cleared on app reload");
+  // Clear caches on app restart (will be re-cached when screens load)
+  // Products cache
+  var productBox = await Hive.openBox('productCache');
+  await productBox.clear();
+  print("✅ Product cache cleared on app restart");
+
+  // Banners cache
+  var bannerBox = await Hive.openBox('bannerBox');
+  await bannerBox.clear();
+  print("✅ Banner cache cleared on app restart");
+
+  // Sections cache
+  var sectionsBox = await Hive.openBox('sectionsBox');
+  await sectionsBox.clear();
+  print("✅ Sections cache cleared on app restart");
+
+  print("📦 All caches will be re-populated when screens load");
+
+  // Initialize CartProvider and load saved cart (cart persists across restarts)
+  final cartProvider = CartProvider();
+  await cartProvider.initialize();
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider.value(value: cartProvider),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => CouponProvider()),
       ],

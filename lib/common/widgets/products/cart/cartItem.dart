@@ -24,7 +24,7 @@ class AlkCartItem extends StatelessWidget {
     required this.productBrand,
     required this.productImage,
     required this.productPrice,
-    this.onDelete, 
+    this.onDelete,
     required this.productQuantity,
   });
 
@@ -68,7 +68,7 @@ class AlkCartItem extends StatelessWidget {
               Text(
                 "${productPrice.toString()} TND      x$productQuantity",
                 style: TextStyle(
-                 
+
                   color: AlkColors.dark,
                 ),
               ),

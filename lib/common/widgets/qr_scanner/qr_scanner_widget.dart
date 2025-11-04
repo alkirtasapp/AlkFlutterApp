@@ -27,6 +27,9 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
   bool _hasPermission = false;
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isProcessing = false; // Flag to prevent multiple scans
+  DateTime? _lastScanTime; // Track last scan time
+  String? _lastScannedCode; // Track last scanned code to prevent duplicates
 
   @override
   void initState() {
@@ -112,10 +115,57 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
             MobileScanner(
               controller: _scannerController,
               onDetect: (capture) {
+                // Prevent multiple scans in quick succession
+                if (_isProcessing) {
+                  debugPrint('⏸️ Scanner locked - processing previous scan');
+                  return;
+                }
+
                 final List<Barcode> barcodes = capture.barcodes;
                 for (final barcode in barcodes) {
                   if (barcode.rawValue != null) {
-                    widget.onQrCodeScanned(barcode.rawValue!);
+                    final scannedCode = barcode.rawValue!;
+                    final now = DateTime.now();
+
+                    // Check if this is a duplicate scan within 3 seconds
+                    if (_lastScannedCode == scannedCode &&
+                        _lastScanTime != null &&
+                        now.difference(_lastScanTime!).inSeconds < 3) {
+                      debugPrint('⚠️ Duplicate scan ignored: $scannedCode');
+                      return;
+                    }
+
+                    // Additional check: prevent ANY scan within 1.5 seconds
+                    if (_lastScanTime != null &&
+                        now.difference(_lastScanTime!).inMilliseconds < 1500) {
+                      debugPrint('⏸️ Scan too quick - waiting...');
+                      return;
+                    }
+
+                    // Mark as processing
+                    setState(() {
+                      _isProcessing = true;
+                      _lastScanTime = now;
+                      _lastScannedCode = scannedCode;
+                    });
+
+                    debugPrint('✅ QR/Barcode scanned: $scannedCode');
+
+                    // Pause scanner while processing
+                    _scannerController.stop();
+
+                    // Call the callback
+                    widget.onQrCodeScanned(scannedCode);
+
+                    // Reset processing flag and restart scanner after 3 seconds
+                    Future.delayed(const Duration(seconds: 3), () {
+                      if (mounted) {
+                        setState(() {
+                          _isProcessing = false;
+                        });
+                        _scannerController.start();
+                      }
+                    });
                     break;
                   }
                 }
@@ -214,31 +264,38 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                     backgroundColor: Colors.black.withOpacity(0.5),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AlkSize.md,
-                    vertical: AlkSize.sm / 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(AlkSize.cardRadiusMd),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.qr_code_scanner,
-                        color: AlkColors.primaryColor,
-                        size: 20,
-                      ),
-                      const SizedBox(width: AlkSize.sm / 2),
-                      Text(
-                        'Scanner Code QR / Code-barres',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: AlkSize.sm / 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AlkSize.md,
+                      vertical: AlkSize.sm / 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(AlkSize.cardRadiusMd),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.qr_code_scanner,
+                          color: AlkColors.primaryColor,
+                          size: 20,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: AlkSize.sm / 2),
+                        Flexible(
+                          child: Text(
+                            'Scanner Code QR / Code-barres',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 IconButton(
@@ -269,20 +326,24 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
               child: Container(
                 padding: const EdgeInsets.all(AlkSize.defaultSpace),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
+                  color: _isProcessing
+                      ? Colors.green.withOpacity(0.8)
+                      : Colors.black.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(AlkSize.cardRadiusLg),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.qr_code,
-                      color: AlkColors.primaryColor,
+                      _isProcessing ? Icons.check_circle : Icons.qr_code,
+                      color: _isProcessing ? Colors.white : AlkColors.primaryColor,
                       size: 32,
                     ),
                     const SizedBox(height: AlkSize.spaceBtwItems / 2),
                     Text(
-                      'Placez le code dans le cadre',
+                      _isProcessing
+                          ? 'Code scanné ✓'
+                          : 'Placez le code dans le cadre',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
@@ -291,7 +352,9 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                     ),
                     const SizedBox(height: AlkSize.sm),
                     Text(
-                      'QR code ou code-barres produit\nDétection automatique',
+                      _isProcessing
+                          ? 'Traitement en cours...'
+                          : 'QR code ou code-barres produit\nDétection automatique',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.white70,
                       ),

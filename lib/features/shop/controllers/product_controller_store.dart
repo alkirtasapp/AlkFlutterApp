@@ -6,6 +6,7 @@ import 'package:alkirtas/data/controllers/discount_controller.dart';
 import 'package:alkirtas/data/controllers/product_list_Category.dart';
 import 'package:alkirtas/data/controllers/tax_controller.dart';
 import 'package:alkirtas/data/controllers/quantity_controller.dart';
+import 'package:alkirtas/features/shop/controllers/brand_controller.dart';
 
 class ProductControllerStore {
   final QuantityController quantityController = QuantityController();
@@ -13,6 +14,7 @@ class ProductControllerStore {
   final TaxController taxController = TaxController();
   final ProductListCategory productListCategory = ProductListCategory();
   final DetailsController detailsController = DetailsController();
+  final BrandController brandController = BrandController();
 
   Future<List<Map<String, dynamic>>?> fetchProductDataStore(
       int categoryId, int offset, int limit) async {
@@ -192,7 +194,7 @@ class ProductControllerStore {
     try {
       // Ensure product has stock
       product['id'] = int.tryParse(product['id'].toString()) ?? 0;
-      product['price'] = double.tryParse(product['price'].toString()) ?? 0.0;      
+      product['price'] = double.tryParse(product['price'].toString()) ?? 0.0;
       // Fetch actual quantity using QuantityController
       product['quantity'] = await quantityController.fetchQuantity(product['id']) ?? 0;
 
@@ -223,11 +225,27 @@ class ProductControllerStore {
         product['image_urls'] = [];
       }
 
-  
+      // Fetch brand/manufacturer name
+      if (product.containsKey('id_manufacturer')) {
+        final manufacturerId = int.tryParse(product['id_manufacturer'].toString()) ?? 0;
+        if (manufacturerId > 0) {
+          final brandName = await brandController.fetchBrandNameById(manufacturerId);
+          product['brand'] = brandName ?? 'Unknown';
+        } else {
+          product['brand'] = 'Unknown';
+        }
+      } else {
+        product['brand'] = 'Unknown';
+      }
+
+      // Ensure reference field is present (should already be in product data from API)
+      if (!product.containsKey('reference') || product['reference'] == null) {
+        product['reference'] = '';
+      }
 
       fetchedProducts.add(product);
 
-     
+
     } catch (e) {
       print("❌ Error processing product details for ${product['id']}: $e");
     }
