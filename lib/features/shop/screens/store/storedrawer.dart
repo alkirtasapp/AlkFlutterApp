@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:get/get.dart';
@@ -48,10 +49,182 @@ class _StorePageState extends State<StoreDrawer> {
   List<String> navigationStack = [];
   List<int> categoryIdStack = [];
 
+  // Autocomplete and debouncing
+  Timer? _debounceTimer;
+  List<String> _searchSuggestions = [];
+  bool _isLoadingSuggestions = false;
+  OverlayEntry? _overlayEntry;
+
   @override
   void initState() {
     super.initState();
     _initializeCategories();
+    // Listen to search text changes for autocomplete
+    searchTextController.addListener(_onSearchTextChanged);
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    searchTextController.removeListener(_onSearchTextChanged);
+    searchTextController.dispose();
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _onSearchTextChanged() {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+
+    if (searchTextController.text.isEmpty) {
+      _removeOverlay();
+      setState(() {
+        _searchSuggestions = [];
+      });
+      return;
+    }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _fetchSearchSuggestions(searchTextController.text);
+    });
+  }
+
+  Future<void> _fetchSearchSuggestions(String query) async {
+    if (query.trim().isEmpty) return;
+
+    setState(() {
+      _isLoadingSuggestions = true;
+    });
+
+    final List<int>? productIds = await searchController.searchProducts(
+      query,
+      offset: 0,
+      limit: 10, // Limit suggestions to 10 items
+    );
+
+    if (productIds != null && productIds.isNotEmpty) {
+      final List<Map<String, dynamic>>? suggestedProducts =
+          await productController.fetchProductsByIds(productIds);
+
+      if (suggestedProducts != null && suggestedProducts.isNotEmpty) {
+        setState(() {
+          _searchSuggestions = suggestedProducts
+              .map((p) => p['name'].toString())
+              .toSet()
+              .toList();
+          _isLoadingSuggestions = false;
+        });
+        _showSuggestionsOverlay();
+      } else {
+        setState(() {
+          _searchSuggestions = [];
+          _isLoadingSuggestions = false;
+        });
+      }
+    } else {
+      setState(() {
+        _searchSuggestions = [];
+        _isLoadingSuggestions = false;
+      });
+    }
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _showSuggestionsOverlay() {
+    _removeOverlay();
+
+    if (_searchSuggestions.isEmpty) return;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + kToolbarHeight + 70,
+        left: 12,
+        right: 12,
+        child: Material(
+          elevation: 8,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            constraints: BoxConstraints(maxHeight: 300),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: _searchSuggestions.length,
+              separatorBuilder: (context, index) => Divider(height: 1),
+              itemBuilder: (context, index) {
+                return ListTile(
+                  dense: true,
+                  leading: Icon(Iconsax.search_normal, size: 18, color: Colors.grey),
+                  title: Text(
+                    _searchSuggestions[index],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  onTap: () {
+                    final selectedText = _searchSuggestions[index];
+                    // Remove listener temporarily to avoid triggering new suggestions
+                    searchTextController.removeListener(_onSearchTextChanged);
+                    searchTextController.text = selectedText;
+                    // Re-add listener
+                    searchTextController.addListener(_onSearchTextChanged);
+
+                    _removeOverlay();
+                    _searchProducts(selectedText);
+                    setState(() {
+                      isSearchVisible = false;
+                      _searchSuggestions = [];
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _clearSearch() {
+    searchTextController.clear();
+    _removeOverlay();
+    setState(() {
+      isSearching = false;
+      currentSearchQuery = "";
+      products.clear();
+      fetchedProductIds.clear();
+      offset = 0;
+    });
+    // Reload the current category
+    _fetchProductsForCategory(selectedCategoryId);
+  }
+
+  String _getSortOptionLabel(String option) {
+    switch (option) {
+      case "Price Asc":
+        return "Prix Croissant";
+      case "Price Desc":
+        return "Prix Décroissant";
+      case "Name Asc":
+        return "Nom A-Z";
+      case "Name Desc":
+        return "Nom Z-A";
+      case "Référence Asc":
+        return "Référence A-Z";
+      case "Référence Desc":
+        return "Référence Z-A";
+      default:
+        return "Aucun";
+    }
   }
 
   Future<void> _initializeCategories() async {
@@ -161,7 +334,9 @@ class _StorePageState extends State<StoreDrawer> {
       offset = 0;
       currentSearchQuery = query;
       selectedSortOption = "None"; // Reset the filter here
+      _searchSuggestions = []; // Clear suggestions
     });
+    _removeOverlay(); // Ensure overlay is removed
 
     final List<int>? productIds =
         await searchController.searchProducts(query, offset: offset, limit: 100);
@@ -242,7 +417,7 @@ class _StorePageState extends State<StoreDrawer> {
       } else if (selectedSortOption == "Price Desc") {
         products.sort(
             (a, b) => (b['price'] as num).compareTo(a['price'] as num));
-            
+
       } else if (selectedSortOption == "Name Asc") {
         products.sort(
             (a, b) => (a['name'] as String).compareTo(b['name'] as String));
@@ -251,12 +426,12 @@ class _StorePageState extends State<StoreDrawer> {
             (a, b) => (b['name'] as String).compareTo(a['name'] as String));
       } else if (selectedSortOption == "Référence Asc") {
         products.sort(
-            (a, b) => (b['reference'] as String).compareTo(a['reference'] as String));
+            (a, b) => (a['reference'] as String).compareTo(b['reference'] as String));
       } else if (selectedSortOption == "Référence Desc") {
         products.sort(
             (a, b) => (b['reference'] as String).compareTo(a['reference'] as String));
-      } 
-      
+      }
+
     });
   }
 
@@ -300,10 +475,27 @@ class _StorePageState extends State<StoreDrawer> {
               ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: Icon(isSearching ? Icons.search_off : Icons.search),
+            tooltip: isSearching ? 'Effacer la recherche' : 'Rechercher',
             onPressed: () {
               setState(() {
-                isSearchVisible = !isSearchVisible;
+                if (isSearching) {
+                  // If there's an active search, clear it
+                  _clearSearch();
+                  isSearchVisible = false;
+                } else {
+                  // Toggle search bar visibility
+                  isSearchVisible = !isSearchVisible;
+                  if (!isSearchVisible) {
+                    // If closing search bar, clear any unsaved text
+                    searchTextController.clear();
+                    _searchSuggestions = [];
+                    _removeOverlay();
+                  } else {
+                    // If opening search bar, clear old suggestions
+                    _searchSuggestions = [];
+                  }
+                }
               });
             },
           ),
@@ -313,7 +505,13 @@ class _StorePageState extends State<StoreDrawer> {
             tooltip: 'Scanner QR Code',
           ),
           PopupMenuButton<String>(
-            icon: Icon(Iconsax.filter),
+            icon: Icon(
+              Iconsax.filter,
+              color: selectedSortOption != "None" ? Colors.purple : null,
+            ),
+            tooltip: selectedSortOption != "None"
+                ? 'Filtre actif: ${_getSortOptionLabel(selectedSortOption)}'
+                : 'Filtrer',
             onSelected: (String value) {
               setState(() {
                 selectedSortOption = value;
@@ -321,12 +519,114 @@ class _StorePageState extends State<StoreDrawer> {
               });
             },
             itemBuilder: (BuildContext context) => [
-              PopupMenuItem(value: "Price Asc", child: Text("Prix Croissant")),
-              PopupMenuItem(value: "Price Desc", child: Text("Prix Décroissant")),
-              PopupMenuItem(value: "Name Asc", child: Text("Nom A-Z")),
-              PopupMenuItem(value: "Name Desc", child: Text("Nom Z-A")),
-              PopupMenuItem(value: "Référence Adc", child: Text("Référence Z-A")),
-              PopupMenuItem(value: "Référence Desc", child: Text("Réféence Z-A")),
+              PopupMenuItem(
+                value: "None",
+                child: Row(
+                  children: [
+                    Icon(
+                      selectedSortOption == "None" ? Iconsax.tick_circle5 : Iconsax.close_circle,
+                      size: 18,
+                      color: selectedSortOption == "None" ? Colors.purple : Colors.grey,
+                    ),
+                    SizedBox(width: 8),
+                    Text("Aucun filtre", style: TextStyle(
+                      fontWeight: selectedSortOption == "None" ? FontWeight.bold : FontWeight.normal,
+                      color: selectedSortOption == "None" ? Colors.purple : null,
+                    )),
+                  ],
+                ),
+              ),
+              PopupMenuDivider(),
+              PopupMenuItem(
+                value: "Price Asc",
+                child: Row(
+                  children: [
+                    if (selectedSortOption == "Price Asc")
+                      Icon(Iconsax.tick_circle5, size: 18, color: Colors.purple)
+                    else
+                      SizedBox(width: 18),
+                    SizedBox(width: 8),
+                    Text("Prix Croissant", style: TextStyle(
+                      fontWeight: selectedSortOption == "Price Asc" ? FontWeight.bold : FontWeight.normal,
+                    )),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: "Price Desc",
+                child: Row(
+                  children: [
+                    if (selectedSortOption == "Price Desc")
+                      Icon(Iconsax.tick_circle5, size: 18, color: Colors.purple)
+                    else
+                      SizedBox(width: 18),
+                    SizedBox(width: 8),
+                    Text("Prix Décroissant", style: TextStyle(
+                      fontWeight: selectedSortOption == "Price Desc" ? FontWeight.bold : FontWeight.normal,
+                    )),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: "Name Asc",
+                child: Row(
+                  children: [
+                    if (selectedSortOption == "Name Asc")
+                      Icon(Iconsax.tick_circle5, size: 18, color: Colors.purple)
+                    else
+                      SizedBox(width: 18),
+                    SizedBox(width: 8),
+                    Text("Nom A-Z", style: TextStyle(
+                      fontWeight: selectedSortOption == "Name Asc" ? FontWeight.bold : FontWeight.normal,
+                    )),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: "Name Desc",
+                child: Row(
+                  children: [
+                    if (selectedSortOption == "Name Desc")
+                      Icon(Iconsax.tick_circle5, size: 18, color: Colors.purple)
+                    else
+                      SizedBox(width: 18),
+                    SizedBox(width: 8),
+                    Text("Nom Z-A", style: TextStyle(
+                      fontWeight: selectedSortOption == "Name Desc" ? FontWeight.bold : FontWeight.normal,
+                    )),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: "Référence Asc",
+                child: Row(
+                  children: [
+                    if (selectedSortOption == "Référence Asc")
+                      Icon(Iconsax.tick_circle5, size: 18, color: Colors.purple)
+                    else
+                      SizedBox(width: 18),
+                    SizedBox(width: 8),
+                    Text("Référence A-Z", style: TextStyle(
+                      fontWeight: selectedSortOption == "Référence Asc" ? FontWeight.bold : FontWeight.normal,
+                    )),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: "Référence Desc",
+                child: Row(
+                  children: [
+                    if (selectedSortOption == "Référence Desc")
+                      Icon(Iconsax.tick_circle5, size: 18, color: Colors.purple)
+                    else
+                      SizedBox(width: 18),
+                    SizedBox(width: 8),
+                    Text("Référence Z-A", style: TextStyle(
+                      fontWeight: selectedSortOption == "Référence Desc" ? FontWeight.bold : FontWeight.normal,
+                    )),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
@@ -482,23 +782,111 @@ class _StorePageState extends State<StoreDrawer> {
                   alignment: Alignment.centerLeft,
                   child: TextField(
                     controller: searchTextController,
+                    autofocus: true,
                     decoration: InputDecoration(
                       hintText: 'Recherche',
                       prefixIcon: Icon(Iconsax.search_normal),
+                      suffixIcon: searchTextController.text.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, size: 20),
+                              onPressed: () {
+                                if (isSearching) {
+                                  _clearSearch();
+                                } else {
+                                  searchTextController.clear();
+                                  _removeOverlay();
+                                }
+                              },
+                              tooltip: 'Effacer',
+                            )
+                          : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                       ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
                     ),
                     onSubmitted: (query) {
-                      _searchProducts(query);
-                      setState(() {
-                        isSearchVisible = false; // Hide search bar after search
-                      });
+                      if (query.trim().isNotEmpty) {
+                        _removeOverlay(); // Remove suggestions overlay
+                        _searchProducts(query);
+                        setState(() {
+                          isSearchVisible = false; // Hide search bar after search
+                        });
+                      }
+                    },
+                    onChanged: (value) {
+                      // Trigger rebuild to show/hide clear button
+                      setState(() {});
                     },
                   ),
                 ),
               ),
             ),
+            // Active search and filter chips
+            if (isSearching || selectedSortOption != "None")
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (isSearching)
+                      Chip(
+                        avatar: Icon(
+                          Iconsax.search_normal,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          'Recherche: "$currentSearchQuery"',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        deleteIcon: Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                        onDeleted: () {
+                          _clearSearch();
+                        },
+                        backgroundColor: Colors.purple,
+                        deleteIconColor: Colors.white,
+                      ),
+                    if (selectedSortOption != "None")
+                      Chip(
+                        avatar: Icon(
+                          Iconsax.filter,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          _getSortOptionLabel(selectedSortOption),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        deleteIcon: Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                        onDeleted: () {
+                          setState(() {
+                            selectedSortOption = "None";
+                            _applySorting();
+                          });
+                        },
+                        backgroundColor: Colors.deepPurple.shade400,
+                        deleteIconColor: Colors.white,
+                      ),
+                  ],
+                ),
+              ),
             Expanded(
               child: isLoading
                   ? const Padding(
