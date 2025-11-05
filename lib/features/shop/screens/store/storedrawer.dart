@@ -500,7 +500,7 @@ class _StorePageState extends State<StoreDrawer> {
             },
           ),
           IconButton(
-            icon: const Icon(Iconsax.scan),
+            icon: Icon(Iconsax.scan),
             onPressed: () => _showQrScanner(context),
             tooltip: 'Scanner QR Code',
           ),
