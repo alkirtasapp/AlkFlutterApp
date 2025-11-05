@@ -131,20 +131,38 @@ class QrNavigationController extends GetxController {
       // Small delay to ensure the scanner is closed before navigating
       await Future.delayed(const Duration(milliseconds: 100));
 
+      // Calculate prices with discount
+      final double discount = product['discount']?.toDouble() ?? 0.0;
+      final double ttcPrice = product['ttc_price']?.toDouble() ?? product['price']?.toDouble() ?? 0.0;
+
+      String productOldPrice;
+      String productNewPrice;
+
+      if (discount > 0) {
+        // If there's a discount, oldPrice is the original ttc price
+        productOldPrice = ttcPrice.toStringAsFixed(2);
+        // newPrice is ttc price with discount applied
+        productNewPrice = (ttcPrice * (1 - discount / 100)).toStringAsFixed(2);
+      } else {
+        // If no discount, both prices are the same
+        productOldPrice = ttcPrice.toStringAsFixed(2);
+        productNewPrice = ttcPrice.toStringAsFixed(2);
+      }
+
       // Navigate to ProductDetails screen
       Get.to(() => ProductDetails(
         productId: product['id'].toString(),
         productName: product['name'] ?? 'Produit',
         productReference: product['reference'] ?? '',
-        productDiscount: product['discount']?.toString() ?? '0',
+        productDiscount: discount > 0 ? discount.toStringAsFixed(0) : '0',
         productBrand: product['brand'] ?? '',
         productBrandId: product['id_manufacturer']?.toString() ?? '0',
         productImage: product['image'] ?? '',
         productImageList: product['images'] ?? [],
         productStock: product['stock']?.toString() ?? '0',
         productDescription: product['description'] ?? '',
-        productOldPrice: product['price']?.toString() ?? '0',
-        productNewPrice: product['price']?.toString() ?? '0',
+        productOldPrice: productOldPrice,
+        productNewPrice: productNewPrice,
         productFeatures: product['features'] ?? [],
       ));
 
@@ -186,12 +204,30 @@ class QrNavigationController extends GetxController {
       // Small delay to ensure the scanner is closed before navigating
       await Future.delayed(const Duration(milliseconds: 100));
 
+      // Calculate prices with discount
+      final double discount = product['discount']?.toDouble() ?? 0.0;
+      final double ttcPrice = product['ttc_price']?.toDouble() ?? product['price']?.toDouble() ?? 0.0;
+
+      String productOldPrice;
+      String productNewPrice;
+
+      if (discount > 0) {
+        // If there's a discount, oldPrice is the original ttc price
+        productOldPrice = ttcPrice.toStringAsFixed(2);
+        // newPrice is ttc price with discount applied
+        productNewPrice = (ttcPrice * (1 - discount / 100)).toStringAsFixed(2);
+      } else {
+        // If no discount, both prices are the same
+        productOldPrice = ttcPrice.toStringAsFixed(2);
+        productNewPrice = ttcPrice.toStringAsFixed(2);
+      }
+
       // Navigate to ProductDetails screen
       Get.to(() => ProductDetails(
         productId: product['id'].toString(),
         productName: product['name'] ?? 'Produit',
         productReference: product['reference'] ?? '',
-        productDiscount: product['discount']?.toString() ?? '0',
+        productDiscount: discount > 0 ? discount.toStringAsFixed(0) : '0',
         productBrand: product['brand'] ?? '',
         productBrandId: product['id_manufacturer']?.toString() ?? '0',
         productImage: product['image_urls']?.isNotEmpty == true
@@ -200,8 +236,8 @@ class QrNavigationController extends GetxController {
         productImageList: List<String>.from(product['image_urls'] ?? []),
         productStock: product['quantity']?.toString() ?? '0',
         productDescription: product['description'] ?? '',
-        productOldPrice: product['price']?.toString() ?? '0',
-        productNewPrice: product['ttc_price']?.toString() ?? product['price']?.toString() ?? '0',
+        productOldPrice: productOldPrice,
+        productNewPrice: productNewPrice,
         productFeatures: [],
       ));
 

@@ -644,123 +644,343 @@ class _StorePageState extends State<StoreDrawer> {
               )
             : Column(
                 children: [
-                  // Breadcrumb navigation
-                  if (navigationStack.isNotEmpty)
-                    ListTile(
-                      leading: Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.black,
+                  // Drawer Header with gradient
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.purple.shade700,
+                          Colors.purple.shade400,
+                        ],
                       ),
-                      title: Text(
-                        'Retour vers ${navigationStack.last}',
-                        style: TextStyle(
-                          color: Theme.of(context).primaryColor,
-                          fontWeight: FontWeight.w500,
+                    ),
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Iconsax.category,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Catégories',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Parcourir nos produits',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.9),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      onTap: () {
-                        setState(() {
-                          navigationStack.removeLast();
-                          categoryIdStack.removeLast();
-                          if (categoryIdStack.isNotEmpty) {
-                            selectedCategory = navigationStack.last;
-                            selectedCategoryId = categoryIdStack.last;
-                          } else {
-                            selectedCategory = categoriesController.mainCategories.keys.first;
-                            selectedCategoryId = categoriesController.mainCategories.values.first;
-                          }
-                        });
-                        _fetchProductsForCategory(selectedCategoryId);
-                        Navigator.pop(context);
-                      },
                     ),
+                  ),
+                  // Breadcrumb navigation with improved styling
+                  if (navigationStack.isNotEmpty)
+                    Container(
+                      color: Colors.purple.shade50,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              navigationStack.removeLast();
+                              categoryIdStack.removeLast();
+                              if (categoryIdStack.isNotEmpty) {
+                                selectedCategory = navigationStack.last;
+                                selectedCategoryId = categoryIdStack.last;
+                              } else {
+                                selectedCategory = categoriesController.mainCategories.keys.first;
+                                selectedCategoryId = categoriesController.mainCategories.values.first;
+                              }
+                            });
+                            _fetchProductsForCategory(selectedCategoryId);
+                            Navigator.pop(context);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.arrow_back_ios,
+                                  color: Colors.purple.shade700,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Retour vers ${navigationStack.last}',
+                                    style: TextStyle(
+                                      color: Colors.purple.shade700,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.purple.shade300,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  Divider(height: 1, thickness: 1),
                   Expanded(
                     child: ListView(
+                      padding: EdgeInsets.symmetric(vertical: 8),
                       children: [
                         for (var category
                             in categoriesController.mainCategories.entries)
-                          ExpansionTile(
-                            title: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedCategory = category.key;
-                                  selectedCategoryId = category.value;
-                                  productListKey = UniqueKey();
-                                  // Clear navigation stack when selecting main category
-                                  navigationStack.clear();
-                                  categoryIdStack.clear();
-                                });
-
-                                _fetchProductsForCategory(selectedCategoryId);
-                                Navigator.pop(context);
-                              },
-                              child: Text(category.key,
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                          Container(
+                            margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: selectedCategoryId == category.value && navigationStack.isEmpty
+                                  ? Colors.purple.shade50
+                                  : Colors.transparent,
                             ),
-                            children: [
-                              if (categoriesController.categoryTree
-                                  .containsKey(category.value))
-                                for (var subcategory in categoriesController
-                                    .categoryTree[category.value]!)
-                                  ExpansionTile(
-                                    title: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          selectedCategory = subcategory['name'];
-                                          selectedCategoryId = subcategory['id'];
-                                          productListKey = UniqueKey();
-                                          
-                                          // Clear previous navigation if any
-                                          navigationStack.clear();
-                                          categoryIdStack.clear();
-                                          
-                                          // Add the parent category to navigation stack
-                                          navigationStack.add(category.key);
-                                          categoryIdStack.add(category.value);
-                                        });
+                            child: Theme(
+                              data: Theme.of(context).copyWith(
+                                dividerColor: Colors.transparent,
+                              ),
+                              child: ExpansionTile(
+                                tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                childrenPadding: EdgeInsets.only(left: 12),
+                                leading: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: selectedCategoryId == category.value && navigationStack.isEmpty
+                                        ? Colors.purple.shade100
+                                        : Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Iconsax.folder_2,
+                                    color: selectedCategoryId == category.value && navigationStack.isEmpty
+                                        ? Colors.purple.shade700
+                                        : Colors.grey.shade700,
+                                    size: 20,
+                                  ),
+                                ),
+                                title: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      selectedCategory = category.key;
+                                      selectedCategoryId = category.value;
+                                      productListKey = UniqueKey();
+                                      // Clear navigation stack when selecting main category
+                                      navigationStack.clear();
+                                      categoryIdStack.clear();
+                                    });
 
-                                        _fetchProductsForCategory(selectedCategoryId);
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text("• ${subcategory['name']}",
-                                          style: TextStyle(fontSize: 14)),
+                                    _fetchProductsForCategory(selectedCategoryId);
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(
+                                    category.key,
+                                    style: TextStyle(
+                                      fontWeight: selectedCategoryId == category.value && navigationStack.isEmpty
+                                          ? FontWeight.bold
+                                          : FontWeight.w600,
+                                      fontSize: 15,
+                                      color: selectedCategoryId == category.value && navigationStack.isEmpty
+                                          ? Colors.purple.shade700
+                                          : Colors.grey.shade800,
                                     ),
-                                    children: [
-                                      if (categoriesController.categoryTree
-                                          .containsKey(subcategory['id']))
-                                        for (var subSubcategory
-                                            in categoriesController
-                                                .categoryTree[subcategory['id']]!)
-                                          ListTile(
-                                            title:
-                                                Text("→ ${subSubcategory['name']}"),
-                                            onTap: () {
-                                              setState(() {
-                                                selectedCategory =
-                                                    subSubcategory['name'];
-                                                selectedCategoryId =
-                                                    subSubcategory['id'];
-                                                productListKey = UniqueKey();
-                                                
-                                                // Clear previous navigation if any
-                                                navigationStack.clear();
-                                                categoryIdStack.clear();
-                                                
-                                                // Add both parent and current category to navigation stack
-                                                navigationStack.add(category.key);
-                                                categoryIdStack.add(category.value);
-                                                navigationStack.add(subcategory['name']);
-                                                categoryIdStack.add(subcategory['id']);
-                                              });
+                                  ),
+                                ),
+                                iconColor: Colors.purple.shade700,
+                                collapsedIconColor: Colors.grey.shade600,
+                                children: [
+                                  if (categoriesController.categoryTree
+                                      .containsKey(category.value))
+                                    for (var subcategory in categoriesController
+                                        .categoryTree[category.value]!)
+                                      Container(
+                                        margin: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(6),
+                                          color: selectedCategoryId == subcategory['id']
+                                              ? Colors.purple.shade50
+                                              : Colors.transparent,
+                                        ),
+                                        child: Theme(
+                                          data: Theme.of(context).copyWith(
+                                            dividerColor: Colors.transparent,
+                                          ),
+                                          child: ExpansionTile(
+                                            tilePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                                            childrenPadding: EdgeInsets.only(left: 8),
+                                            leading: Container(
+                                              padding: EdgeInsets.all(6),
+                                              child: Icon(
+                                                Iconsax.category_2,
+                                                color: selectedCategoryId == subcategory['id']
+                                                    ? Colors.purple.shade600
+                                                    : Colors.grey.shade500,
+                                                size: 16,
+                                              ),
+                                            ),
+                                            title: GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  selectedCategory = subcategory['name'];
+                                                  selectedCategoryId = subcategory['id'];
+                                                  productListKey = UniqueKey();
 
-                                              _fetchProductsForCategory(
-                                                  selectedCategoryId);
-                                              Navigator.pop(context);
-                                            },
-                                          )
-                                    ],
-                                  )
-                            ],
+                                                  // Clear previous navigation if any
+                                                  navigationStack.clear();
+                                                  categoryIdStack.clear();
+
+                                                  // Add the parent category to navigation stack
+                                                  navigationStack.add(category.key);
+                                                  categoryIdStack.add(category.value);
+                                                });
+
+                                                _fetchProductsForCategory(selectedCategoryId);
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                subcategory['name'],
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: selectedCategoryId == subcategory['id']
+                                                      ? FontWeight.w600
+                                                      : FontWeight.w500,
+                                                  color: selectedCategoryId == subcategory['id']
+                                                      ? Colors.purple.shade700
+                                                      : Colors.grey.shade700,
+                                                ),
+                                              ),
+                                            ),
+                                            iconColor: Colors.purple.shade600,
+                                            collapsedIconColor: Colors.grey.shade500,
+                                            children: [
+                                              if (categoriesController.categoryTree
+                                                  .containsKey(subcategory['id']))
+                                                for (var subSubcategory
+                                                    in categoriesController
+                                                        .categoryTree[subcategory['id']]!)
+                                                  Material(
+                                                    color: Colors.transparent,
+                                                    child: InkWell(
+                                                      borderRadius: BorderRadius.circular(6),
+                                                      onTap: () {
+                                                        setState(() {
+                                                          selectedCategory =
+                                                              subSubcategory['name'];
+                                                          selectedCategoryId =
+                                                              subSubcategory['id'];
+                                                          productListKey = UniqueKey();
+
+                                                          // Clear previous navigation if any
+                                                          navigationStack.clear();
+                                                          categoryIdStack.clear();
+
+                                                          // Add both parent and current category to navigation stack
+                                                          navigationStack.add(category.key);
+                                                          categoryIdStack.add(category.value);
+                                                          navigationStack.add(subcategory['name']);
+                                                          categoryIdStack.add(subcategory['id']);
+                                                        });
+
+                                                        _fetchProductsForCategory(
+                                                            selectedCategoryId);
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: Container(
+                                                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                                        margin: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                        decoration: BoxDecoration(
+                                                          borderRadius: BorderRadius.circular(6),
+                                                          color: selectedCategoryId == subSubcategory['id']
+                                                              ? Colors.purple.shade50
+                                                              : Colors.transparent,
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(
+                                                              Iconsax.arrow_right_3,
+                                                              size: 14,
+                                                              color: selectedCategoryId == subSubcategory['id']
+                                                                  ? Colors.purple.shade600
+                                                                  : Colors.grey.shade400,
+                                                            ),
+                                                            SizedBox(width: 8),
+                                                            Expanded(
+                                                              child: Text(
+                                                                subSubcategory['name'],
+                                                                style: TextStyle(
+                                                                  fontSize: 13,
+                                                                  fontWeight: selectedCategoryId == subSubcategory['id']
+                                                                      ? FontWeight.w600
+                                                                      : FontWeight.normal,
+                                                                  color: selectedCategoryId == subSubcategory['id']
+                                                                      ? Colors.purple.shade700
+                                                                      : Colors.grey.shade600,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            if (selectedCategoryId == subSubcategory['id'])
+                                                              Container(
+                                                                padding: EdgeInsets.all(4),
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors.purple.shade600,
+                                                                  shape: BoxShape.circle,
+                                                                ),
+                                                                child: Icon(
+                                                                  Icons.check,
+                                                                  size: 10,
+                                                                  color: Colors.white,
+                                                                ),
+                                                              ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                            ],
+                                          ),
+                                        ),
+                                      )
+                                ],
+                              ),
+                            ),
                           ),
                       ],
                     ),

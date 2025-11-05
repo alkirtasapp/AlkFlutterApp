@@ -67,7 +67,10 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            if (widget.productDiscount != null && widget.productDiscount!.isNotEmpty)
+            // Only show discount badge if discount exists and is not 0
+            if (widget.productDiscount != null &&
+                widget.productDiscount!.isNotEmpty &&
+                widget.productDiscount != '0')
               AlkRoundedContainer(
                 radius: AlkSize.sm,
                 backgroundColor: Colors.purple.shade300,
@@ -76,25 +79,36 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
                   vertical: AlkSize.xs,
                 ),
                 child: Text(
-                  widget.productDiscount!,
+                  widget.productDiscount!.contains('%')
+                      ? widget.productDiscount!
+                      : '${widget.productDiscount}%',
                   style: Theme.of(context)
                       .textTheme
                       .labelLarge!
                       .apply(color: Colors.white),
                 ),
               ),
-            SizedBox(width: AlkSize.spaceBtwItems),
+            if (widget.productDiscount != null &&
+                widget.productDiscount!.isNotEmpty &&
+                widget.productDiscount != '0')
+              SizedBox(width: AlkSize.spaceBtwItems),
 
-            if (widget.productDiscount != null && widget.productDiscount!.isNotEmpty)
+            // Only show old price with strikethrough if discount exists
+            if (widget.productDiscount != null &&
+                widget.productDiscount!.isNotEmpty &&
+                widget.productDiscount != '0')
               Text(
                 '${widget.productOldPrice} TND',
                 style: Theme.of(context).textTheme.titleSmall!.apply(
                       decoration: TextDecoration.lineThrough,
                     ),
               ),
-            SizedBox(width: AlkSize.spaceBtwItems),
+            if (widget.productDiscount != null &&
+                widget.productDiscount!.isNotEmpty &&
+                widget.productDiscount != '0')
+              SizedBox(width: AlkSize.spaceBtwItems),
 
-            // New price
+            // Price display (always shown)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

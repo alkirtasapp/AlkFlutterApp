@@ -25,14 +25,46 @@ class AlkLoginForm extends StatefulWidget {
   _AlkLoginFormState createState() => _AlkLoginFormState();
 }
 
-class _AlkLoginFormState extends State<AlkLoginForm> {
+class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMixin {
   final RxBool isObscured = true.obs;
   final RxBool isRememberMeChecked = false.obs;
+  late AnimationController _formController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    _formController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _formController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _formController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
+
     _loadSavedCredentials();
+    _formController.forward();
+  }
+
+  @override
+  void dispose() {
+    _formController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -63,95 +95,209 @@ class _AlkLoginFormState extends State<AlkLoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AlkSize.spaceBtwSections),
-        child: Column(
-          children: [
-            // Email Input
-            TextFormField(
-              controller: widget.emailController,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Iconsax.direct),
-                label: Text('E-mail'),
-              ),
-            ),
-            const SizedBox(height: AlkSize.spaceBtwInputFields),
-            // Password Input with Visibility Toggle
-            Obx(() => TextFormField(
-                  controller: widget.passwordController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Iconsax.password_check),
-                    labelText: 'Mot de passe',
-                    suffixIcon: IconButton(
-                      icon: Icon(isObscured.value ? Iconsax.eye_slash : Iconsax.eye),
-                      onPressed: () {
-                        isObscured.value = !isObscured.value;
-                      },
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Form(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AlkSize.spaceBtwSections),
+            child: Column(
+              children: [
+                // Email Input with enhanced styling
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.shade100.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextFormField(
+                    controller: widget.emailController,
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Iconsax.direct, color: Colors.purple.shade400),
+                      label: const Text('E-mail'),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.purple.shade400, width: 2),
+                      ),
                     ),
                   ),
-                  obscureText: isObscured.value,
-                )),
-            const SizedBox(height: AlkSize.spaceBtwInputFields / 2),
-            // Remember Me and Forgot Password
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Obx(() => Row(
-                      children: [
-                        Checkbox(
-                          value: isRememberMeChecked.value,
-                          onChanged: (value) {
-                            isRememberMeChecked.value = value ?? false;
-                          },
-                          activeColor: const Color(0xFF7F2461),
+                ),
+                const SizedBox(height: AlkSize.spaceBtwInputFields),
+                // Password Input with Visibility Toggle and enhanced styling
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.shade100.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Obx(() => TextFormField(
+                        controller: widget.passwordController,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Iconsax.password_check, color: Colors.purple.shade400),
+                          labelText: 'Mot de passe',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.purple.shade400, width: 2),
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              isObscured.value ? Iconsax.eye_slash : Iconsax.eye,
+                              color: Colors.purple.shade400,
+                            ),
+                            onPressed: () {
+                              isObscured.value = !isObscured.value;
+                            },
+                          ),
                         ),
-                        const Text('Mémoriser info'),
+                        obscureText: isObscured.value,
+                      )),
+                ),
+                const SizedBox(height: AlkSize.spaceBtwInputFields / 2),
+                // Remember Me and Forgot Password
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Obx(() => Row(
+                          children: [
+                            Checkbox(
+                              value: isRememberMeChecked.value,
+                              onChanged: (value) {
+                                isRememberMeChecked.value = value ?? false;
+                              },
+                              activeColor: Colors.purple.shade600,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            const Text(
+                              'Mémoriser info',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        )),
+                    Flexible(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const ForgotPasswordWebView()),
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.purple.shade600,
+                        ),
+                        child: const Text(
+                          'Mot de passe oublié?',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AlkSize.spaceBtwSections),
+                // Sign In Button with enhanced styling
+                Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.purple.shade700,
+                        Colors.purple.shade500,
                       ],
-                    )),
-                Flexible(
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const ForgotPasswordWebView()),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.shade300.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () async {
+                      await _saveCredentials();
+                      if (context.mounted) {
+                        widget.onSignIn(context);
+                      }
+                    },
+                    child: const Text(
+                      'Connexion',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AlkSize.spaceBtwItems),
+                // Create Account Button with enhanced styling
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: () => Get.to(() => const SignUpScreen()),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.purple.shade400, width: 2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      foregroundColor: Colors.purple.shade700,
                     ),
                     child: const Text(
-                      'Mot de passe oublié?',
-                      overflow: TextOverflow.ellipsis,
+                      'Créer un compte',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AlkSize.spaceBtwSections),
-            // Sign In Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 151, 46, 116),
-                ),
-                onPressed: () async {
-                  await _saveCredentials();
-                  widget.onSignIn(context);
-                },
-                child: const Text(
-                  'Connexion',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-            const SizedBox(height: AlkSize.spaceBtwItems),
-            // Create Account Button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Get.to(() => const SignUpScreen()),
-                child: const Text('Créer un compte'),
-                
-              ),
-                
-            ),
-          ],
+          ),
         ),
       ),
     );

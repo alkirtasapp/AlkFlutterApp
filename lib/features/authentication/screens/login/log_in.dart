@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:alkirtas/features/authentication/screens/login/log_in_divider.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in_footer.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in_form.dart';
@@ -187,41 +188,106 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.only(
-                top: AlkSize.appBarHeight,
-                left: AlkSize.defaultSpace,
-                bottom: AlkSize.defaultSpace,
-                right: AlkSize.defaultSpace,
-              ),
-              child: Column(
-                children: [
-                  /// Logo title and subtitle
-                  AlkLoginHeader(dark: dark),
-
-                  /// Form with email/password input and login logic
-                  AlkLoginForm(
-                    emailController: emailController,
-                    passwordController: passwordController,
-                    onSignIn: (context) => signInUser(context),
-                  ),
-
-                  /// Divider
-                  //AlkLoginDivider(dark: dark), *will be used once FireBase is implemented*
-                  const SizedBox(height: AlkSize.spaceBtwSections),
-
-                  /// Footer with social login buttons
-                  //AlkLoginFooter()   *will be used once FireBase is implemented*
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.purple.shade50.withOpacity(0.3),
+                  Colors.white,
+                  Colors.white,
                 ],
+              ),
+            ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: AlkSize.appBarHeight,
+                  left: AlkSize.defaultSpace,
+                  bottom: AlkSize.defaultSpace,
+                  right: AlkSize.defaultSpace,
+                ),
+                child: Column(
+                  children: [
+                    /// Logo title and subtitle
+                    AlkLoginHeader(dark: dark),
+
+                    /// Form with email/password input and login logic
+                    AlkLoginForm(
+                      emailController: emailController,
+                      passwordController: passwordController,
+                      onSignIn: (context) => signInUser(context),
+                    ),
+
+                    /// Divider
+                    //AlkLoginDivider(dark: dark), *will be used once FireBase is implemented*
+                    const SizedBox(height: AlkSize.spaceBtwSections),
+
+                    /// Footer with social login buttons
+                    //AlkLoginFooter()   *will be used once FireBase is implemented*
+                  ],
+                ),
               ),
             ),
           ),
           if (isLoading)
-            Container(
-              color: Colors.purple.withOpacity(0.5),
-              child: Center(
-                child: CircularProgressIndicator(),
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 300),
+              opacity: isLoading ? 1.0 : 0.0,
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 60,
+                            height: 60,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.purple.shade600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Connexion en cours...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.purple.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Veuillez patienter',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
         ],

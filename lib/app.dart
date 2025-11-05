@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
 import 'package:alkirtas/features/authentication/screens/onBoarding/onboarding.dart';
+import 'package:alkirtas/features/authentication/screens/onBoarding/animated_onboarding.dart';
 import 'utils/theme/theme.dart';
 
 class App extends StatelessWidget {
@@ -27,8 +28,8 @@ class App extends StatelessWidget {
             themeMode: ThemeMode.light,
             theme: TAppTheme.lightTheme,
             darkTheme: TAppTheme.darkTheme,
-            // redirect to login Screen 
-            home: hasSeenOnboarding ? LoginScreen() : const OnBoardingScreen(),
+            // redirect to login Screen
+            home: hasSeenOnboarding ? LoginScreen() : const AnimatedOnboardingScreen(),
           );
         }
       },
