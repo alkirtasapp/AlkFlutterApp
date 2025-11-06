@@ -25,27 +25,40 @@ class AlkBannerSlider extends StatelessWidget {
     if (banners.isEmpty) {
       return const Center(child: Text('No banners available'));
     }
+
+    // Get screen width for responsive sizing with padding
+    final screenWidth = MediaQuery.of(context).size.width;
+    const horizontalPadding = AlkSize.defaultSpace * 2; // Padding on both sides
+    final availableWidth = screenWidth - horizontalPadding;
+    // Maintain 1200x500 aspect ratio (2.4:1)
+    final bannerHeight = availableWidth / 2.4;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(100),
       ),
       child: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(1000),
-            ),
-            child: CarouselSlider(
-              items: banners
-                  .map((url) => AlkRoundedImage(imageUrl: url))
-                  .toList(),
-              options: CarouselOptions(
-                viewportFraction: 1.2,
-                autoPlay: true, // Enable autoPlay
-                autoPlayInterval: const Duration(seconds: 5), // Set interval
-                onPageChanged: (index, _) =>
-                    controller.updatePageIndicator(index),
-              ),
+          CarouselSlider(
+            items: banners
+                .map((url) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: AlkRoundedImage(
+                        imageUrl: url,
+                        width: availableWidth,
+                        height: bannerHeight,
+                        fit: BoxFit.cover,
+                      ),
+                    ))
+                .toList(),
+            options: CarouselOptions(
+              viewportFraction: 0.92,
+              height: bannerHeight,
+              enlargeCenterPage: true,
+              autoPlay: true, // Enable autoPlay
+              autoPlayInterval: const Duration(seconds: 5), // Set interval
+              onPageChanged: (index, _) =>
+                  controller.updatePageIndicator(index),
             ),
           ),
           const SizedBox(height: AlkSize.spaceBtwItems),
