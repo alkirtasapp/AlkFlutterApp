@@ -16,7 +16,14 @@ class AlkPrimaryHeaderContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlkCurvedEdgeswidget(
       child: Container(
-        color : const Color(0xFF7F2461),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.purple.shade400, const Color(0xFF7F2461)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            stops: const [0.2, 1],
+          ),
+        ),
         padding : const EdgeInsets.all(0),
         child: Stack(
           children: [

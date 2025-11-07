@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/features/authentication/screens/home/home.dart';
 import 'package:alkirtas/features/personalization/screens/settings/settings.dart';
 import 'package:alkirtas/features/shop/screens/cart/cart.dart';
 import 'package:alkirtas/features/shop/screens/store/storedrawer.dart';
+import 'package:alkirtas/features/shop/screens/store/controllers/store_controller.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 
@@ -98,9 +100,12 @@ class NavigationController extends GetxController {
 
   final screens = [
      HomeScreen(),
-    Obx(() => StoreDrawer(
-          initialCategoryId: Get.find<NavigationController>().initialCategoryId.value,
-          initialCategoryName: Get.find<NavigationController>().initialCategoryName.value,
+    Obx(() => ChangeNotifierProvider(
+          create: (_) => StoreController(),
+          child: StoreDrawer(
+            initialCategoryId: Get.find<NavigationController>().initialCategoryId.value,
+            initialCategoryName: Get.find<NavigationController>().initialCategoryName.value,
+          ),
         )),
     const CartScreen(),
     const SettingScreen(),

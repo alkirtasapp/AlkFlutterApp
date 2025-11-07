@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:iconsax/iconsax.dart';
 
 class AlkProductFeatures extends StatelessWidget {
   const AlkProductFeatures({
@@ -11,59 +12,101 @@ class AlkProductFeatures extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      
-      elevation: 5, // Shadow effect for a modern look
-      shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(10), // Rounded corners
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.purple.shade50,
+            Colors.white,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.purple.shade100,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.shade100.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      margin: const EdgeInsets.all(
-          3
-          ), // Adds spacing around the card
       child: Padding(
-        padding:
-            const EdgeInsets.all(12), // Padding inside the card
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children:
-              productFeatures!.asMap().entries.map((entry) {
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: productFeatures!.asMap().entries.map((entry) {
+            final index = entry.key;
             final feature = entry.value;
-            final parts =
-                feature.split(':'); // Split "Feature: Value"
+            final parts = feature.split(':'); // Split "Feature: Value"
             final featureName = parts[0].trim();
-            final featureValue =
-                parts.length > 1 ? parts[1].trim() : "N/A";
-    
-            return Padding(
-              padding: const EdgeInsets.symmetric(
-                  vertical: 6.0), // Space between items
+            final featureValue = parts.length > 1 ? parts[1].trim() : "N/A";
+
+            return Container(
+              margin: EdgeInsets.only(
+                bottom: index < productFeatures!.length - 1 ? 12 : 0,
+              ),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.purple.shade50,
+                  width: 1,
+                ),
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex:
-                        4, // Adjusts spacing between feature & value
-                    child: Text(
-                      '$featureName:',
-                      
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.deepPurple,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.purple.shade400,
+                          const Color(0xFF7F2461),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Iconsax.info_circle5,
+                      color: Colors.white,
+                      size: 18,
                     ),
                   ),
+                  const SizedBox(width: 12),
                   Expanded(
-                    flex:
-                        3, // Adjusts spacing between feature & value
-                    child: Text(
-                      featureValue,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black87,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          featureName,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.purple.shade700,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          featureValue,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

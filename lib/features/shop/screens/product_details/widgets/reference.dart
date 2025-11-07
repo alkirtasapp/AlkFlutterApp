@@ -9,10 +9,10 @@ class AlkRef extends StatelessWidget {
     final String title ;
     final IconData icon;
     final double size;
-    
+
 
   const AlkRef({
-    super.key, required this.productReference, required this.title, required this.icon, required this.size , 
+    super.key, required this.productReference, required this.title, required this.icon, required this.size ,
   });
 
   @override
