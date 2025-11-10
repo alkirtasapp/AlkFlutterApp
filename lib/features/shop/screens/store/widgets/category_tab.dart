@@ -11,7 +11,7 @@ class AlkCategoryTab
 
   @override
   Widget build(BuildContext context) {
-    return 
+    return
             ListView(
               shrinkWrap: false,
               physics: NeverScrollableScrollPhysics(),
@@ -27,7 +27,7 @@ class AlkCategoryTab
                     // Products
                     // AlkSectionHeading(title: '' ,onPressed: (){}, showActionButton: false,),
                     const SizedBox(height:  AlkSize.spaceBtwItems),
-              
+
                     AlkGridLayout(itemCount: 8,),
                     const SizedBox(height: AlkSize.spaceBtwSections,)
                  ],

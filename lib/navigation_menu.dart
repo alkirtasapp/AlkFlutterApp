@@ -11,10 +11,54 @@ import 'package:alkirtas/features/shop/screens/store/controllers/store_controlle
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 
-class NavigationMenu extends StatelessWidget {
+class NavigationMenu extends StatefulWidget {
   /// the index of the selected tab
   final int selectedMenu;
   const NavigationMenu({super.key, this.selectedMenu = 0});
+
+  @override
+  State<NavigationMenu> createState() => _NavigationMenuState();
+}
+
+class _NavigationMenuState extends State<NavigationMenu>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,63 +67,69 @@ class NavigationMenu extends StatelessWidget {
       Get.put(ProductProvider(), permanent: true);
     }
     // Initialize NavigationController with selectedMenu
-    final controller = Get.put(NavigationController(selectedMenu));
+    final controller = Get.put(NavigationController(widget.selectedMenu));
     final darkMode = AlkHelperFunctions.isDarkMode(context);
 
     // Use WillPopScope to handle back button press
-    return WillPopScope(
-      onWillPop: () async {
-        final shouldPop = await showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('Quitter l\'application'),
-              content: const Text('Voulez-vous vraiment quitter l\'application?'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Non'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Oui'),
-                ),
-              ],
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: WillPopScope(
+          onWillPop: () async {
+            final shouldPop = await showDialog<bool>(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: const Text('Quitter l\'application'),
+                  content: const Text('Voulez-vous vraiment quitter l\'application?'),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Non'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Oui'),
+                    ),
+                  ],
+                );
+              },
             );
+            return shouldPop ?? false;
           },
-        );
-        return shouldPop ?? false;
-      },
-      // Scaffold with NavigationBar and screens
-      child: Scaffold(
-        bottomNavigationBar: Obx(
-          () => NavigationBar(
-            height: 80,
-            elevation: 0,
-            selectedIndex: controller.selectedIndex.value,
-            onDestinationSelected: (index) {
-              controller.pageController.jumpToPage(index); // Navigate to the selected page
-              controller.selectedIndex.value = index;
-            },
-            backgroundColor: darkMode ? AlkColors.black : Colors.white,
-            indicatorColor: darkMode
-                ? AlkColors.white.withOpacity(0.1)
-                : AlkColors.black.withOpacity(0.1),
-            destinations: const [
-              NavigationDestination(icon: Icon(Iconsax.home), label: 'Acceuil'),
-              NavigationDestination(icon: Icon(Iconsax.shop), label: 'Boutique'),
-              NavigationDestination(icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
-              NavigationDestination(icon: Icon(Iconsax.user), label: 'Profil'),
-            //  NavigationDestination(icon: Icon(Iconsax.star_1), label: 'PROMOS'),
-            ],
+          // Scaffold with NavigationBar and screens
+          child: Scaffold(
+            bottomNavigationBar: Obx(
+              () => NavigationBar(
+                height: 80,
+                elevation: 0,
+                selectedIndex: controller.selectedIndex.value,
+                onDestinationSelected: (index) {
+                  controller.pageController.jumpToPage(index); // Navigate to the selected page
+                  controller.selectedIndex.value = index;
+                },
+                backgroundColor: darkMode ? AlkColors.black : Colors.white,
+                indicatorColor: darkMode
+                    ? AlkColors.white.withOpacity(0.1)
+                    : AlkColors.black.withOpacity(0.1),
+                destinations: const [
+                  NavigationDestination(icon: Icon(Iconsax.home), label: 'Acceuil'),
+                  NavigationDestination(icon: Icon(Iconsax.shop), label: 'Boutique'),
+                  NavigationDestination(icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
+                  NavigationDestination(icon: Icon(Iconsax.user), label: 'Profil'),
+                //  NavigationDestination(icon: Icon(Iconsax.star_1), label: 'PROMOS'),
+                ],
+              ),
+            ),
+            body: PageView(
+              controller: controller.pageController,
+              onPageChanged: (index) {
+                controller.selectedIndex.value = index; // Update the selected index
+              },
+              children: controller.screens,
+            ),
           ),
-        ),
-        body: PageView(
-          controller: controller.pageController,
-          onPageChanged: (index) {
-            controller.selectedIndex.value = index; // Update the selected index
-          },
-          children: controller.screens,
         ),
       ),
     );
@@ -98,13 +148,14 @@ class NavigationController extends GetxController {
       : selectedIndex = initialIndex.obs,
         pageController = PageController(initialPage: initialIndex);
 
-  final screens = [
+  // Using a getter instead of final field to ensure proper initialization
+  List<Widget> get screens => [
      HomeScreen(),
     Obx(() => ChangeNotifierProvider(
           create: (_) => StoreController(),
           child: StoreDrawer(
-            initialCategoryId: Get.find<NavigationController>().initialCategoryId.value,
-            initialCategoryName: Get.find<NavigationController>().initialCategoryName.value,
+            initialCategoryId: initialCategoryId.value,
+            initialCategoryName: initialCategoryName.value,
           ),
         )),
     const CartScreen(),

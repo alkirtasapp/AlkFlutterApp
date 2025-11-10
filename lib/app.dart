@@ -20,7 +20,17 @@ class App extends StatelessWidget {
       future: _hasSeenOnboarding(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          // Show a proper loading screen with MaterialApp wrapper
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: TAppTheme.lightTheme,
+            darkTheme: TAppTheme.darkTheme,
+            home: const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
         } else {
           final hasSeenOnboarding = snapshot.data ?? false;
           return GetMaterialApp(

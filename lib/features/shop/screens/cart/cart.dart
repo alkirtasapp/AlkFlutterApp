@@ -319,26 +319,59 @@ class _CartScreenState extends State<CartScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Close Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple[400],
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  // Action Buttons
+                  Row(
+                    children: [
+                      // Save to History Icon Button
+                      IconButton(
+                        onPressed: () async {
+                          final navigator = Navigator.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
+
+                          final savedCart = await cartProvider.saveCartToHistory(qrData);
+                          if (savedCart != null) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: const Text('Panier sauvegardé dans l\'historique'),
+                                backgroundColor: Colors.green,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          } else {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: const Text('Erreur lors de la sauvegarde'),
+                                backgroundColor: Colors.red,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                        icon: Icon(Icons.save, color: Colors.green[700], size: 28),
+                        tooltip: 'Sauvegarder dans l\'historique',
+                      ),
+                      const SizedBox(width: 8),
+                      // Close Button
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.purple[400],
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Fermer',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        'Fermer',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ),
+                    ],
                   ),
                 ],
               ),

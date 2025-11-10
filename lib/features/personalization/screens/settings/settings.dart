@@ -10,6 +10,7 @@ import 'package:alkirtas/common/widgets/list_tiles/settings_menu_tile.dart';
 import 'package:alkirtas/common/widgets/texts/section_heading.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
 import 'package:alkirtas/features/shop/screens/cart/cart.dart';
+import 'package:alkirtas/features/shop/screens/cart/cart_history.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/constants/size.dart';
 
@@ -80,11 +81,18 @@ class SettingScreen extends StatelessWidget {
                       
                   AlkSettingMenuTile(
                       icon: Iconsax.shopping_cart,
-                      title: 'Mon Panier',
+                      title: 'Panier Actuel',
                       subtitle:
                           'Ajouter, supprimer des produits et passer à la caisse',
                           onPressed:  (){Get.offAll(() => const NavigationMenu(selectedMenu: 2));}
                           ),
+                  AlkSettingMenuTile(
+                      icon: Iconsax.bag_tick,
+                      title: 'Historique des Paniers',
+                      subtitle: 'Accédez à vos paniers sauvegardés',
+                      onPressed: () {
+                        Get.to(() => const CartHistoryScreen());
+                      },),
                 /*  AlkSettingMenuTile(
                       icon: Iconsax.bag_tick,
                       title: 'Mes Commandes',

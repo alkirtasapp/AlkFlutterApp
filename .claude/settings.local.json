@@ -3,7 +3,8 @@
     "allow": [
       "Bash(flutter run:*)",
       "Bash(flutter analyze:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(flutter pub run build_runner build:*)"
     ],
     "deny": [],
     "ask": []

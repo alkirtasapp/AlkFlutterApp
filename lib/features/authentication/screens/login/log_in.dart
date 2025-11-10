@@ -34,7 +34,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   bool isLoading = false;
 
-  void signInUser(BuildContext context) async {
+  void signInUser() async {
+    if (!mounted) return;
+
     setState(() {
       isLoading = true;
     });
@@ -43,6 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
@@ -72,6 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
        final streamedResponse = await request.send();
        final response = await http.Response.fromStream(streamedResponse);
 
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
@@ -97,36 +101,54 @@ class _LoginScreenState extends State<LoginScreen> {
               // Pass the ID as integer to Firebase
      //         await registerAppUser(customer['id'] as int);
 
-              Get.offAll(() => const NavigationMenu());
+              // Add a small delay to let the loading animation complete smoothly
+              await Future.delayed(const Duration(milliseconds: 500));
+
               final prefs = await SharedPreferences.getInstance();
               final pending = prefs.getString('pendingNavigation');
+
               if (pending != null) {
                 prefs.remove('pendingNavigation');
                 print('Redirecting after login to: $pending');
 
-                // Small delay to make sure NavigationMenu is fully built
-                Future.delayed(Duration(milliseconds: 100), () {
-                  if (pending == 'Promos') {
-                    Get.offAll(() => const NavigationMenu(selectedMenu: 1));
-                  }
-
-                  // Add more cases if needed
-                });
+                if (pending == 'Promos') {
+                  Get.offAll(
+                    () => const NavigationMenu(selectedMenu: 1),
+                    transition: Transition.fadeIn,
+                    duration: const Duration(milliseconds: 400),
+                  );
+                } else {
+                  Get.offAll(
+                    () => const NavigationMenu(),
+                    transition: Transition.fadeIn,
+                    duration: const Duration(milliseconds: 400),
+                  );
+                }
+              } else {
+                Get.offAll(
+                  () => const NavigationMenu(),
+                  transition: Transition.fadeIn,
+                  duration: const Duration(milliseconds: 400),
+                );
               }
 
               return;
             } else {
+              if (!mounted) return;
               showErrorDialog(context, 'Mot de passe invalide');
               return;
             }
           }
         }
 
+        if (!mounted) return;
         showErrorDialog(context, 'Aucun utilisateur trouvé avec cet e-mail.');
       } else {
+        if (!mounted) return;
         showErrorDialog(context, 'Erreur de connexion.');
       }
     } catch (e) {
+       if (!mounted) return;
        setState(() {
          isLoading = false;
        });
@@ -217,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     AlkLoginForm(
                       emailController: emailController,
                       passwordController: passwordController,
-                      onSignIn: (context) => signInUser(context),
+                      onSignIn: (_) => signInUser(),
                     ),
 
                     /// Divider
