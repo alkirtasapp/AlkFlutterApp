@@ -48,6 +48,7 @@ dependencies:
   mobile_scanner: ^3.5.6
   permission_handler: ^11.3.1
   qr_flutter: ^4.1.0
+  uuid: ^4.5.1  # For generating unique session IDs
 
 
 # Development-only dependencies

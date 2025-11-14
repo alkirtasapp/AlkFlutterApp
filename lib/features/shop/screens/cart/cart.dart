@@ -14,6 +14,8 @@ import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart' as xml;
 import 'package:provider/provider.dart'; // Import Provider
 import 'package:qr_flutter/qr_flutter.dart'; // Import QR Flutter
+import 'package:uuid/uuid.dart'; // Import UUID for session IDs
+import 'package:alkirtas/features/shop/screens/cart/cart_qr_dialog.dart'; // Import new QR dialog with polling
 
 import 'dart:convert';
 import 'dart:typed_data';
@@ -40,9 +42,13 @@ class _CartScreenState extends State<CartScreen> {
     return getTotalPrice(cartProvider) + 9.0; // Delivery fee is fixed at 9.0 TND
   }
 
-  // Generate QR code data from cart
-  String generateCartQRData(CartProvider cartProvider) {
+  // Generate QR code data from cart with session ID for syncing
+  Map<String, dynamic> generateCartQRDataWithSession(CartProvider cartProvider) {
+    // Generate unique session ID
+    final sessionId = const Uuid().v4();
+
     final cartData = {
+      'session_id': sessionId, // NEW: Add session ID for polling
       'cartItems': cartProvider.cartItems.map((item) {
         // Only include essential data - Odoo will get name/brand from its database
         return {
@@ -55,21 +61,24 @@ class _CartScreenState extends State<CartScreen> {
       'totalPrice': getTotalPrice(cartProvider),
     };
 
-    // Encode to JSON
-    final jsonString = jsonEncode(cartData);
-
     // Log for debugging
-    print('📦 QR Data Generated (Simplified):');
+    print('📦 QR Data Generated with Session ID:');
+    print('   Session ID: $sessionId');
     print('   Items: ${cartProvider.cartItems.length}');
     print('   Total: ${getTotalPrice(cartProvider)}');
     if (cartProvider.cartItems.isNotEmpty) {
       final firstRef = cartProvider.cartItems[0]['productReference'] ?? 'N/A';
       print('   First Product Reference: $firstRef');
     }
-    print('   JSON Length: ${jsonString.length} characters');
-    print('   JSON: $jsonString');
+    print('   JSON: ${jsonEncode(cartData)}');
 
-    return jsonString;
+    return cartData;
+  }
+
+  // Legacy method for backwards compatibility
+  String generateCartQRData(CartProvider cartProvider) {
+    final cartData = generateCartQRDataWithSession(cartProvider);
+    return jsonEncode(cartData);
   }
 
   // Show QR code in fullscreen
@@ -118,8 +127,42 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  // Show QR code in a dialog
+  // Show QR code dialog with automatic polling for cart sync
   void showQRCodeDialog(BuildContext context, CartProvider cartProvider) {
+    // Generate QR data with session ID
+    final cartDataWithSession = generateCartQRDataWithSession(cartProvider);
+    final sessionId = cartDataWithSession['session_id'] as String;
+    final qrData = jsonEncode(cartDataWithSession);
+
+    // Show new dialog with polling
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => CartQRDialog(
+        qrData: qrData,
+        sessionId: sessionId,
+        cartProvider: cartProvider,
+        // IMPORTANT: Change this for production!
+        // Local testing: Use your computer's local IP (e.g., 'http://192.168.1.100:8069')
+        // Production: Use 'https://www.odoo.alkirtas.com'
+        odooBaseUrl: 'http://10.220.225.242:8069', // Physical device on local network
+      ),
+    ).then((success) {
+      if (success == true) {
+        // Cart was synced successfully
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Panier synchronisé avec succès!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    });
+  }
+
+  // Old dialog method (keep for fullscreen QR or as backup)
+  void showOldQRCodeDialog(BuildContext context, CartProvider cartProvider) {
     final qrData = generateCartQRData(cartProvider);
 
     // Get screen size for responsive QR code
