@@ -116,8 +116,9 @@ class _CartQRDialogState extends State<CartQRDialog> {
           });
         }
 
-        // Cleanup session from Odoo
-        _deleteSession();
+        // Note: Session is automatically marked as 'synced' in Odoo when retrieved
+        // It will be auto-deleted after 30 days by Odoo's scheduled cleanup job
+        // No need to delete manually - this keeps traceability records
 
       } else if (response.statusCode == 404) {
         // Not ready yet, keep polling
@@ -193,25 +194,52 @@ class _CartQRDialogState extends State<CartQRDialog> {
           print('✅ Updated existing product: $productName (qty: $verifiedQty)');
         } else {
           // New product added during Odoo verification
-          // Add it with minimal data from Odoo
-          await widget.cartProvider.addToCart(
-            productId: productId,
-            productName: productName,
-            productBrand: null,
-            productPrice: price,
-            productDiscount: null,
-            productOldPrice: null,
-            productNewPrice: null,
-            productImage: null,
-            productReference: productRef,
-            productStock: null,
-            productDescription: null,
-            productBrandId: null,
-            productImageList: null,
-            productFeatures: null,
-            quantity: verifiedQty,
-          );
-          print('✅ Added new product: $productName (qty: $verifiedQty) - Added by cashier');
+          // Fetch full product details from PrestaShop API using reference
+          print('🔍 Fetching full details for new product: $productName (Ref: $productRef, ID: $productId)');
+
+          final fullProductData = await _fetchProductDetails(productId, productRef);
+
+          if (fullProductData != null) {
+            // Add with full product data - use PrestaShop ID from fetched data
+            await widget.cartProvider.addToCart(
+              productId: fullProductData['productId'] ?? productId,  // Use PrestaShop ID
+              productName: fullProductData['productName'] ?? productName,
+              productBrand: fullProductData['productBrand'],
+              productPrice: fullProductData['productPrice'] ?? price,
+              productDiscount: fullProductData['productDiscount'],
+              productOldPrice: fullProductData['productOldPrice'],
+              productNewPrice: fullProductData['productNewPrice'],
+              productImage: fullProductData['productImage'],
+              productReference: fullProductData['productReference'] ?? productRef,
+              productStock: fullProductData['productStock'],
+              productDescription: fullProductData['productDescription'],
+              productBrandId: fullProductData['productBrandId'],
+              productImageList: fullProductData['productImageList'],
+              productFeatures: fullProductData['productFeatures'],
+              quantity: verifiedQty,
+            );
+            print('✅ Added new product with full details: $productName (PrestaShop ID: ${fullProductData['productId']}, qty: $verifiedQty)');
+          } else {
+            // Fallback: Add with minimal data if fetch fails
+            await widget.cartProvider.addToCart(
+              productId: productId,
+              productName: productName,
+              productBrand: null,
+              productPrice: price,
+              productDiscount: null,
+              productOldPrice: null,
+              productNewPrice: null,
+              productImage: null,
+              productReference: productRef,
+              productStock: null,
+              productDescription: null,
+              productBrandId: null,
+              productImageList: null,
+              productFeatures: null,
+              quantity: verifiedQty,
+            );
+            print('⚠️ Added new product with minimal data (fetch failed): $productName');
+          }
         }
       }
 
@@ -221,14 +249,133 @@ class _CartQRDialogState extends State<CartQRDialog> {
     }
   }
 
-  Future<void> _deleteSession() async {
+  Future<Map<String, dynamic>?> _fetchProductDetails(String productId, String productReference) async {
     try {
-      final url = '${widget.odooBaseUrl}/pos/api/verified_cart/${widget.sessionId}';
-      await http.delete(Uri.parse(url));
-      print('🗑️ Session deleted from Odoo');
+      // Fetch product by REFERENCE (barcode) - more reliable than ID since Odoo ID might differ from PrestaShop ID
+      String url = 'https://www.alkirtas.com/api/products?display=full&filter[reference]=$productReference&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU&output_format=JSON';
+
+      print('🌐 Fetching product by reference: $productReference');
+
+      var response = await http.get(Uri.parse(url)).timeout(
+        const Duration(seconds: 10),
+      );
+
+      if (response.statusCode == 200) {
+        // IMPORTANT: Use utf8.decode for proper Arabic text encoding
+        final data = json.decode(utf8.decode(response.bodyBytes));
+
+        if (data['products'] == null || data['products'].isEmpty) {
+          print('❌ No product found with reference: $productReference');
+          return null;
+        }
+
+        // Get first product from results
+        final product = data['products'][0];
+
+        // IMPORTANT: Use the PrestaShop product ID, not the Odoo ID
+        final String prestashopProductId = product['id']?.toString() ?? productId;
+
+        // Extract product details with UTF-8 support
+        final String productName = _extractValue(product['name']) ?? '';
+        final String productDescription = _extractValue(product['description']) ?? '';
+        final String productRef = product['reference']?.toString() ?? productReference;
+
+        // Get base price
+        final double basePrice = double.tryParse(product['price']?.toString() ?? '0') ?? 0.0;
+
+        // Format price with 3 decimal places
+        final String productPrice = basePrice.toStringAsFixed(3);
+
+        // Get stock quantity
+        final String productStock = product['quantity']?.toString() ?? '0';
+
+        // Get manufacturer/brand
+        String? brandId = product['id_manufacturer']?.toString();
+        String? brandName;
+
+        // Get images using the same method as ProductControllerStore
+        final associations = product['associations'];
+        List<String>? imageList;
+        String? mainImage;
+
+        if (associations != null && associations['images'] != null) {
+          final images = associations['images'];
+          final imagesList = images is List ? images : [images];
+
+          imageList = [];
+          for (var img in imagesList) {
+            if (img != null && img['id'] != null) {
+              final imgId = img['id'].toString();
+              // Use the same image URL construction as ProductControllerStore
+              final path = imgId.split('').join('/');
+              imageList.add('https://www.alkirtas.com/img/p/$path/$imgId.jpg');
+            }
+          }
+          mainImage = imageList.isNotEmpty ? imageList[0] : null;
+        }
+
+        // Get features
+        List<String>? features;
+        if (associations != null && associations['product_features'] != null) {
+          final productFeatures = associations['product_features'];
+          final featuresList = productFeatures is List ? productFeatures : [productFeatures];
+
+          features = [];
+          for (var f in featuresList) {
+            if (f != null && f['id'] != null) {
+              features.add(f['id'].toString());
+            }
+          }
+        }
+
+        print('✅ Product details fetched successfully for: $productName');
+        print('   PrestaShop ID: $prestashopProductId, Price: $productPrice, Images: ${imageList?.length ?? 0}');
+
+        return {
+          'productId': prestashopProductId,  // Use PrestaShop ID, not Odoo ID
+          'productName': productName,
+          'productBrand': brandName,
+          'productBrandId': brandId,
+          'productPrice': productPrice,
+          'productDiscount': '0',
+          'productOldPrice': productPrice,
+          'productNewPrice': productPrice,
+          'productImage': mainImage,
+          'productReference': productRef,
+          'productStock': productStock,
+          'productDescription': productDescription,
+          'productImageList': imageList,
+          'productFeatures': features,
+        };
+      } else {
+        print('❌ Failed to fetch product: ${response.statusCode}');
+        return null;
+      }
     } catch (e) {
-      print('⚠️ Error deleting session: $e');
+      print('❌ Error fetching product details: $e');
+      return null;
     }
+  }
+
+  // Helper method to extract value from PrestaShop API language arrays
+  String? _extractValue(dynamic field) {
+    if (field == null) return null;
+
+    if (field is List && field.isNotEmpty) {
+      // It's a language array, get first value
+      final firstItem = field[0];
+      if (firstItem is Map && firstItem['value'] != null) {
+        return firstItem['value'].toString();
+      }
+    } else if (field is Map && field['value'] != null) {
+      // Single language object
+      return field['value'].toString();
+    } else if (field is String) {
+      // Direct string value
+      return field;
+    }
+
+    return null;
   }
 
   // Calculate total price from cart
