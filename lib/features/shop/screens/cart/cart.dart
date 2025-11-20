@@ -145,7 +145,7 @@ class _CartScreenState extends State<CartScreen> {
         // IMPORTANT: Change this for production!
         // Local testing: Use your computer's local IP (e.g., 'http://192.168.1.100:8069')
         // Production: Use 'https://www.odoo.alkirtas.com'
-        odooBaseUrl: 'http://10.220.225.242:8069', // Physical device on local network
+        odooBaseUrl: 'http://10.130.193.63:8069', // Physical device on local Wi-Fi network
       ),
     ).then((success) {
       if (success == true) {
@@ -610,11 +610,85 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                   ),
                 ),
-                Text(
-                  "Total: ${getTotalPriceWithDelivery(cartProvider).toStringAsFixed(3)} TND (Livraison 9.000 TND)",
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AlkColors.darkGrey,
+                // Price breakdown section
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Column(
+                    children: [
+                      // Subtotal
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Sous-total',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          Text(
+                            '${getTotalPrice(cartProvider).toStringAsFixed(3)} TND',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 2),
+                      // Delivery fee
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Livraison',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          Text(
+                            '9.000 TND',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 10, thickness: 1),
+                      // Total
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Total',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple[700],
+                            ),
+                          ),
+                          Text(
+                            '${getTotalPriceWithDelivery(cartProvider).toStringAsFixed(3)} TND',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 Padding(
                   padding: EdgeInsets.all(AlkSize.defaultSpace),

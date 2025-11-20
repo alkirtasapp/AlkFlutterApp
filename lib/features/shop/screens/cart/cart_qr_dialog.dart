@@ -20,7 +20,7 @@ class CartQRDialog extends StatefulWidget {
     required this.qrData,
     required this.sessionId,
     required this.cartProvider,
-    this.odooBaseUrl = 'http://10.220.225.242:8069', // Physical device on local network
+    this.odooBaseUrl = 'http://10.130.193.63:8069', // Physical device on local Wi-Fi network
   }) : super(key: key);
 
   @override
@@ -108,12 +108,8 @@ class _CartQRDialogState extends State<CartQRDialog> {
             _syncMessage = '✓ Panier synchronisé avec succès!';
           });
 
-          // Auto-close after 2 seconds
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) {
-              Navigator.of(context).pop(true); // Return true to indicate success
-            }
-          });
+          // Show confirmation dialog
+          await _showSyncCompleteConfirmation();
         }
 
         // Note: Session is automatically marked as 'synced' in Odoo when retrieved
@@ -140,7 +136,15 @@ class _CartQRDialogState extends State<CartQRDialog> {
 
   Future<void> _updateCartFromVerified(Map<String, dynamic> verifiedData) async {
     try {
-      final items = verifiedData['items'] as List;
+      // Get cartItems from the verified data
+      final cartItems = verifiedData['cartItems'] as List?;
+
+      if (cartItems == null || cartItems.isEmpty) {
+        print('❌ No cart items in verified data');
+        throw Exception('No cart items found in verified data');
+      }
+
+      print('📦 Processing ${cartItems.length} verified items');
 
       // IMPORTANT: Save original cart items BEFORE clearing
       final originalCartItems = List<Map<String, String>>.from(widget.cartProvider.cartItems);
@@ -149,39 +153,38 @@ class _CartQRDialogState extends State<CartQRDialog> {
       await widget.cartProvider.clearCart();
 
       // Add verified items back with updated quantities
-      for (var item in items) {
-        final productRef = (item['product_reference'] ?? '').toString();
-        final verifiedQty = (item['verified_quantity'] is int)
-            ? item['verified_quantity'] as int
-            : int.tryParse(item['verified_quantity']?.toString() ?? '0') ?? 0;
-        final productId = item['product_id']?.toString() ?? '';
-        final productName = (item['product_name'] ?? '').toString();
-        final price = item['price']?.toString() ?? '0';
+      for (var item in cartItems) {
+        final productRef = (item['productReference'] ?? '').toString();
+        final verifiedQty = int.tryParse(item['productQuantity']?.toString() ?? '1') ?? 1;
+        final price = (item['productPrice'] ?? '0').toString();
+        final productNameFromOdoo = item['productName']?.toString();
+        final productIdFromOdoo = item['productId']?.toString();
 
-        print('📦 Processing item: $productName, Ref: $productRef, Qty: $verifiedQty');
+        print('📦 Processing item: Ref: $productRef, Name: $productNameFromOdoo, Qty: $verifiedQty, Price: $price');
 
-        // Skip items with 0 quantity (already filtered on Odoo side, but double-check)
+        // Skip items with 0 quantity
         if (verifiedQty <= 0) {
-          print('⏭️ Skipping $productName (quantity: $verifiedQty)');
+          print('⏭️ Skipping item (quantity: $verifiedQty)');
           continue;
         }
 
-        // Find the original cart item to get full product data from saved list
+        // Find the original cart item to get full product data
         final originalItem = originalCartItems.firstWhere(
           (cartItem) => cartItem['productReference'] == productRef,
           orElse: () => {},
         );
 
         if (originalItem.isNotEmpty) {
-          // Existing product from original cart
+          // Existing product from original cart - restore with verified quantity and price
+          // Use Odoo price in case cashier adjusted it at POS
           await widget.cartProvider.addToCart(
             productId: originalItem['productId'] ?? '',
             productName: originalItem['productName'] ?? '',
             productBrand: originalItem['productBrand'],
-            productPrice: originalItem['productPrice'] ?? '0',
-            productDiscount: originalItem['productDiscount'],
+            productPrice: price, // Use verified Odoo price (may be adjusted by cashier)
+            productDiscount: '0', // Discount already applied in Odoo price
             productOldPrice: originalItem['productOldPrice'],
-            productNewPrice: originalItem['productNewPrice'],
+            productNewPrice: price, // Use verified Odoo price
             productImage: originalItem['productImage'],
             productReference: originalItem['productReference'],
             productStock: originalItem['productStock'],
@@ -191,26 +194,27 @@ class _CartQRDialogState extends State<CartQRDialog> {
             productFeatures: originalItem['productFeatures']?.split(','),
             quantity: verifiedQty, // Use verified quantity from Odoo
           );
-          print('✅ Updated existing product: $productName (qty: $verifiedQty)');
+          print('✅ Updated existing product: ${originalItem['productName']} (qty: $verifiedQty, price: $price TND)');
         } else {
           // New product added during Odoo verification
-          // Fetch full product details from PrestaShop API using reference
-          print('🔍 Fetching full details for new product: $productName (Ref: $productRef, ID: $productId)');
+          // Try to fetch full details from PrestaShop, but use Odoo data as fallback
+          print('🔍 Fetching details for new product: $productNameFromOdoo (Ref: $productRef)');
 
-          final fullProductData = await _fetchProductDetails(productId, productRef);
+          final fullProductData = await _fetchProductDetailsByReference(productRef);
 
           if (fullProductData != null) {
-            // Add with full product data - use PrestaShop ID from fetched data
+            // Add with full product data from PrestaShop
+            // IMPORTANT: Use Odoo price (includes mobile app discounts), not PrestaShop price
             await widget.cartProvider.addToCart(
-              productId: fullProductData['productId'] ?? productId,  // Use PrestaShop ID
-              productName: fullProductData['productName'] ?? productName,
+              productId: fullProductData['productId'] ?? productIdFromOdoo ?? productRef,
+              productName: fullProductData['productName'] ?? productNameFromOdoo ?? 'Product',
               productBrand: fullProductData['productBrand'],
-              productPrice: fullProductData['productPrice'] ?? price,
-              productDiscount: fullProductData['productDiscount'],
+              productPrice: price, // Use Odoo price (verified and includes discounts)
+              productDiscount: '0', // Discount already applied in Odoo price
               productOldPrice: fullProductData['productOldPrice'],
-              productNewPrice: fullProductData['productNewPrice'],
+              productNewPrice: price, // Use Odoo price as the new price
               productImage: fullProductData['productImage'],
-              productReference: fullProductData['productReference'] ?? productRef,
+              productReference: productRef,
               productStock: fullProductData['productStock'],
               productDescription: fullProductData['productDescription'],
               productBrandId: fullProductData['productBrandId'],
@@ -218,11 +222,12 @@ class _CartQRDialogState extends State<CartQRDialog> {
               productFeatures: fullProductData['productFeatures'],
               quantity: verifiedQty,
             );
-            print('✅ Added new product with full details: $productName (PrestaShop ID: ${fullProductData['productId']}, qty: $verifiedQty)');
+            print('✅ Added new product from PrestaShop: ${fullProductData['productName']} (qty: $verifiedQty, price: $price TND)');
           } else {
-            // Fallback: Add with minimal data if fetch fails
+            // Fallback: Use Odoo data if PrestaShop fetch fails
+            final productName = productNameFromOdoo ?? 'Product $productRef';
             await widget.cartProvider.addToCart(
-              productId: productId,
+              productId: productIdFromOdoo ?? productRef,
               productName: productName,
               productBrand: null,
               productPrice: price,
@@ -238,15 +243,21 @@ class _CartQRDialogState extends State<CartQRDialog> {
               productFeatures: null,
               quantity: verifiedQty,
             );
-            print('⚠️ Added new product with minimal data (fetch failed): $productName');
+            print('✅ Added new product from Odoo data: $productName (qty: $verifiedQty)');
           }
         }
       }
 
-      print('✅ Cart updated successfully with ${items.length} items');
+      print('✅ Cart updated successfully with ${cartItems.length} items');
     } catch (e) {
       print('❌ Error updating cart: $e');
+      rethrow;
     }
+  }
+
+  Future<Map<String, dynamic>?> _fetchProductDetailsByReference(String productReference) async {
+    // Use the more complete method that has UTF-8 support
+    return await _fetchProductDetails('', productReference);
   }
 
   Future<Map<String, dynamic>?> _fetchProductDetails(String productId, String productReference) async {
@@ -255,6 +266,7 @@ class _CartQRDialogState extends State<CartQRDialog> {
       String url = 'https://www.alkirtas.com/api/products?display=full&filter[reference]=$productReference&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU&output_format=JSON';
 
       print('🌐 Fetching product by reference: $productReference');
+      print('   URL: $url');
 
       var response = await http.get(Uri.parse(url)).timeout(
         const Duration(seconds: 10),
@@ -264,13 +276,42 @@ class _CartQRDialogState extends State<CartQRDialog> {
         // IMPORTANT: Use utf8.decode for proper Arabic text encoding
         final data = json.decode(utf8.decode(response.bodyBytes));
 
-        if (data['products'] == null || data['products'].isEmpty) {
-          print('❌ No product found with reference: $productReference');
+        // Check if response is valid JSON object (not array)
+        if (data is! Map) {
+          print('❌ Invalid API response format (expected Map, got ${data.runtimeType})');
           return null;
         }
 
-        // Get first product from results
-        final product = data['products'][0];
+        print('📦 PrestaShop API Response keys: ${data.keys}');
+
+        // Handle null or empty products
+        if (data['products'] == null) {
+          print('❌ No products field in response');
+          return null;
+        }
+
+        // Get the product - handle both array and map formats
+        dynamic product;
+        if (data['products'] is List) {
+          if ((data['products'] as List).isEmpty) {
+            print('❌ Empty products array - no product found with reference: $productReference');
+            return null;
+          }
+          product = data['products'][0];
+          print('✅ Found product in array format');
+        } else if (data['products'] is Map) {
+          // Products is a map - get first value
+          final productsMap = data['products'] as Map;
+          if (productsMap.isEmpty) {
+            print('❌ Empty products map - no product found with reference: $productReference');
+            return null;
+          }
+          product = productsMap.values.first;
+          print('✅ Found product in map format (key: ${productsMap.keys.first})');
+        } else {
+          print('❌ Unexpected products format: ${data['products'].runtimeType}');
+          return null;
+        }
 
         // IMPORTANT: Use the PrestaShop product ID, not the Odoo ID
         final String prestashopProductId = product['id']?.toString() ?? productId;
@@ -293,39 +334,60 @@ class _CartQRDialogState extends State<CartQRDialog> {
         String? brandId = product['id_manufacturer']?.toString();
         String? brandName;
 
+        // Try to get manufacturer name if available in response
+        // Note: PrestaShop API might need separate call to get brand name
+        // For now, we'll use empty string and rely on brand images/features
+        if (brandId != null && brandId != '0') {
+          // Brand exists but name needs separate API call
+          // TODO: Fetch brand name from manufacturers API if needed
+          brandName = ''; // Will be empty for now
+        }
+
         // Get images using the same method as ProductControllerStore
-        final associations = product['associations'];
         List<String>? imageList;
         String? mainImage;
 
-        if (associations != null && associations['images'] != null) {
-          final images = associations['images'];
-          final imagesList = images is List ? images : [images];
+        try {
+          final associations = product['associations'];
+          if (associations != null && associations['images'] != null) {
+            final images = associations['images'];
+            final imagesList = images is List ? images : [images];
 
-          imageList = [];
-          for (var img in imagesList) {
-            if (img != null && img['id'] != null) {
-              final imgId = img['id'].toString();
-              // Use the same image URL construction as ProductControllerStore
-              final path = imgId.split('').join('/');
-              imageList.add('https://www.alkirtas.com/img/p/$path/$imgId.jpg');
+            imageList = [];
+            for (var img in imagesList) {
+              if (img != null && img['id'] != null) {
+                final imgId = img['id'].toString();
+                // Use the same image URL construction as ProductControllerStore
+                final path = imgId.split('').join('/');
+                imageList.add('https://www.alkirtas.com/img/p/$path/$imgId.jpg');
+              }
             }
+            mainImage = imageList.isNotEmpty ? imageList[0] : null;
           }
-          mainImage = imageList.isNotEmpty ? imageList[0] : null;
+        } catch (e) {
+          print('⚠️ Error parsing images: $e');
+          imageList = null;
+          mainImage = null;
         }
 
         // Get features
         List<String>? features;
-        if (associations != null && associations['product_features'] != null) {
-          final productFeatures = associations['product_features'];
-          final featuresList = productFeatures is List ? productFeatures : [productFeatures];
+        try {
+          final associations = product['associations'];
+          if (associations != null && associations['product_features'] != null) {
+            final productFeatures = associations['product_features'];
+            final featuresList = productFeatures is List ? productFeatures : [productFeatures];
 
-          features = [];
-          for (var f in featuresList) {
-            if (f != null && f['id'] != null) {
-              features.add(f['id'].toString());
+            features = [];
+            for (var f in featuresList) {
+              if (f != null && f['id'] != null) {
+                features.add(f['id'].toString());
+              }
             }
           }
+        } catch (e) {
+          print('⚠️ Error parsing features: $e');
+          features = null;
         }
 
         print('✅ Product details fetched successfully for: $productName');
@@ -376,6 +438,88 @@ class _CartQRDialogState extends State<CartQRDialog> {
     }
 
     return null;
+  }
+
+  // Show sync complete confirmation dialog
+  Future<void> _showSyncCompleteConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green[700], size: 32),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Synchronisation Réussie!',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Votre panier a été vérifié et synchronisé avec succès!',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.inventory_2, color: Colors.green[700]),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${widget.cartProvider.cartItems.length} articles - ${_calculateTotal().toStringAsFixed(3)} TND',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green[900],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                'Confirmer',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[700],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Close the QR dialog after confirmation
+    if (confirmed == true && mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 
   // Calculate total price from cart
@@ -685,21 +829,85 @@ class _CartQRDialogState extends State<CartQRDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // Close button
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[300],
-                    foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                // Action buttons - Save and Close
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Save to History button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            final savedCart = await widget.cartProvider.saveCartToHistory(widget.qrData);
+                            if (savedCart != null && mounted) {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: const Text('Panier sauvegardé dans l\'historique'),
+                                  backgroundColor: Colors.green[600],
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            } else if (mounted) {
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text('Erreur lors de la sauvegarde'),
+                                  backgroundColor: Colors.red,
+                                  duration: Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            print('Error saving cart: $e');
+                            if (mounted) {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Erreur: $e'),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.save, size: 18),
+                        label: const Text(
+                          '',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[600],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'Fermer',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
+                    const SizedBox(width: 12),
+                    // Close button
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[300],
+                          foregroundColor: Colors.black87,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'Fermer',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
