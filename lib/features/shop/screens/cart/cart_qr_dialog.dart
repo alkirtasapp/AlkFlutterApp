@@ -20,7 +20,7 @@ class CartQRDialog extends StatefulWidget {
     required this.qrData,
     required this.sessionId,
     required this.cartProvider,
-    this.odooBaseUrl = 'http://10.130.193.63:8069', // Physical device on local Wi-Fi network
+    this.odooBaseUrl = 'http://10.52.97.188:8069', // Physical device on local Wi-Fi network
   }) : super(key: key);
 
   @override
@@ -98,6 +98,20 @@ class _CartQRDialogState extends State<CartQRDialog> {
         print('✅ Cart verified! Data: $verifiedData');
 
         await _updateCartFromVerified(verifiedData);
+
+        // Auto-save to cart history
+        try {
+          print('💾 Auto-saving cart to history...');
+          final savedCart = await widget.cartProvider.saveCartToHistory(widget.qrData);
+          if (savedCart != null) {
+            print('✅ Cart automatically saved to history');
+          } else {
+            print('⚠️ Failed to auto-save cart to history');
+          }
+        } catch (e) {
+          print('⚠️ Error auto-saving cart to history: $e');
+          // Don't fail the sync if history save fails
+        }
 
         // Stop polling
         _pollTimer?.cancel();
@@ -473,6 +487,19 @@ class _CartQRDialogState extends State<CartQRDialog> {
                 'Votre panier a été vérifié et synchronisé avec succès!',
                 style: TextStyle(fontSize: 16),
               ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.check_circle_outline, color: Colors.green[600], size: 18),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Panier sauvegardé dans l\'historique',
+                      style: TextStyle(fontSize: 14, color: Colors.black87),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -817,7 +844,8 @@ class _CartQRDialogState extends State<CartQRDialog> {
                       Text(
                         '1. Montrez ce QR code au caissier\n'
                         '2. Le caissier vérifiera les articles\n'
-                        '3. Votre panier sera automatiquement mis à jour',
+                        '3. Procédez au paiement au terminal\n'
+                        '4. Votre panier sera synchronisé automatiquement',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.blue[900],
