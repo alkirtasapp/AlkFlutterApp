@@ -46,3 +46,4 @@ app.*.map.json
 
 # Java heap dumps (large files)
 *.hprof
+*.claude
