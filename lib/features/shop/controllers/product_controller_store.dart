@@ -350,6 +350,68 @@ class ProductControllerStore {
     final path = imageIdStr.split('').join('/');
     return 'https://www.alkirtas.com/img/p/$path/$imageIdStr.jpg';
   }
+
+  // Search product by reference (default_code)
+  Future<Map<String, dynamic>?> searchProductByReference(String reference) async {
+    try {
+      print("🔍 Searching for product with reference: $reference");
+
+      // Search by reference in PrestaShop API
+      final String productApi =
+          'https://www.alkirtas.com/api/products?display=full&filter[reference]=$reference&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+
+      final response = await http.get(Uri.parse(productApi));
+
+      if (response.statusCode != 200) {
+        print("❌ API Error: ${response.statusCode}");
+        return null;
+      }
+
+      final productData = json.decode(utf8.decode(response.bodyBytes));
+
+      if (productData['products'] == null || productData['products'].isEmpty) {
+        print("⚠️ No product found with reference: $reference");
+        return null;
+      }
+
+      // PrestaShop returns products as either a List or a Map
+      dynamic productsData = productData['products'];
+      Map<String, dynamic> product;
+
+      if (productsData is List) {
+        if (productsData.isEmpty) {
+          print("⚠️ No product found with reference: $reference");
+          return null;
+        }
+        product = productsData[0];
+      } else if (productsData is Map) {
+        final productKeys = productsData.keys.toList();
+        if (productKeys.isEmpty) {
+          print("⚠️ No product found with reference: $reference");
+          return null;
+        }
+        product = Map<String, dynamic>.from(productsData[productKeys.first]);
+      } else {
+        print("❌ Unexpected products data format: ${productsData.runtimeType}");
+        return null;
+      }
+
+      // Process the product details (discount, price, images, etc.)
+      List<Map<String, dynamic>> tempProducts = [];
+      await _processProductDetails(product, tempProducts);
+
+      if (tempProducts.isEmpty) {
+        print("❌ Error processing product with reference: $reference");
+        return null;
+      }
+
+      print("✅ Product found with reference: $reference - ${tempProducts[0]['name']}");
+      return tempProducts[0];
+    } catch (e) {
+      print('❌ Error searching product by reference: $e');
+      return null;
+    }
+  }
 }
 
 

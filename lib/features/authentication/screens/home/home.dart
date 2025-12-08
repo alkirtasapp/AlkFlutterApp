@@ -1,4 +1,5 @@
 import 'package:alkirtas/features/authentication/screens/home/widgets/top_sales_books.dart';
+import 'package:alkirtas/features/audiobooks/audiobooks.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -108,9 +109,83 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: AlkBannerSlider(),
                   ),
                   // Further reduced space after banner
-                  const SizedBox(
-                      height: AlkSize
-                          .spaceBtwItems), // Was AlkSize.spaceBtwItems * 1.5
+                  const SizedBox(height: AlkSize.spaceBtwItems),
+
+                  // --- Audiobooks Section ---
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AlkSize.defaultSpace),
+                    child: GestureDetector(
+                      onTap: () => Get.to(() => const AudiobookLibraryScreen()),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AlkColors.primaryColor,
+                              AlkColors.primaryColor.withOpacity(0.8),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AlkColors.primaryColor.withOpacity(0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Iconsax.headphone,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Livres Audio',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Écoutez vos livres préférés',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Iconsax.arrow_right_3,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AlkSize.spaceBtwItems),
 
                   // --- Product Sections (with conditional special section) ---
                   // Show loading indicator while sections are loading

@@ -50,6 +50,9 @@ dependencies:
   qr_flutter: ^4.1.0
   uuid: ^4.5.1  # For generating unique session IDs
 
+  # Audio Player for audiobooks
+  just_audio: ^0.9.40  # Powerful audio player
+  audio_video_progress_bar: ^2.0.3  # Progress bar for audio
 
 # Development-only dependencies
 dev_dependencies:
@@ -72,6 +75,7 @@ flutter:
     - lib/assets/logos/
     - lib/assets/logos/logo_light.png
     - lib/assets/images/banners/
+    - lib/assets/audio/
 
 
 

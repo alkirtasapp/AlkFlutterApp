@@ -4,6 +4,7 @@ import 'package:alkirtas/features/authentication/screens/splash_wrapper.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 import 'package:alkirtas/features/shop/controllers/product_card_controller.dart';
 import 'package:alkirtas/features/shop/models/saved_cart_model.dart';
+import 'package:alkirtas/features/audiobooks/audiobooks.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:alkirtas/app.dart';
@@ -75,6 +76,7 @@ Future<void> main() async {
           ChangeNotifierProvider.value(value: cartProvider),
           ChangeNotifierProvider(create: (_) => ProductProvider()),
           ChangeNotifierProvider(create: (_) => CouponProvider()),
+          ChangeNotifierProvider(create: (_) => AudioPlayerProvider()),
         ],
         child: const SplashWrapper(),
       ),

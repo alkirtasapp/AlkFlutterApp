@@ -8,6 +8,7 @@ import 'package:alkirtas/features/personalization/screens/settings/settings.dart
 import 'package:alkirtas/features/shop/screens/cart/cart.dart';
 import 'package:alkirtas/features/shop/screens/store/storedrawer.dart';
 import 'package:alkirtas/features/shop/screens/store/controllers/store_controller.dart';
+import 'package:alkirtas/features/audiobooks/audiobooks.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 
@@ -100,6 +101,21 @@ class _NavigationMenuState extends State<NavigationMenu>
           },
           // Scaffold with NavigationBar and screens
           child: Scaffold(
+            // Persistent FAB when audiobook is playing
+            floatingActionButton: Consumer<AudioPlayerProvider>(
+              builder: (context, audioProvider, child) {
+                if (!audioProvider.hasAudiobook) return const SizedBox.shrink();
+                return FloatingActionButton(
+                  onPressed: () {
+                    Get.to(() => const AudiobookPlayerScreen());
+                  },
+                  backgroundColor: AlkColors.primaryColor,
+                  child: audioProvider.isPlaying
+                      ? const Icon(Iconsax.pause, color: Colors.white)
+                      : const Icon(Iconsax.play, color: Colors.white),
+                );
+              },
+            ),
             bottomNavigationBar: Obx(
               () => NavigationBar(
                 height: 80,
@@ -118,7 +134,6 @@ class _NavigationMenuState extends State<NavigationMenu>
                   NavigationDestination(icon: Icon(Iconsax.shop), label: 'Boutique'),
                   NavigationDestination(icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
                   NavigationDestination(icon: Icon(Iconsax.user), label: 'Profil'),
-                //  NavigationDestination(icon: Icon(Iconsax.star_1), label: 'PROMOS'),
                 ],
               ),
             ),

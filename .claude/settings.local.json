@@ -5,7 +5,20 @@
       "Bash(flutter analyze:*)",
       "Bash(git checkout:*)",
       "Bash(flutter pub run build_runner build:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(copy \"C:\\Users\\MSI\\Desktop\\shepherd boy\\apptest.mp3\" \"d:\\flutter\\test\\lib\\assets\\audio\\apptest.mp3\")",
+      "Bash(dir:*)",
+      "Bash(cmd /c \"copy \"\"C:\\Users\\MSI\\Desktop\\shepherd boy\\apptest.mp3\"\" \"\"d:\\flutter\\test\\lib\\assets\\audio\\apptest.mp3\"\"\")",
+      "Bash(cmd /c \"dir d:\\flutter\\test\\lib\\assets\\audio\")",
+      "Bash(powershell -Command:*)",
+      "Bash(where:*)",
+      "Bash(nul)",
+      "Bash(ffmpeg:*)",
+      "Bash(cd:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
