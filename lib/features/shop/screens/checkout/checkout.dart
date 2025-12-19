@@ -1,7 +1,9 @@
 import 'package:alkirtas/data/controllers/cart_contoller.dart';
+import 'package:alkirtas/data/controllers/carrier_controller.dart';
 import 'package:alkirtas/data/controllers/discount_controller.dart';
 import 'package:alkirtas/data/controllers/order_controller.dart';
 import 'package:alkirtas/data/controllers/tax_controller.dart';
+import 'package:alkirtas/data/models/carrier_model.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 import 'package:alkirtas/navigation_menu.dart';
 import 'package:flutter/material.dart';
@@ -39,15 +41,55 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final gouverneratController = TextEditingController();
 
   bool isTermsAccepted = false; // Checkbox state
-  String selectedDeliveryMethod = "First Delivery"; 
-  double deliveryFee = 9.000; 
 
-  void updateDeliveryMethod(String method) {
+  // Dynamic carriers
+  List<Carrier> carriers = [];
+  Carrier? selectedCarrier;
+  bool isLoadingCarriers = true;
+  bool isLoadingAddress = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    // Load carriers and address in parallel
+    await Future.wait([
+      _loadCarriers(),
+      _loadAddress(),
+    ]);
+  }
+
+  Future<void> _loadCarriers() async {
+    final carrierController = CarrierController();
+    final loadedCarriers = await carrierController.fetchCarriers();
+
     setState(() {
-      selectedDeliveryMethod = method;
-      deliveryFee = (method == "Alkirtas corniche") ? 0.0 : 9.000;
+      carriers = loadedCarriers;
+      // Select first carrier by default if available
+      if (carriers.isNotEmpty) {
+        selectedCarrier = carriers.first;
+      }
+      isLoadingCarriers = false;
     });
   }
+
+  Future<void> _loadAddress() async {
+    final addressController = Get.put(AddressController(), permanent: true);
+    await addressController.fetchCustomerAddress();
+
+    setState(() {
+      isLoadingAddress = false;
+      // If user has existing address, pre-select it
+      if (AddressData.hasAddress()) {
+        isUsingExistingAddress = true;
+      }
+    });
+  }
+
+  double get deliveryFee => selectedCarrier?.shippingCost ?? 0.0;
 
   // Validator for required fields
   String? _validateField(String? value) {
@@ -198,17 +240,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               padding: EdgeInsets.all(AlkSize.defaultSpace),
               child: Column(
                 children: [
-                  // Suggest existing address if available
-                  if (AddressData.hasAddress())
+                  // Address section
+                  if (isLoadingAddress)
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (AddressData.hasAddress())
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Adresse de livraison", // Translated to French
+                          "Adresse de livraison",
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         ListTile(
-                          title: Text("Utiliser l'adresse existante"), // Translated to French
+                          title: Text("Utiliser l'adresse existante"),
                           subtitle: Text(
                               "${AddressData.firstname} ${AddressData.lastname}, ${AddressData.address1}, ${AddressData.city}, ${AddressData.postcode}, ${AddressData.phone}"),
                           leading: Radio<bool>(
@@ -222,7 +269,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         ListTile(
-                          title: Text("Créer une nouvelle adresse"), 
+                          title: Text("Créer une nouvelle adresse"),
                           leading: Radio<bool>(
                             value: false,
                             groupValue: isUsingExistingAddress,
@@ -235,7 +282,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                       ],
                     ),
-                  if (!isUsingExistingAddress)
+                  if (!isLoadingAddress && !isUsingExistingAddress)
                     Form(
                       key: _formKey,
                       child: Column(
@@ -329,35 +376,37 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Méthode de livraison", // Translated to French
+                        "Méthode de livraison",
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
-                      ListTile(
-                        title: Text("Alkirtas-Corniche Bizerte (Gratuit)"),
-                        leading: Radio<String>(
-                          value: "Alkirtas corniche",
-                          groupValue: selectedDeliveryMethod,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedDeliveryMethod = value!;
-                              deliveryFee = 0.0; // No delivery fee for Alkirtas corniche
-                            });
-                          },
-                        ),
-                      ),
-                      ListTile(
-                        title: Text("First Delivery (9.000 TND)"),
-                        leading: Radio<String>(
-                          value: "First Delivery",
-                          groupValue: selectedDeliveryMethod,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedDeliveryMethod = value!;
-                              deliveryFee = 9.0; // Delivery fee for First Delivery
-                            });
-                          },
-                        ),
-                      ),
+                      if (isLoadingCarriers)
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        )
+                      else if (carriers.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text("Aucune méthode de livraison disponible"),
+                        )
+                      else
+                        ...carriers.map((carrier) => ListTile(
+                          title: Text(
+                            carrier.isFree
+                                ? "${carrier.name} (Gratuit)"
+                                : "${carrier.name} (${carrier.shippingCost.toStringAsFixed(3)} TND)",
+                          ),
+                          subtitle: carrier.delay.isNotEmpty ? Text("Délai: ${carrier.delay}") : null,
+                          leading: Radio<int>(
+                            value: carrier.id,
+                            groupValue: selectedCarrier?.id,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedCarrier = carrier;
+                              });
+                            },
+                          ),
+                        )),
                     ],
                   ),
                   const SizedBox(height: AlkSize.spaceBtwInputFields),
@@ -498,29 +547,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   final cartId = await cartController.createCartWithAddress(
                                     cartItems: cartProvider.cartItems,
                                     idAddressDelivery: AddressData.id,
-                                    idCarrier: selectedDeliveryMethod == "Alkirtas corniche" ? 4 : 6,
-                                   
+                                    idCarrier: selectedCarrier?.id ?? 7,
                                   );
 
                                   print("✅ Cart created successfully with ID: $cartId");
 
-                                  // No need to call addCouponToCart anymore
-
                                   // Step 3: Create Order
                                   final OrderController orderController = OrderController();
 
-                                  final totalProducts = await calculateTotalProducts(cartProvider.cartItems); // After discounts
-                                  final totalProductsWt = await calculateTotalProductsWt(cartProvider); // With tax and discounts
+                                  final totalProducts = await calculateTotalProducts(cartProvider.cartItems);
+                                  final totalProductsWt = await calculateTotalProductsWt(cartProvider);
                                   final totalPaid = totalProductsWt + deliveryFee;
 
                                   final orderSuccess = await orderController.createOrder(
                                     idCart: cartId,
-                                    deliveryMethod: selectedDeliveryMethod,
+                                    deliveryMethod: selectedCarrier?.name ?? '',
                                     cartTotal: totalPaid,
                                     totalProducts: totalProducts,
                                     totalProductsWt: totalProductsWt,
-                                    coupon: selectedCoupon, // Pass coupon
-                                    discountAmount: discountAmount, // Pass discount
+                                    shippingCost: deliveryFee,
+                                    idCarrier: selectedCarrier?.id ?? 7,
+                                    coupon: selectedCoupon,
+                                    discountAmount: discountAmount,
                                   );
 
                                   if (orderSuccess) {

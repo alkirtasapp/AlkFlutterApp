@@ -14,14 +14,12 @@ class OrderController {
     required double cartTotal,
     required double totalProducts,
     required double totalProductsWt,
+    required double shippingCost,
+    required int idCarrier,
     Coupon? coupon,
     double discountAmount = 0.0,
   }) async {
     try {
-      // Determine the carrier ID and shipping cost based on the delivery method
-      int idCarrier = (deliveryMethod == "Alkirtas corniche") ? 4 : 6; // 4 for Alkirtas corniche, 6 for First Delivery
-      double shippingCost = (deliveryMethod == "Alkirtas corniche") ? 0.0 : 8.0;
-
       // Dynamically calculate total_paid
       double totalPaid = totalProductsWt + shippingCost - discountAmount;
 

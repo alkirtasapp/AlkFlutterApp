@@ -88,7 +88,7 @@ class SettingScreen extends StatelessWidget {
                           ),
                   AlkSettingMenuTile(
                       icon: Iconsax.bag_tick,
-                      title: 'Historique des Paniers',
+                      title: 'Historique des Commandes',
                       subtitle: 'Accédez à vos paniers sauvegardés',
                       onPressed: () {
                         Get.to(() => const CartHistoryScreen());

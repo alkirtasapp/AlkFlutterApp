@@ -54,6 +54,9 @@ dependencies:
   just_audio: ^0.9.40  # Powerful audio player
   audio_video_progress_bar: ^2.0.3  # Progress bar for audio
 
+  # Environment variables
+  flutter_dotenv: ^5.1.0
+
 # Development-only dependencies
 dev_dependencies:
   flutter_test:
