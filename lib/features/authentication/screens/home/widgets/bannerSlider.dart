@@ -1,7 +1,7 @@
 // ignore: file_names
 
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:flutter/material.dart%20';
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:alkirtas/features/shop/controllers/home_controller.dart';
