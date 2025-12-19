@@ -4,79 +4,13 @@ workflows:
     max_build_duration: 60
     environment:
       flutter: stable
-      xcode: latest
+      xcode: 15.4
     scripts:
       - name: Get Flutter dependencies
         script: flutter pub get
-      - name: Prepare iOS build
-        script: |
-          cd ios
-          rm -f Podfile.lock
-          rm -rf Pods
-      - name: Write fixed Podfile
-        script: |
-          cd ios
-          echo "platform :ios, '13.0'" > Podfile
-          echo "ENV['COCOAPODS_DISABLE_STATS'] = 'true'" >> Podfile
-          echo "" >> Podfile
-          echo "project 'Runner', {" >> Podfile
-          echo "  'Debug' => :debug," >> Podfile
-          echo "  'Profile' => :release," >> Podfile
-          echo "  'Release' => :release," >> Podfile
-          echo "}" >> Podfile
-          echo "" >> Podfile
-          echo "def flutter_root" >> Podfile
-          echo "  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)" >> Podfile
-          echo "  unless File.exist?(generated_xcode_build_settings_path)" >> Podfile
-          echo "    raise \"\#{generated_xcode_build_settings_path} must exist.\"" >> Podfile
-          echo "  end" >> Podfile
-          echo "  File.foreach(generated_xcode_build_settings_path) do |line|" >> Podfile
-          echo "    matches = line.match(/FLUTTER_ROOT\\=(.*)/)" >> Podfile
-          echo "    return matches[1].strip if matches" >> Podfile
-          echo "  end" >> Podfile
-          echo "  raise \"FLUTTER_ROOT not found\"" >> Podfile
-          echo "end" >> Podfile
-          echo "" >> Podfile
-          echo "require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)" >> Podfile
-          echo "" >> Podfile
-          echo "flutter_ios_podfile_setup" >> Podfile
-          echo "" >> Podfile
-          echo "target 'Runner' do" >> Podfile
-          echo "  use_frameworks!" >> Podfile
-          echo "  use_modular_headers!" >> Podfile
-          echo "  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))" >> Podfile
-          echo "end" >> Podfile
-          echo "" >> Podfile
-          echo "post_install do |installer|" >> Podfile
-          echo "  installer.pods_project.targets.each do |target|" >> Podfile
-          echo "    flutter_additional_ios_build_settings(target)" >> Podfile
-          echo "    target.build_configurations.each do |config|" >> Podfile
-          echo "      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'" >> Podfile
-          echo "      config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf'" >> Podfile
-          echo "    end" >> Podfile
-          echo "  end" >> Podfile
-          echo "end" >> Podfile
-          cat Podfile
       - name: Install CocoaPods
         script: cd ios && pod install --repo-update
-      - name: Patch Pods project for Xcode 15
-        script: |
-          cd ios
-          # Replace all dwarf-with-dsym with dwarf in Pods project
-          sed -i '' 's/DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"/DEBUG_INFORMATION_FORMAT = dwarf/g' Pods/Pods.xcodeproj/project.pbxproj
-          sed -i '' 's/DEBUG_INFORMATION_FORMAT = dwarf-with-dsym/DEBUG_INFORMATION_FORMAT = dwarf/g' Pods/Pods.xcodeproj/project.pbxproj
-          echo "Patched Pods.xcodeproj"
-      - name: Build iOS with xcodebuild
-        script: |
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Debug \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO \
-            DEBUG_INFORMATION_FORMAT=dwarf \
-            build
+      - name: Build iOS
+        script: flutter build ios --debug --no-codesign
     artifacts:
       - build/ios/iphoneos/*.app
-      - ios/build/Build/Products/Debug-iphoneos/*.app
