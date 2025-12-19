@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:alkirtas/data/controllers/discount_controller.dart';
 import 'package:alkirtas/data/controllers/tax_controller.dart';
 import 'package:alkirtas/data/controllers/quantity_controller.dart'; // Import QuantityController
+import 'package:alkirtas/config/app_config.dart';
 
 class CategoryProductController {
   // --- Static Cache and State Management ---
@@ -181,7 +182,7 @@ class CategoryProductController {
 
         print(" -> Fetching details batch (${currentIdIndex + 1}-${endIndex}) for Category ID: $categoryId...");
         String idFilter = batchIds.join('|');
-        final productDetailsApi = 'https://www.alkirtas.com/api/products?display=full&filter[id]=[$idFilter]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+        final productDetailsApi = 'https://www.alkirtas.com/api/products?display=full&filter[id]=[$idFilter]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
         final response = await http.get(Uri.parse(productDetailsApi));
         currentIdIndex = endIndex; // Move index
 

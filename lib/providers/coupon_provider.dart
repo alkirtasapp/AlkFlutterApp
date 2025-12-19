@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:hive/hive.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 part 'coupon_provider.g.dart';
 
@@ -72,7 +73,7 @@ class CouponProvider extends ChangeNotifier {
 
   Future<bool> addCoupon(String code) async {
     print('[CouponProvider] Attempting to add coupon: $code');
-    final url = 'https://www.alkirtas.com/api/cart_rules?display=full&limit=1&filter[code]=$code&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+    final url = 'https://www.alkirtas.com/api/cart_rules?display=full&limit=1&filter[code]=$code&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
     print('[CouponProvider] API URL: $url');
     final response = await http.get(Uri.parse(url));
     print('[CouponProvider] API Response status:  [38;5;2m${response.statusCode} [0m');

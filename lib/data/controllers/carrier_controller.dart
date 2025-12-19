@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:alkirtas/data/models/carrier_model.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 class CarrierController {
-  final String apiKey = 'Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+  String get apiKey => AppConfig.prestashopApiKey;
   final String baseUrl = 'https://www.alkirtas.com/api';
 
   /// Fetches all active carriers from the API

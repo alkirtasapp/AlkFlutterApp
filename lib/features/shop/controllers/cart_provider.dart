@@ -10,6 +10,7 @@ import '../models/saved_cart_model.dart';
 import 'product_controller_store.dart';
 import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 class CartProvider with ChangeNotifier {
   final List<Map<String, String>> _cartItems = [];
@@ -543,7 +544,7 @@ class CartProvider with ChangeNotifier {
 
       print('🛒 Creating PrestaShop cart for user ${UserData.id}...');
 
-      const String url = 'https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+      final String url = 'https://www.alkirtas.com/api/carts?ws_key=${AppConfig.prestashopApiKey}';
 
       // Build cart rows XML
       String cartRowsXml = _cartItems.map((item) {

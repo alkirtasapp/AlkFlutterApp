@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as htmlParser;
 import 'package:alkirtas/data/controllers/details_controller.dart';
 import 'package:alkirtas/data/controllers/product_list_Category.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 class ProductCardControllerTax {
   final DetailsController detailsController = DetailsController();
@@ -76,7 +77,7 @@ class ProductCardControllerTax {
 
     String productIdsQuery = productIds.join('|');
     final productApi =
-        'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsQuery]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+        'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsQuery]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
     final response = await http.get(Uri.parse(productApi));
     if (response.statusCode != 200) {
@@ -137,7 +138,7 @@ class ProductCardControllerTax {
 
           String productIdsQuery = batch.join('|');
           final productApi =
-              'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsQuery]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+              'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsQuery]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
           final response = await http.get(Uri.parse(productApi));
           if (response.statusCode != 200) {
@@ -231,7 +232,7 @@ class ProductCardControllerTax {
   Future<Map<String, dynamic>?> fetchDiscount(int productId) async {
     try {
       final discountApi =
-          'https://www.alkirtas.com/api/specific_prices?display=full&filter[id_product]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/specific_prices?display=full&filter[id_product]=[$productId]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final response = await http.get(Uri.parse(discountApi));
       if (response.statusCode == 200) {
@@ -265,7 +266,7 @@ class ProductCardControllerTax {
       }
 
       final taxRulesApi =
-          'https://www.alkirtas.com/api/tax_rules?display=[id_tax,id_tax_rules_group]&filter[id_tax_rules_group]=[$taxRulesGroupId]&limit=1&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/tax_rules?display=[id_tax,id_tax_rules_group]&filter[id_tax_rules_group]=[$taxRulesGroupId]&limit=1&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final taxRulesResponse = await http.get(Uri.parse(taxRulesApi));
       if (taxRulesResponse.statusCode != 200) {
@@ -281,7 +282,7 @@ class ProductCardControllerTax {
       final int taxId = taxRulesData['tax_rules'][0]['id_tax'];
 
       final taxesApi =
-          'https://www.alkirtas.com/api/taxes?display=[rate,id]&filter[id]=[$taxId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/taxes?display=[rate,id]&filter[id]=[$taxId]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final taxesResponse = await http.get(Uri.parse(taxesApi));
       final taxesData = json.decode(utf8.decode(taxesResponse.bodyBytes));

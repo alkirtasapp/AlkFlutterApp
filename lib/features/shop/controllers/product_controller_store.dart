@@ -7,6 +7,7 @@ import 'package:alkirtas/data/controllers/product_list_Category.dart';
 import 'package:alkirtas/data/controllers/tax_controller.dart';
 import 'package:alkirtas/data/controllers/quantity_controller.dart';
 import 'package:alkirtas/features/shop/controllers/brand_controller.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 class ProductControllerStore {
   final QuantityController quantityController = QuantityController();
@@ -101,7 +102,7 @@ class ProductControllerStore {
   Future<void> _fetchAndProcessProducts(List<int> batchProductIds, List<Map<String, dynamic>> fetchedProducts) async {
     String productIdsParam = batchProductIds.join('|');
     final String productApi =
-        'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsParam]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+        'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsParam]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
     print("📡 Fetching products for IDs: $productIdsParam");
 
@@ -136,7 +137,7 @@ class ProductControllerStore {
   try {
     final DetailsController detailsController = DetailsController();
     final String apiUrl =
-        'https://www.alkirtas.com/api/products?display=full&filter[id]=$productId&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+        'https://www.alkirtas.com/api/products?display=full&filter[id]=$productId&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
     print("🟡 Fetching product features for ID: $productId");
 
@@ -287,7 +288,7 @@ class ProductControllerStore {
 
       // Search by EAN13 in PrestaShop API
       final String productApi =
-          'https://www.alkirtas.com/api/products?display=full&filter[ean13]=$barcode&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/products?display=full&filter[ean13]=$barcode&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final response = await http.get(Uri.parse(productApi));
 
@@ -358,7 +359,7 @@ class ProductControllerStore {
 
       // Search by reference in PrestaShop API
       final String productApi =
-          'https://www.alkirtas.com/api/products?display=full&filter[reference]=$reference&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/products?display=full&filter[reference]=$reference&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final response = await http.get(Uri.parse(productApi));
 

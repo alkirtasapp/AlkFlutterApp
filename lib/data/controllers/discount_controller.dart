@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/config/app_config.dart';
 
 
 class DiscountController {
@@ -8,7 +9,7 @@ class DiscountController {
   Future<Map<String, dynamic>?> fetchDiscount(int productId) async {
     try {
       final discountApi =
-          'https://www.alkirtas.com/api/specific_prices?display=full&filter[id_product]=[$productId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/specific_prices?display=full&filter[id_product]=[$productId]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final response = await http.get(Uri.parse(discountApi));
 

@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 class CartController extends GetxController {
   var isLoading = false.obs;
@@ -17,7 +18,7 @@ class CartController extends GetxController {
   Future<void> fetchCustomerCart() async {
     try {
       isLoading.value = true;
-      String url = "https://www.alkirtas.com/api/carts?filter[id_customer]=${UserData.id}&sort=[id_DESC]&limit=1&display=full&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+      String url = "https://www.alkirtas.com/api/carts?filter[id_customer]=${UserData.id}&sort=[id_DESC]&limit=1&display=full&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}";
       
       var response = await http.get(Uri.parse(url));
       
@@ -42,7 +43,7 @@ class CartController extends GetxController {
   Future<void> createNewCart(List<Map<String, String>> cartItems) async {
     try {
       print("Creating new cart for customer ${UserData.id}");
-      String url = "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+      String url = "https://www.alkirtas.com/api/carts?ws_key=${AppConfig.prestashopApiKey}";
       
       String cartRowsXml = cartItems.map((item) {
         return """
@@ -100,7 +101,7 @@ class CartController extends GetxController {
     }
 
     String url =
-        "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+        "https://www.alkirtas.com/api/carts?ws_key=${AppConfig.prestashopApiKey}";
 
     String cartRowsXml = cartProvider.cartItems.map((item) {
       return """
@@ -152,7 +153,7 @@ class CartController extends GetxController {
 
   Future<void> fetchCartItems(String cartId) async {
     String url =
-        "https://www.alkirtas.com/api/carts/$cartId?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU&output_format=JSON";
+        "https://www.alkirtas.com/api/carts/$cartId?ws_key=${AppConfig.prestashopApiKey}&output_format=JSON";
 
     var response = await http.get(Uri.parse(url));
 
@@ -186,7 +187,7 @@ class CartController extends GetxController {
     // Removed couponId
   }) async {
     try {
-      String url = "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+      String url = "https://www.alkirtas.com/api/carts?ws_key=${AppConfig.prestashopApiKey}";
 
       String cartRowsXml = cartItems.map((item) {
         return """

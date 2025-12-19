@@ -16,6 +16,7 @@ import 'package:provider/provider.dart'; // Import Provider
 import 'package:qr_flutter/qr_flutter.dart'; // Import QR Flutter
 import 'package:uuid/uuid.dart'; // Import UUID for session IDs
 import 'package:alkirtas/features/shop/screens/cart/cart_qr_dialog.dart'; // Import new QR dialog with polling
+import 'package:alkirtas/config/app_config.dart';
 
 import 'dart:convert';
 import 'dart:typed_data';
@@ -459,7 +460,7 @@ class _CartScreenState extends State<CartScreen> {
   // Send a POST request to create a cart
   Future<String> createCart(List<Map<String, String>> cartItems) async {
     String url =
-        "https://www.alkirtas.com/api/carts?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+        "https://www.alkirtas.com/api/carts?ws_key=${AppConfig.prestashopApiKey}";
 
     // Generate XML for cart rows
     String cartRowsXml = cartItems.map((item) {

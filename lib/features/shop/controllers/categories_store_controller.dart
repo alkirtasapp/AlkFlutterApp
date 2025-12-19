@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/config/app_config.dart';
 
 class CategoriesStoreController {
-  final String apiKey = "Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+  String get apiKey => AppConfig.prestashopApiKey;
   final String apiUrl =
       "https://www.alkirtas.com/api/categories?display=[id,id_parent,name,level_depth]&filter[active]=1&output_format=JSON&ws_key=";
 

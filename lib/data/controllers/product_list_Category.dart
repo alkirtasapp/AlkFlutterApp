@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/config/app_config.dart';
 
 
 class ProductListCategory {
   Future<List<int>> fetchProductIdsFromCategory(int categoryId) async {
   try {
     final categoryApi =
-        'https://www.alkirtas.com/api/categories?display=full&filter[id]=[$categoryId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+        'https://www.alkirtas.com/api/categories?display=full&filter[id]=[$categoryId]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
     print("📡 Fetching product IDs for Category ID: $categoryId");
 

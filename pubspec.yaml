@@ -72,6 +72,7 @@ flutter:
   
   # Asset directories for project resources
   assets:
+    - .env
     - lib/assets/
     - lib/assets/images/on_boarding_images/
     - lib/assets/icons/

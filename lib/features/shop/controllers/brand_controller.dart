@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/config/app_config.dart';
 
 class BrandController {
   Future<Map<String, dynamic>?> fetchBrandData(int brandIndex) async {
@@ -11,7 +12,7 @@ class BrandController {
       final brandId = brandIds[brandIndex]; // Get specific brand ID
 
       final brandApi =
-          'https://www.alkirtas.com/api/manufacturers?display=full&filter[id]=[$brandId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/manufacturers?display=full&filter[id]=[$brandId]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final response = await http.get(Uri.parse(brandApi));
 
@@ -42,7 +43,7 @@ class BrandController {
       if (brandId == 0) return null;
 
       final brandApi =
-          'https://www.alkirtas.com/api/manufacturers/$brandId?output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/manufacturers/$brandId?output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final response = await http.get(Uri.parse(brandApi));
 

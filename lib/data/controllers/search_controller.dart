@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/config/app_config.dart';
 
 class AlkSearchController {
-  final String apiKey = 'Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+  String get apiKey => AppConfig.prestashopApiKey;
   final String baseUrl = 'https://www.alkirtas.com/api/products';
 
   Future<List<int>?> searchProducts(String query, {int offset = 0, int limit = 100}) async {

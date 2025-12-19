@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 class SignUpController {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -31,7 +32,7 @@ class SignUpController {
   // Function to check if the email is unique
   Future<bool> isEmailUnique(String email) async {
     final String apiUrl =
-        "https://www.alkirtas.com/api/customers?display=full&filter[email]=$email&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU&output_format=JSON";
+        "https://www.alkirtas.com/api/customers?display=full&filter[email]=$email&ws_key=${AppConfig.prestashopApiKey}&output_format=JSON";
 
     try {
       log("Checking if email exists: $email");
@@ -115,7 +116,7 @@ class SignUpController {
     }
 
     final String apiUrl =
-        "https://www.alkirtas.com/api/customers?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+        "https://www.alkirtas.com/api/customers?ws_key=${AppConfig.prestashopApiKey}";
     final String xmlData = generateXmlData();
 
     try {

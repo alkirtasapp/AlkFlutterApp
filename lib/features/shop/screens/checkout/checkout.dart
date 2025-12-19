@@ -20,6 +20,7 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/providers/coupon_provider.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key}); // Remove cartId
@@ -133,7 +134,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       // Fetch product price from the API
       final response = await http.get(Uri.parse(
-          "https://www.alkirtas.com/api/products?display=full&filter[id]=$productId&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU"));
+          "https://www.alkirtas.com/api/products?display=full&filter[id]=$productId&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}"));
 
       if (response.statusCode == 200) {
         final productData = json.decode(response.body);
@@ -169,7 +170,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       // Fetch product price and tax rules group ID from the API
       final response = await http.get(Uri.parse(
-          "https://www.alkirtas.com/api/products?display=full&filter[id]=$productId&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU"));
+          "https://www.alkirtas.com/api/products?display=full&filter[id]=$productId&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}"));
 
       if (response.statusCode == 200) {
         final productData = json.decode(response.body);

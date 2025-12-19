@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:alkirtas/utils/backendData/userData.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 class AddressController extends GetxController {
   var isLoading = false.obs;
@@ -13,7 +14,7 @@ class AddressController extends GetxController {
       isLoading.value = true;
 
       String url =
-          "https://www.alkirtas.com/api/addresses?limit=1&filter[id_customer]=${UserData.id}&display=full&filter[deleted]=0&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU";
+          "https://www.alkirtas.com/api/addresses?limit=1&filter[id_customer]=${UserData.id}&display=full&filter[deleted]=0&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}";
 
       var response = await http.get(Uri.parse(url));
 
@@ -57,7 +58,7 @@ class AddressController extends GetxController {
     try {
       isLoading.value = true;
 
-      String url = "https://www.alkirtas.com/api/addresses?ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU&output_format=JSON";
+      String url = "https://www.alkirtas.com/api/addresses?ws_key=${AppConfig.prestashopApiKey}&output_format=JSON";
 
       String xmlBody = """
       <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">

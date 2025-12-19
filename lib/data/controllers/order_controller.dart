@@ -3,9 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:alkirtas/providers/coupon_provider.dart';
+import 'package:alkirtas/config/app_config.dart';
 
 class OrderController {
-  final String apiKey = 'Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+  String get apiKey => AppConfig.prestashopApiKey;
   final String baseUrl = 'https://www.alkirtas.com/api/orders';
 
   Future<bool> createOrder({

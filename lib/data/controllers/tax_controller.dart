@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/config/app_config.dart';
 
 class TaxController {
   Future<double?> fetchTTCPrice(
@@ -12,7 +13,7 @@ class TaxController {
 
       // Step 2: Fetch id_tax from tax rules API
       final taxRulesApi =
-          'https://www.alkirtas.com/api/tax_rules?display=[id_tax,id_tax_rules_group]&filter[id_tax_rules_group]=[$taxRulesGroupId]&limit=1&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/tax_rules?display=[id_tax,id_tax_rules_group]&filter[id_tax_rules_group]=[$taxRulesGroupId]&limit=1&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final taxRulesResponse = await http.get(Uri.parse(taxRulesApi));
       if (taxRulesResponse.statusCode != 200) {
@@ -33,7 +34,7 @@ class TaxController {
 
       // Step 3: Fetch tax rate from taxes API
       final taxesApi =
-          'https://www.alkirtas.com/api/taxes?display=[rate,id]&filter[id]=[$taxId]&output_format=JSON&ws_key=Y262WZ22UPBRMJ6UNTHU24KDXT7T66RU';
+          'https://www.alkirtas.com/api/taxes?display=[rate,id]&filter[id]=[$taxId]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final taxesResponse = await http.get(Uri.parse(taxesApi));
       if (taxesResponse.statusCode != 200) {
