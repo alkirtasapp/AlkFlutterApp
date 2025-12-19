@@ -4,13 +4,33 @@ workflows:
     max_build_duration: 60
     environment:
       flutter: stable
-      xcode: 15.2
+      xcode: latest
     scripts:
       - name: Get Flutter dependencies
         script: flutter pub get
       - name: Install CocoaPods
         script: cd ios && pod install --repo-update
+      - name: Fix Xcode 15+ debug format issue
+        script: |
+          cd ios
+          # Patch all xcconfig files in Pods
+          find Pods -name "*.xcconfig" -exec sed -i '' 's/DEBUG_INFORMATION_FORMAT = dwarf-with-dsym/DEBUG_INFORMATION_FORMAT = dwarf/g' {} \;
+          # Patch Pods project file
+          sed -i '' 's/DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"/DEBUG_INFORMATION_FORMAT = "dwarf"/g' Pods/Pods.xcodeproj/project.pbxproj
+          sed -i '' 's/DEBUG_INFORMATION_FORMAT = dwarf-with-dsym/DEBUG_INFORMATION_FORMAT = dwarf/g' Pods/Pods.xcodeproj/project.pbxproj
+          echo "Patched debug format settings"
       - name: Build iOS
-        script: flutter build ios --debug --no-codesign
+        script: |
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf \
+            GCC_GENERATE_DEBUGGING_SYMBOLS=NO \
+            build
     artifacts:
       - build/ios/iphoneos/*.app
+      - ios/build/Build/Products/Debug-iphoneos/*.app
