@@ -33,22 +33,18 @@ jobs:
           cd ios
           pod install --repo-update
 
-      - name: Build iOS (No Code Signing)
+      - name: Build iOS App
+        run: flutter build ios --no-codesign --debug
+
+      - name: Find and list built app
         run: |
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Debug \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO \
-            build
+          echo "Looking for .app files..."
+          find build -name "*.app" -type d 2>/dev/null || true
+          ls -la build/ios/iphoneos/ 2>/dev/null || true
 
       - name: Upload iOS App
         uses: actions/upload-artifact@v4
         with:
           name: ios-app
-          path: |
-            build/ios/iphoneos/*.app
-            ios/build/Build/Products/Debug-iphoneos/*.app
+          path: build/ios/iphoneos/Runner.app
           retention-days: 7
