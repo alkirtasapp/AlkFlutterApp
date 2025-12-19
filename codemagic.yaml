@@ -7,31 +7,24 @@ workflows:
       xcode: latest
     scripts:
       - name: Get Flutter dependencies
-        script: |
-          flutter pub get
+        script: flutter pub get
       - name: Fix iOS Podfile for Xcode 15
         script: |
           cd ios
-          # Add post_install hook to fix -G flag issue
-          cat >> Podfile << 'PODFILE_HOOK'
-
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-      config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf'
-    end
-  end
-end
-PODFILE_HOOK
-          cd ..
+          echo "" >> Podfile
+          echo "post_install do |installer|" >> Podfile
+          echo "  installer.pods_project.targets.each do |target|" >> Podfile
+          echo "    target.build_configurations.each do |config|" >> Podfile
+          echo "      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'" >> Podfile
+          echo "      config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf'" >> Podfile
+          echo "    end" >> Podfile
+          echo "  end" >> Podfile
+          echo "end" >> Podfile
       - name: Install CocoaPods
         script: |
           cd ios
           pod install
-          cd ..
       - name: Build iOS
-        script: |
-          flutter build ios --debug --no-codesign
+        script: flutter build ios --debug --no-codesign
     artifacts:
       - build/ios/iphoneos/*.app
