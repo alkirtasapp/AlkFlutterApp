@@ -113,7 +113,7 @@ class _StoreScreenState extends State<StoreScreen>{
                      AlkCategoryTab(),
                       AlkCategoryTab(),
 
-             //products
+            
 
 
           ],

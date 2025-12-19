@@ -17,7 +17,7 @@ class CartQRDialog extends StatefulWidget {
     required this.qrData,
     required this.sessionId,
     required this.cartProvider,
-    this.odooBaseUrl = 'http://10.52.97.188:8069', // Physical device on local Wi-Fi network
+    this.odooBaseUrl = 'http://192.168.1.132:8069', // Physical device on local Wi-Fi network
   }) : super(key: key);
 
   @override
