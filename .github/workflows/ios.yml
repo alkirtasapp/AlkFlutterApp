@@ -36,15 +36,17 @@ jobs:
       - name: Build iOS App
         run: flutter build ios --no-codesign --debug
 
-      - name: Find and list built app
+      - name: Create IPA file
         run: |
-          echo "Looking for .app files..."
-          find build -name "*.app" -type d 2>/dev/null || true
-          ls -la build/ios/iphoneos/ 2>/dev/null || true
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r Runner.ipa Payload
+          mv Runner.ipa ../../../Runner.ipa
 
-      - name: Upload iOS App
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-app
-          path: build/ios/iphoneos/Runner.app
+          name: ios-ipa
+          path: Runner.ipa
           retention-days: 7
