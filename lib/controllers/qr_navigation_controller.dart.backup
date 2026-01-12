@@ -193,10 +193,12 @@ class QrNavigationController extends GetxController {
       }
 
       // Check if product is active (handle various formats: 1, "1", true, "true")
-      // NOTE: Allow viewing inactive products for in-store barcode scanning
       final active = product['active'];
       final isActive = active == 1 || active == '1' || active == true || active == 'true';
-      // Product can be viewed and added to cart even if inactive on PrestaShop (for in-store use)
+      if (!isActive) {
+        _showErrorSnackBar('Ce produit n\'est plus disponible');
+        return false;
+      }
 
       // Close the QR scanner first, then navigate to product details
       Get.back(); // Close the scanner

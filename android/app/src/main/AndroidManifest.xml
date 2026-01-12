@@ -8,7 +8,9 @@
     <application
         android:label="Alkirtas"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config">
         <activity
             android:name="com.alkirtas.alkirtas.MainActivity"
             android:exported="true"

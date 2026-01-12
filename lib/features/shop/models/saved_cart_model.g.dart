@@ -24,13 +24,14 @@ class SavedCartAdapter extends TypeAdapter<SavedCart> {
           .toList(),
       totalAmount: fields[3] as double,
       qrData: fields[4] as String,
+      sessionId: fields[5] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SavedCart obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -40,7 +41,9 @@ class SavedCartAdapter extends TypeAdapter<SavedCart> {
       ..writeByte(3)
       ..write(obj.totalAmount)
       ..writeByte(4)
-      ..write(obj.qrData);
+      ..write(obj.qrData)
+      ..writeByte(5)
+      ..write(obj.sessionId);
   }
 
   @override

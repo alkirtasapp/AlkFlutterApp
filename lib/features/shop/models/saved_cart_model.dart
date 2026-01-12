@@ -19,12 +19,16 @@ class SavedCart extends HiveObject {
   @HiveField(4)
   final String qrData;
 
+  @HiveField(5)
+  final String? sessionId; // Odoo session ID for traceability
+
   SavedCart({
     required this.id,
     required this.savedDate,
     required this.items,
     required this.totalAmount,
     required this.qrData,
+    this.sessionId,
   });
 
   // Convert to Map for JSON serialization
@@ -35,6 +39,7 @@ class SavedCart extends HiveObject {
       'items': items,
       'totalAmount': totalAmount,
       'qrData': qrData,
+      'sessionId': sessionId,
     };
   }
 
@@ -46,6 +51,7 @@ class SavedCart extends HiveObject {
       items: List<Map<String, dynamic>>.from(json['items'] as List),
       totalAmount: (json['totalAmount'] as num).toDouble(),
       qrData: json['qrData'] as String,
+      sessionId: json['sessionId'] as String?,
     );
   }
 

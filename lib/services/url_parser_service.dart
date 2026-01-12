@@ -61,7 +61,8 @@ class UrlParserService {
   static Map<String, dynamic>? _extractCategoryId(String url) {
     // Pattern: alkirtas.com/{categoryId}-{categoryName}
     // Category URLs don't end with .html
-    final categoryPattern = RegExp(r'^alkirtas\.com/(\d+)-([^/]+?)/?$');
+    // Use negative lookahead to reject .html URLs
+    final categoryPattern = RegExp(r'^alkirtas\.com/(\d+)-([^/]+?)(?<!\.html)/?$');
     final match = categoryPattern.firstMatch(url);
 
     if (match != null) {

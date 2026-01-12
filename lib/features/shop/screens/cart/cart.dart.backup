@@ -45,47 +45,26 @@ class _CartScreenState extends State<CartScreen> {
 
   // Generate QR code data from cart with session ID for syncing
   Map<String, dynamic> generateCartQRDataWithSession(CartProvider cartProvider) {
-    // Try to find existing session ID for this cart (for traceability when rescanning)
-    final existingSessionId = cartProvider.findExistingSessionIdForCart();
-
-    // Use existing session ID if found, otherwise generate a new one
-    final sessionId = existingSessionId ?? const Uuid().v4();
-
-    if (existingSessionId != null) {
-      print('🔗 Reusing existing session ID: $sessionId');
-    } else {
-      print('🆕 Generated new session ID: $sessionId');
-    }
+    // Generate unique session ID
+    final sessionId = const Uuid().v4();
 
     final cartData = {
-      'session_id': sessionId, // Session ID for polling (reused if cart was synced before)
+      'session_id': sessionId, // NEW: Add session ID for polling
       'cartItems': cartProvider.cartItems.map((item) {
-        // Include price data for Odoo to display same prices as app
-        // productOldPrice = prix AVANT remise, productNewPrice = prix APRES remise
+        // Only include essential data - Odoo will get name/brand from its database
         return {
           'productReference': item['productReference']?.toString() ?? '',
           'productPrice': item['productPrice']?.toString() ?? '0',
-          'productOldPrice': item['productOldPrice']?.toString() ?? item['productPrice']?.toString() ?? '0',
-          'productNewPrice': item['productNewPrice']?.toString() ?? item['productPrice']?.toString() ?? '0',
           'productQuantity': item['productQuantity']?.toString() ?? '1',
           'productDiscount': item['productDiscount']?.toString() ?? '0',
         };
       }).toList(),
       'totalPrice': getTotalPrice(cartProvider),
-      // Customer data for Odoo association (presta_id is the PrestaShop customer ID)
-      'presta_id': UserData.id.isNotEmpty ? UserData.id : null,
-      'customer_name': (UserData.firstname.isNotEmpty || UserData.lastname.isNotEmpty)
-          ? '${UserData.firstname} ${UserData.lastname}'.trim()
-          : null,
-      'customer_email': UserData.email.isNotEmpty ? UserData.email : null,
     };
 
     // Log for debugging
     print('📦 QR Data Generated with Session ID:');
-    print('   Session ID: $sessionId (${existingSessionId != null ? 'reused' : 'new'})');
-    print('   Customer ID (presta_id): ${UserData.id}');
-    print('   Customer Name: ${UserData.firstname} ${UserData.lastname}');
-    print('   Customer Email: ${UserData.email}');
+    print('   Session ID: $sessionId');
     print('   Items: ${cartProvider.cartItems.length}');
     print('   Total: ${getTotalPrice(cartProvider)}');
     if (cartProvider.cartItems.isNotEmpty) {

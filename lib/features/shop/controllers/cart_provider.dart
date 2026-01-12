@@ -195,8 +195,8 @@ class CartProvider with ChangeNotifier {
 
   // ==================== CART HISTORY METHODS ====================
 
-  /// Save current cart to history with QR data
-  Future<SavedCart?> saveCartToHistory(String qrData) async {
+  /// Save current cart to history with QR data and session ID
+  Future<SavedCart?> saveCartToHistory(String qrData, {String? sessionId}) async {
     try {
       if (_cartItems.isEmpty) {
         print('⚠️ Cannot save empty cart to history');
@@ -216,18 +216,19 @@ class CartProvider with ChangeNotifier {
         return Map<String, dynamic>.from(item);
       }).toList();
 
-      // Create saved cart object
+      // Create saved cart object with session ID for traceability
       final savedCart = SavedCart(
         id: cartId,
         savedDate: DateTime.now(),
         items: itemsCopy,
         totalAmount: cartTotal(),
         qrData: qrData,
+        sessionId: sessionId,
       );
 
       // Save to Hive
       await _savedCartsBox!.put(cartId, savedCart);
-      print('✅ Cart saved to history with ${_cartItems.length} items - Total: ${savedCart.totalAmount}');
+      print('✅ Cart saved to history with ${_cartItems.length} items - Total: ${savedCart.totalAmount} - SessionId: $sessionId');
 
       return savedCart;
     } catch (e) {
@@ -308,6 +309,52 @@ class CartProvider with ChangeNotifier {
     }
   }
 
+  /// Find existing session ID for current cart items
+  /// This enables reusing the same session_id when rescanning a cart
+  /// to maintain traceability in Odoo
+  String? findExistingSessionIdForCart() {
+    try {
+      if (_savedCartsBox == null || _cartItems.isEmpty) {
+        return null;
+      }
+
+      // Get current cart product references for comparison
+      final currentRefs = _cartItems
+          .map((item) => item['productReference'] ?? '')
+          .where((ref) => ref.isNotEmpty)
+          .toSet();
+
+      if (currentRefs.isEmpty) {
+        return null;
+      }
+
+      // Search through saved carts for a matching one
+      final savedCarts = _savedCartsBox!.values.toList();
+
+      for (var savedCart in savedCarts) {
+        if (savedCart.sessionId == null) continue;
+
+        // Get saved cart product references
+        final savedRefs = savedCart.items
+            .map((item) => item['productReference']?.toString() ?? '')
+            .where((ref) => ref.isNotEmpty)
+            .toSet();
+
+        // Check if the cart items match (same products)
+        if (currentRefs.length == savedRefs.length &&
+            currentRefs.containsAll(savedRefs)) {
+          print('🔗 Found existing session ID for cart: ${savedCart.sessionId}');
+          return savedCart.sessionId;
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print('❌ Error finding existing session ID: $e');
+      return null;
+    }
+  }
+
   // ==================== BACKGROUND SYNC METHODS ====================
 
   /// Start background polling for cart sync
@@ -356,29 +403,41 @@ class CartProvider with ChangeNotifier {
     }
 
     try {
-      final url = '$_syncOdooBaseUrl/pos/api/verified_cart/$_syncSessionId';
+      // Use simplified route that works better with external IPs
+      final url = '$_syncOdooBaseUrl/pos/mobile/sync/$_syncSessionId?db=alkirtas_backup';
       print('📡 Background polling: $url');
 
-      final response = await http.get(Uri.parse(url)).timeout(
-        const Duration(seconds: 5),
-      );
+      // Create HTTP client with explicit connection timeout
+      final client = http.Client();
+      try {
+        final request = http.Request('GET', Uri.parse(url));
+        request.headers['Accept'] = 'application/json';
+        request.headers['Connection'] = 'keep-alive';
+
+        final streamedResponse = await client.send(request).timeout(
+          const Duration(seconds: 10),
+        );
+        final response = await http.Response.fromStream(streamedResponse);
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}...');
 
       if (response.statusCode == 200) {
         // Cart verified! Parse and update
         final verifiedData = jsonDecode(response.body);
-        print('✅ Background sync: Cart verified!');
+        print('✅ Background sync: Cart verified! Data: $verifiedData');
 
         // Stop polling
         _syncTimer?.cancel();
         _syncTimer = null;
 
-        // Update cart from verified data
+        // Update cart from verified data (temporarily to get correct data for history)
         await _updateCartFromVerifiedData(verifiedData);
 
-        // Auto-save to history
-        if (_syncQrData != null) {
-          await saveCartToHistory(_syncQrData!);
-          print('💾 Cart auto-saved to history');
+        // Auto-save to history with session ID for traceability
+        if (_syncQrData != null && _syncSessionId != null) {
+          await saveCartToHistory(_syncQrData!, sessionId: _syncSessionId);
+          print('💾 Cart auto-saved to history with sessionId: $_syncSessionId');
         }
 
         // Create cart on PrestaShop
@@ -386,6 +445,10 @@ class CartProvider with ChangeNotifier {
         if (prestashopCartId != null) {
           print('🛒 PrestaShop cart ID: $prestashopCartId');
         }
+
+        // Clear the current cart after successful sync
+        await clearCart();
+        print('🧹 Cart cleared after successful sync');
 
         _syncComplete = true;
         _isSyncing = false;
@@ -404,9 +467,17 @@ class CartProvider with ChangeNotifier {
         print('⏳ Background sync: Not ready yet...');
         _syncStatus = 'En attente du paiement...';
         _safeNotifyListeners();
+      } else {
+        print('⚠️ Unexpected status: ${response.statusCode}');
+        print('   Body: ${response.body}');
+      }
+      } finally {
+        client.close();
       }
     } catch (e) {
       print('⚠️ Background sync error: $e');
+      _syncStatus = 'Erreur: ${e.toString().split(':').last.trim()}';
+      _safeNotifyListeners();
       // Continue polling on error
     }
   }
