@@ -44,8 +44,13 @@ class _CartQRDialogState extends State<CartQRDialog> {
   }
 
   void _startBackgroundSync() {
+    // IMPORTANT: Use prestashop_ prefix to match what Odoo stores in mobile.cart
+    // The JavaScript in Odoo uses `prestashop_${cart_id}` as the session identifier
+    final syncSessionId = 'prestashop_${widget.sessionId}';
+    print('🔄 Starting background sync with session ID: $syncSessionId');
+
     widget.cartProvider.startBackgroundSync(
-      sessionId: widget.sessionId,
+      sessionId: syncSessionId,
       odooBaseUrl: widget.odooBaseUrl,
       qrData: widget.qrData,
       onComplete: (success, message) {

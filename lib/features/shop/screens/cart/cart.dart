@@ -14,7 +14,6 @@ import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart' as xml;
 import 'package:provider/provider.dart'; // Import Provider
 import 'package:qr_flutter/qr_flutter.dart'; // Import QR Flutter
-import 'package:uuid/uuid.dart'; // Import UUID for session IDs
 import 'package:alkirtas/features/shop/screens/cart/cart_qr_dialog.dart'; // Import new QR dialog with polling
 import 'package:alkirtas/config/app_config.dart';
 
@@ -43,64 +42,45 @@ class _CartScreenState extends State<CartScreen> {
     return getTotalPrice(cartProvider) + 9.0; // Delivery fee is fixed at 9.0 TND
   }
 
-  // Generate QR code data from cart with session ID for syncing
-  Map<String, dynamic> generateCartQRDataWithSession(CartProvider cartProvider) {
-    // Try to find existing session ID for this cart (for traceability when rescanning)
-    final existingSessionId = cartProvider.findExistingSessionIdForCart();
-
-    // Use existing session ID if found, otherwise generate a new one
-    final sessionId = existingSessionId ?? const Uuid().v4();
-
-    if (existingSessionId != null) {
-      print('🔗 Reusing existing session ID: $sessionId');
-    } else {
-      print('🆕 Generated new session ID: $sessionId');
-    }
-
-    final cartData = {
-      'session_id': sessionId, // Session ID for polling (reused if cart was synced before)
-      'cartItems': cartProvider.cartItems.map((item) {
-        // Include price data for Odoo to display same prices as app
-        // productOldPrice = prix AVANT remise, productNewPrice = prix APRES remise
-        return {
-          'productReference': item['productReference']?.toString() ?? '',
-          'productPrice': item['productPrice']?.toString() ?? '0',
-          'productOldPrice': item['productOldPrice']?.toString() ?? item['productPrice']?.toString() ?? '0',
-          'productNewPrice': item['productNewPrice']?.toString() ?? item['productPrice']?.toString() ?? '0',
-          'productQuantity': item['productQuantity']?.toString() ?? '1',
-          'productDiscount': item['productDiscount']?.toString() ?? '0',
-        };
-      }).toList(),
-      'totalPrice': getTotalPrice(cartProvider),
-      // Customer data for Odoo association (presta_id is the PrestaShop customer ID)
-      'presta_id': UserData.id.isNotEmpty ? UserData.id : null,
+  // Generate simple QR code data with PrestaShop cart_id + customer info
+  // The cart_id is used by Odoo to fetch full cart details from PrestaShop API
+  Map<String, dynamic> generateSimpleQRData(String prestashopCartId) {
+    final qrData = {
+      'cart_id': prestashopCartId,
       'customer_name': (UserData.firstname.isNotEmpty || UserData.lastname.isNotEmpty)
           ? '${UserData.firstname} ${UserData.lastname}'.trim()
           : null,
       'customer_email': UserData.email.isNotEmpty ? UserData.email : null,
     };
 
-    // Log for debugging
-    print('📦 QR Data Generated with Session ID:');
-    print('   Session ID: $sessionId (${existingSessionId != null ? 'reused' : 'new'})');
-    print('   Customer ID (presta_id): ${UserData.id}');
-    print('   Customer Name: ${UserData.firstname} ${UserData.lastname}');
-    print('   Customer Email: ${UserData.email}');
-    print('   Items: ${cartProvider.cartItems.length}');
-    print('   Total: ${getTotalPrice(cartProvider)}');
-    if (cartProvider.cartItems.isNotEmpty) {
-      final firstRef = cartProvider.cartItems[0]['productReference'] ?? 'N/A';
-      print('   First Product Reference: $firstRef');
-    }
-    print('   JSON: ${jsonEncode(cartData)}');
+    print('📦 Simple QR Data Generated:');
+    print('   PrestaShop Cart ID: $prestashopCartId');
+    print('   Customer Name: ${qrData['customer_name']}');
+    print('   Customer Email: ${qrData['customer_email']}');
 
-    return cartData;
+    return qrData;
   }
 
-  // Legacy method for backwards compatibility
-  String generateCartQRData(CartProvider cartProvider) {
-    final cartData = generateCartQRDataWithSession(cartProvider);
-    return jsonEncode(cartData);
+  // Create PrestaShop cart and return cart ID
+  // Returns null if creation fails
+  Future<String?> createPrestashopCartForQR(CartProvider cartProvider) async {
+    try {
+      // Check if we already have a PrestaShop cart ID for this cart
+      final existingCartId = cartProvider.findExistingPrestashopCartId();
+      if (existingCartId != null) {
+        print('🔗 Reusing existing PrestaShop cart ID: $existingCartId');
+        return existingCartId;
+      }
+
+      // Create new cart on PrestaShop
+      print('🆕 Creating new PrestaShop cart...');
+      final cartId = await createCart(cartProvider.cartItems);
+      print('✅ PrestaShop cart created with ID: $cartId');
+      return cartId;
+    } catch (e) {
+      print('❌ Error creating PrestaShop cart: $e');
+      return null;
+    }
   }
 
   // Show QR code in fullscreen
@@ -150,301 +130,93 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   // Show QR code dialog with automatic polling for cart sync
-  void showQRCodeDialog(BuildContext context, CartProvider cartProvider) {
-    // Generate QR data with session ID
-    final cartDataWithSession = generateCartQRDataWithSession(cartProvider);
-    final sessionId = cartDataWithSession['session_id'] as String;
-    final qrData = jsonEncode(cartDataWithSession);
-
-    // Show new dialog with polling
+  // NEW FLOW: Creates PrestaShop cart first, then generates simple QR with cart_id
+  void showQRCodeDialog(BuildContext context, CartProvider cartProvider) async {
+    // Show loading indicator while creating PrestaShop cart
     showDialog(
       context: context,
-      barrierDismissible: true,
-      builder: (context) => CartQRDialog(
-        qrData: qrData,
-        sessionId: sessionId,
-        cartProvider: cartProvider,
-        // IMPORTANT: Change this for production!
-        // Local testing: Use your computer's local IP (e.g., 'http://192.168.1.100:8069')
-        // Production: Use 'https://www.odoo.alkirtas.com'
-        odooBaseUrl: 'http://192.168.1.132:8069', // Physical device on local Wi-Fi network
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
       ),
-    ).then((success) {
-      if (success == true) {
-        // Cart was synced successfully
+    );
+
+    try {
+      // Step 1: Create PrestaShop cart (or reuse existing)
+      final prestashopCartId = await createPrestashopCartForQR(cartProvider);
+
+      // Close loading dialog
+      if (context.mounted) Navigator.of(context).pop();
+
+      if (prestashopCartId == null) {
+        // Show error with retry option
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Erreur'),
+              content: const Text('Impossible de créer le panier. Vérifiez votre connexion et réessayez.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    showQRCodeDialog(context, cartProvider); // Retry
+                  },
+                  child: const Text('Réessayer'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      // Step 2: Generate simple QR data with cart_id + customer info
+      final qrDataMap = generateSimpleQRData(prestashopCartId);
+      final qrData = jsonEncode(qrDataMap);
+
+      // Step 3: Show QR dialog with polling (using cart_id as session_id for Odoo)
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (context) => CartQRDialog(
+            qrData: qrData,
+            sessionId: prestashopCartId, // Use PrestaShop cart_id for polling
+            cartProvider: cartProvider,
+            // IMPORTANT: Change this for production!
+            // Local testing: Use your computer's local IP (e.g., 'http://192.168.1.100:8069')
+            // Production: Use 'https://www.odoo.alkirtas.com'
+            odooBaseUrl: 'http://192.168.1.132:8069',
+          ),
+        ).then((success) {
+          if (success == true && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✓ Panier synchronisé avec succès!'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        });
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (context.mounted) {
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✓ Panier synchronisé avec succès!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
           ),
         );
       }
-    });
-  }
-
-  // Old dialog method (keep for fullscreen QR or as backup)
-  void showOldQRCodeDialog(BuildContext context, CartProvider cartProvider) {
-    final qrData = generateCartQRData(cartProvider);
-
-    // Get screen size for responsive QR code
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final qrSize = (screenWidth * 0.5).clamp(200.0, 350.0);
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: screenWidth * 0.9,
-            maxHeight: screenHeight * 0.8,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title
-                  Text(
-                    'QR Code du Panier',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.purple[700],
-                        ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // QR Code with enhanced visibility - Clickable for fullscreen
-                  GestureDetector(
-                    onTap: () {
-                      showFullscreenQR(context, qrData);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.purple[300]!,
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple[100]!,
-                            blurRadius: 12,
-                            spreadRadius: 3,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          QrImageView(
-                            data: qrData,
-                            version: QrVersions.auto,
-                            size: qrSize,
-                            backgroundColor: Colors.white,
-                            errorCorrectionLevel: QrErrorCorrectLevel.H, // Highest error correction
-                            padding: const EdgeInsets.all(16),
-                            eyeStyle: const QrEyeStyle(
-                              eyeShape: QrEyeShape.square,
-                              color: Colors.black,
-                            ),
-                            dataModuleStyle: const QrDataModuleStyle(
-                              dataModuleShape: QrDataModuleShape.square,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.fullscreen,
-                                size: 20,
-                                color: Colors.purple[600],
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  'Appuyez pour agrandir',
-                                  style: TextStyle(
-                                    color: Colors.purple[700],
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Instructions
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.purple[50],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.qr_code_scanner,
-                          size: 32,
-                          color: Colors.purple[700],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Scannez ce code pour créer\nle panier dans le point de vente',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.purple[900],
-                                height: 1.5,
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Cart Info
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Column(
-                          children: [
-                            Text(
-                              '${cartProvider.cartItems.length}',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.purple[700],
-                                  ),
-                            ),
-                            Text(
-                              'Articles',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          height: 40,
-                          width: 1,
-                          color: Colors.grey[300],
-                        ),
-                        Column(
-                          children: [
-                            Text(
-                              '${getTotalPrice(cartProvider).toStringAsFixed(3)} TND',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.purple[700],
-                                  ),
-                            ),
-                            Text(
-                              'Total',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Action Buttons
-                  Row(
-                    children: [
-                      // Save to History Icon Button
-                      IconButton(
-                        onPressed: () async {
-                          final navigator = Navigator.of(context);
-                          final messenger = ScaffoldMessenger.of(context);
-
-                          final savedCart = await cartProvider.saveCartToHistory(qrData);
-                          if (savedCart != null) {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: const Text('Panier sauvegardé dans l\'historique'),
-                                backgroundColor: Colors.green,
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          } else {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: const Text('Erreur lors de la sauvegarde'),
-                                backgroundColor: Colors.red,
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        },
-                        icon: Icon(Icons.save, color: Colors.green[700], size: 28),
-                        tooltip: 'Sauvegarder dans l\'historique',
-                      ),
-                      const SizedBox(width: 8),
-                      // Close Button
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple[400],
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            'Fermer',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    }
   }
 
   // Checkout method will be activated once the button is clicked
@@ -501,6 +273,8 @@ class _CartScreenState extends State<CartScreen> {
   <cart>
     <id_currency>1</id_currency>
     <id_lang>1</id_lang>
+    <id_shop>1</id_shop>
+    <id_shop_group>1</id_shop_group>
     <id_customer><![CDATA[${UserData.id}]]></id_customer>
     <associations>
       <cart_rows>

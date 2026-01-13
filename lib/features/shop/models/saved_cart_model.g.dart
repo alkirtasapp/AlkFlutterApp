@@ -24,7 +24,7 @@ class SavedCartAdapter extends TypeAdapter<SavedCart> {
           .toList(),
       totalAmount: fields[3] as double,
       qrData: fields[4] as String,
-      sessionId: fields[5] as String?,
+      prestashopCartId: fields[5] as String?,
     );
   }
 
@@ -43,7 +43,7 @@ class SavedCartAdapter extends TypeAdapter<SavedCart> {
       ..writeByte(4)
       ..write(obj.qrData)
       ..writeByte(5)
-      ..write(obj.sessionId);
+      ..write(obj.prestashopCartId);
   }
 
   @override

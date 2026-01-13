@@ -195,8 +195,8 @@ class CartProvider with ChangeNotifier {
 
   // ==================== CART HISTORY METHODS ====================
 
-  /// Save current cart to history with QR data and session ID
-  Future<SavedCart?> saveCartToHistory(String qrData, {String? sessionId}) async {
+  /// Save current cart to history with QR data and PrestaShop cart ID
+  Future<SavedCart?> saveCartToHistory(String qrData, {String? prestashopCartId}) async {
     try {
       if (_cartItems.isEmpty) {
         print('⚠️ Cannot save empty cart to history');
@@ -216,19 +216,19 @@ class CartProvider with ChangeNotifier {
         return Map<String, dynamic>.from(item);
       }).toList();
 
-      // Create saved cart object with session ID for traceability
+      // Create saved cart object with PrestaShop cart ID for traceability
       final savedCart = SavedCart(
         id: cartId,
         savedDate: DateTime.now(),
         items: itemsCopy,
         totalAmount: cartTotal(),
         qrData: qrData,
-        sessionId: sessionId,
+        prestashopCartId: prestashopCartId,
       );
 
       // Save to Hive
       await _savedCartsBox!.put(cartId, savedCart);
-      print('✅ Cart saved to history with ${_cartItems.length} items - Total: ${savedCart.totalAmount} - SessionId: $sessionId');
+      print('✅ Cart saved to history with ${_cartItems.length} items - Total: ${savedCart.totalAmount} - PrestashopCartId: $prestashopCartId');
 
       return savedCart;
     } catch (e) {
@@ -309,10 +309,10 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  /// Find existing session ID for current cart items
-  /// This enables reusing the same session_id when rescanning a cart
+  /// Find existing PrestaShop cart ID for current cart items
+  /// This enables reusing the same cart_id when rescanning a cart
   /// to maintain traceability in Odoo
-  String? findExistingSessionIdForCart() {
+  String? findExistingPrestashopCartId() {
     try {
       if (_savedCartsBox == null || _cartItems.isEmpty) {
         return null;
@@ -332,7 +332,7 @@ class CartProvider with ChangeNotifier {
       final savedCarts = _savedCartsBox!.values.toList();
 
       for (var savedCart in savedCarts) {
-        if (savedCart.sessionId == null) continue;
+        if (savedCart.prestashopCartId == null) continue;
 
         // Get saved cart product references
         final savedRefs = savedCart.items
@@ -343,14 +343,14 @@ class CartProvider with ChangeNotifier {
         // Check if the cart items match (same products)
         if (currentRefs.length == savedRefs.length &&
             currentRefs.containsAll(savedRefs)) {
-          print('🔗 Found existing session ID for cart: ${savedCart.sessionId}');
-          return savedCart.sessionId;
+          print('🔗 Found existing PrestaShop cart ID: ${savedCart.prestashopCartId}');
+          return savedCart.prestashopCartId;
         }
       }
 
       return null;
     } catch (e) {
-      print('❌ Error finding existing session ID: $e');
+      print('❌ Error finding existing PrestaShop cart ID: $e');
       return null;
     }
   }
@@ -434,16 +434,10 @@ class CartProvider with ChangeNotifier {
         // Update cart from verified data (temporarily to get correct data for history)
         await _updateCartFromVerifiedData(verifiedData);
 
-        // Auto-save to history with session ID for traceability
+        // Auto-save to history with PrestaShop cart ID for traceability
         if (_syncQrData != null && _syncSessionId != null) {
-          await saveCartToHistory(_syncQrData!, sessionId: _syncSessionId);
-          print('💾 Cart auto-saved to history with sessionId: $_syncSessionId');
-        }
-
-        // Create cart on PrestaShop
-        final prestashopCartId = await createPrestaShopCart();
-        if (prestashopCartId != null) {
-          print('🛒 PrestaShop cart ID: $prestashopCartId');
+          await saveCartToHistory(_syncQrData!, prestashopCartId: _syncSessionId);
+          print('💾 Cart auto-saved to history with prestashopCartId: $_syncSessionId');
         }
 
         // Clear the current cart after successful sync
@@ -597,6 +591,180 @@ class CartProvider with ChangeNotifier {
 
   // ==================== PRESTASHOP CART CREATION ====================
 
+  // ==================== PRESTASHOP CART FETCH ====================
+
+  /// Fetch cart details from PrestaShop by cart ID
+  /// This is used to get the latest cart state after it was modified by the cashier
+  Future<Map<String, dynamic>?> fetchPrestaShopCart(String cartId) async {
+    try {
+      // Remove 'prestashop_' prefix if present
+      String cleanCartId = cartId;
+      if (cartId.startsWith('prestashop_')) {
+        cleanCartId = cartId.substring('prestashop_'.length);
+      }
+
+      print('🔍 Fetching PrestaShop cart: $cleanCartId');
+
+      final url = AppConfig.prestashopUrl('carts/$cleanCartId', params: {'display': 'full'});
+      print('📡 URL: $url');
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode != 200) {
+        print('❌ Failed to fetch cart: ${response.statusCode}');
+        return null;
+      }
+
+      // Use utf8.decode for proper Arabic/special character support
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      Map<String, dynamic>? cartData;
+
+      if (data['cart'] != null) {
+        cartData = data['cart'] as Map<String, dynamic>;
+      } else if (data['carts'] != null && (data['carts'] as List).isNotEmpty) {
+        cartData = (data['carts'] as List).first as Map<String, dynamic>;
+      }
+
+      if (cartData == null) {
+        print('❌ No cart data found');
+        return null;
+      }
+
+      print('✅ Cart fetched: ${cartData['id']}');
+
+      // Get customer info from cart
+      String customerName = '';
+      String customerEmail = '';
+      final customerId = cartData['id_customer']?.toString();
+      if (customerId != null && customerId.isNotEmpty && customerId != '0') {
+        print('👤 Fetching customer info for ID: $customerId');
+        try {
+          final customerUrl = AppConfig.prestashopUrl('customers/$customerId');
+          final customerResponse = await http.get(Uri.parse(customerUrl));
+          if (customerResponse.statusCode == 200) {
+            // Use utf8.decode for proper Arabic/special character support
+            final customerData = jsonDecode(utf8.decode(customerResponse.bodyBytes));
+            Map<String, dynamic>? customer;
+            if (customerData['customer'] != null) {
+              customer = customerData['customer'] as Map<String, dynamic>;
+            } else if (customerData['customers'] != null && (customerData['customers'] as List).isNotEmpty) {
+              customer = (customerData['customers'] as List).first as Map<String, dynamic>;
+            }
+            if (customer != null) {
+              final firstname = customer['firstname']?.toString() ?? '';
+              final lastname = customer['lastname']?.toString() ?? '';
+              customerName = '$firstname $lastname'.trim();
+              customerEmail = customer['email']?.toString() ?? '';
+              print('👤 Customer: $customerName ($customerEmail)');
+            }
+          }
+        } catch (e) {
+          print('⚠️ Error fetching customer: $e');
+        }
+      }
+
+      // Get cart rows (products in the cart)
+      List<dynamic> cartRows = [];
+      if (cartData['associations'] != null &&
+          cartData['associations']['cart_rows'] != null) {
+        cartRows = cartData['associations']['cart_rows'] as List;
+      }
+
+      print('📦 Cart has ${cartRows.length} products');
+
+      // Fetch product details for each cart row
+      List<Map<String, dynamic>> items = [];
+      final productController = ProductControllerStore();
+
+      for (var row in cartRows) {
+        final productId = row['id_product']?.toString() ?? '';
+        final quantity = int.tryParse(row['quantity']?.toString() ?? '1') ?? 1;
+
+        if (productId.isEmpty || quantity <= 0) continue;
+
+        // Fetch product details from PrestaShop
+        final productUrl = AppConfig.prestashopUrl('products/$productId', params: {'display': 'full'});
+        try {
+          final productResponse = await http.get(Uri.parse(productUrl));
+
+          if (productResponse.statusCode == 200) {
+            // Use utf8.decode for proper Arabic/special character support
+            final productData = jsonDecode(utf8.decode(productResponse.bodyBytes));
+            Map<String, dynamic>? product;
+
+            if (productData['product'] != null) {
+              product = productData['product'] as Map<String, dynamic>;
+            } else if (productData['products'] != null && (productData['products'] as List).isNotEmpty) {
+              product = (productData['products'] as List).first as Map<String, dynamic>;
+            }
+
+            if (product != null) {
+              // Extract product name (handle language structure)
+              String productName = 'Product';
+              if (product['name'] is Map) {
+                productName = product['name']['language']?['value']?.toString() ??
+                              product['name'].toString();
+              } else if (product['name'] is List && (product['name'] as List).isNotEmpty) {
+                productName = (product['name'] as List).first['value']?.toString() ?? 'Product';
+              } else {
+                productName = product['name']?.toString() ?? 'Product';
+              }
+
+              // Get price
+              final price = double.tryParse(product['price']?.toString() ?? '0') ?? 0;
+
+              // Get product image
+              String imageUrl = '';
+              if (product['id_default_image'] != null) {
+                final imageId = product['id_default_image'].toString();
+                imageUrl = 'https://www.alkirtas.com/$imageId-large_default/${product['link_rewrite'] ?? 'product'}.jpg';
+                // Alternative: use direct image API
+                imageUrl = 'https://www.alkirtas.com/api/images/products/$productId/$imageId?ws_key=${AppConfig.prestashopApiKey}';
+              }
+
+              items.add({
+                'productId': productId,
+                'productName': productName,
+                'productReference': product['reference']?.toString() ?? '',
+                'productPrice': price.toString(),
+                'productQuantity': quantity.toString(),
+                'productImage': imageUrl,
+                'productBrand': product['manufacturer_name']?.toString() ?? '',
+                'productDiscount': '0',
+              });
+
+              print('  ✅ Product $productId: $productName x$quantity @ $price');
+            }
+          }
+        } catch (e) {
+          print('  ❌ Error fetching product $productId: $e');
+        }
+      }
+
+      // Calculate total
+      double total = 0;
+      for (var item in items) {
+        final price = double.tryParse(item['productPrice'] ?? '0') ?? 0;
+        final qty = int.tryParse(item['productQuantity'] ?? '1') ?? 1;
+        total += price * qty;
+      }
+
+      return {
+        'cartId': cleanCartId,
+        'items': items,
+        'totalAmount': total,
+        'itemCount': items.fold<int>(0, (sum, item) => sum + (int.tryParse(item['productQuantity'] ?? '1') ?? 1)),
+        'customerName': customerName,
+        'customerEmail': customerEmail,
+      };
+    } catch (e) {
+      print('❌ Error fetching PrestaShop cart: $e');
+      return null;
+    }
+  }
+
+  // ==================== PRESTASHOP CART CREATION ====================
+
   /// Create a cart on PrestaShop after successful sync
   /// This records the verified purchase in PrestaShop
   Future<String?> createPrestaShopCart() async {
@@ -635,11 +803,14 @@ class CartProvider with ChangeNotifier {
       }).join();
 
       // Build full XML body
+      // IMPORTANT: id_shop and id_shop_group must be set to 1 for PrestaShop to properly recognize the cart
       String xmlBody = '''<?xml version="1.0" encoding="UTF-8"?>
 <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
   <cart>
     <id_currency>1</id_currency>
     <id_lang>1</id_lang>
+    <id_shop>1</id_shop>
+    <id_shop_group>1</id_shop_group>
     <id_customer><![CDATA[${UserData.id}]]></id_customer>
     <associations>
       <cart_rows>
