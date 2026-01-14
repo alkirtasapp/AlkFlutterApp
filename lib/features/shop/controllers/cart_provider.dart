@@ -594,7 +594,8 @@ class CartProvider with ChangeNotifier {
   // ==================== PRESTASHOP CART FETCH ====================
 
   /// Fetch cart details from PrestaShop by cart ID
-  /// This is used to get the latest cart state after it was modified by the cashier
+  /// Uses the custom mobile_cart_api module to get CALCULATED prices
+  /// (includes discounts, specific prices, catalog rules, etc.)
   Future<Map<String, dynamic>?> fetchPrestaShopCart(String cartId) async {
     try {
       // Remove 'prestashop_' prefix if present
@@ -603,9 +604,10 @@ class CartProvider with ChangeNotifier {
         cleanCartId = cartId.substring('prestashop_'.length);
       }
 
-      print('🔍 Fetching PrestaShop cart: $cleanCartId');
+      print('🔍 Fetching PrestaShop cart with calculated prices: $cleanCartId');
 
-      final url = AppConfig.prestashopUrl('carts/$cleanCartId', params: {'display': 'full'});
+      // Use the custom mobile_cart_api module endpoint for calculated prices
+      final url = 'https://www.alkirtas.com/module/mobile_cart_api/details?cart_id=$cleanCartId&ws_key=${AppConfig.prestashopApiKey}';
       print('📡 URL: $url');
 
       final response = await http.get(Uri.parse(url));
@@ -617,14 +619,13 @@ class CartProvider with ChangeNotifier {
 
       // Use utf8.decode for proper Arabic/special character support
       final data = jsonDecode(utf8.decode(response.bodyBytes));
-      Map<String, dynamic>? cartData;
 
-      if (data['cart'] != null) {
-        cartData = data['cart'] as Map<String, dynamic>;
-      } else if (data['carts'] != null && (data['carts'] as List).isNotEmpty) {
-        cartData = (data['carts'] as List).first as Map<String, dynamic>;
+      if (data['success'] != true) {
+        print('❌ API error: ${data['error']?['message'] ?? 'Unknown error'}');
+        return null;
       }
 
+      final cartData = data['cart'] as Map<String, dynamic>?;
       if (cartData == null) {
         print('❌ No cart data found');
         return null;
@@ -632,127 +633,72 @@ class CartProvider with ChangeNotifier {
 
       print('✅ Cart fetched: ${cartData['id']}');
 
-      // Get customer info from cart
+      // Get customer info from response
       String customerName = '';
       String customerEmail = '';
-      final customerId = cartData['id_customer']?.toString();
-      if (customerId != null && customerId.isNotEmpty && customerId != '0') {
-        print('👤 Fetching customer info for ID: $customerId');
-        try {
-          final customerUrl = AppConfig.prestashopUrl('customers/$customerId');
-          final customerResponse = await http.get(Uri.parse(customerUrl));
-          if (customerResponse.statusCode == 200) {
-            // Use utf8.decode for proper Arabic/special character support
-            final customerData = jsonDecode(utf8.decode(customerResponse.bodyBytes));
-            Map<String, dynamic>? customer;
-            if (customerData['customer'] != null) {
-              customer = customerData['customer'] as Map<String, dynamic>;
-            } else if (customerData['customers'] != null && (customerData['customers'] as List).isNotEmpty) {
-              customer = (customerData['customers'] as List).first as Map<String, dynamic>;
-            }
-            if (customer != null) {
-              final firstname = customer['firstname']?.toString() ?? '';
-              final lastname = customer['lastname']?.toString() ?? '';
-              customerName = '$firstname $lastname'.trim();
-              customerEmail = customer['email']?.toString() ?? '';
-              print('👤 Customer: $customerName ($customerEmail)');
-            }
-          }
-        } catch (e) {
-          print('⚠️ Error fetching customer: $e');
-        }
+      final customer = cartData['customer'] as Map<String, dynamic>?;
+      if (customer != null) {
+        final firstname = customer['firstname']?.toString() ?? '';
+        final lastname = customer['lastname']?.toString() ?? '';
+        customerName = '$firstname $lastname'.trim();
+        customerEmail = customer['email']?.toString() ?? '';
+        print('👤 Customer: $customerName ($customerEmail)');
       }
 
-      // Get cart rows (products in the cart)
-      List<dynamic> cartRows = [];
-      if (cartData['associations'] != null &&
-          cartData['associations']['cart_rows'] != null) {
-        cartRows = cartData['associations']['cart_rows'] as List;
-      }
+      // Get cart items with calculated prices
+      final cartItems = cartData['items'] as List? ?? [];
+      print('📦 Cart has ${cartItems.length} products');
 
-      print('📦 Cart has ${cartRows.length} products');
-
-      // Fetch product details for each cart row
+      // Convert items to our format
       List<Map<String, dynamic>> items = [];
-      final productController = ProductControllerStore();
 
-      for (var row in cartRows) {
-        final productId = row['id_product']?.toString() ?? '';
-        final quantity = int.tryParse(row['quantity']?.toString() ?? '1') ?? 1;
+      for (var item in cartItems) {
+        final productId = item['id_product']?.toString() ?? '';
+        final quantity = item['quantity'] ?? 1;
 
-        if (productId.isEmpty || quantity <= 0) continue;
+        // Use CALCULATED price from the module (unit_price_tax_incl)
+        // This price already includes all discounts from PrestaShop
+        final calculatedPrice = item['unit_price_tax_incl'] ?? 0.0;
+        final originalPrice = item['original_price_tax_incl'] ?? calculatedPrice;
+        final reductionPercent = item['reduction_percent'] ?? 0.0;
 
-        // Fetch product details from PrestaShop
-        final productUrl = AppConfig.prestashopUrl('products/$productId', params: {'display': 'full'});
-        try {
-          final productResponse = await http.get(Uri.parse(productUrl));
+        final productName = item['name']?.toString() ?? 'Product';
+        final reference = item['reference']?.toString() ?? '';
+        final manufacturer = item['manufacturer_name']?.toString() ?? '';
 
-          if (productResponse.statusCode == 200) {
-            // Use utf8.decode for proper Arabic/special character support
-            final productData = jsonDecode(utf8.decode(productResponse.bodyBytes));
-            Map<String, dynamic>? product;
-
-            if (productData['product'] != null) {
-              product = productData['product'] as Map<String, dynamic>;
-            } else if (productData['products'] != null && (productData['products'] as List).isNotEmpty) {
-              product = (productData['products'] as List).first as Map<String, dynamic>;
-            }
-
-            if (product != null) {
-              // Extract product name (handle language structure)
-              String productName = 'Product';
-              if (product['name'] is Map) {
-                productName = product['name']['language']?['value']?.toString() ??
-                              product['name'].toString();
-              } else if (product['name'] is List && (product['name'] as List).isNotEmpty) {
-                productName = (product['name'] as List).first['value']?.toString() ?? 'Product';
-              } else {
-                productName = product['name']?.toString() ?? 'Product';
-              }
-
-              // Get price
-              final price = double.tryParse(product['price']?.toString() ?? '0') ?? 0;
-
-              // Get product image
-              String imageUrl = '';
-              if (product['id_default_image'] != null) {
-                final imageId = product['id_default_image'].toString();
-                imageUrl = 'https://www.alkirtas.com/$imageId-large_default/${product['link_rewrite'] ?? 'product'}.jpg';
-                // Alternative: use direct image API
-                imageUrl = 'https://www.alkirtas.com/api/images/products/$productId/$imageId?ws_key=${AppConfig.prestashopApiKey}';
-              }
-
-              items.add({
-                'productId': productId,
-                'productName': productName,
-                'productReference': product['reference']?.toString() ?? '',
-                'productPrice': price.toString(),
-                'productQuantity': quantity.toString(),
-                'productImage': imageUrl,
-                'productBrand': product['manufacturer_name']?.toString() ?? '',
-                'productDiscount': '0',
-              });
-
-              print('  ✅ Product $productId: $productName x$quantity @ $price');
-            }
+        // Build image URL
+        String imageUrl = '';
+        if (item['image_url'] != null && item['image_url'].toString().isNotEmpty) {
+          imageUrl = item['image_url'].toString();
+          // Ensure URL is properly formatted
+          if (!imageUrl.startsWith('http')) {
+            imageUrl = 'https://$imageUrl';
           }
-        } catch (e) {
-          print('  ❌ Error fetching product $productId: $e');
         }
+
+        items.add({
+          'productId': productId,
+          'productName': productName,
+          'productReference': reference,
+          'productPrice': calculatedPrice.toString(),  // CALCULATED price with discounts
+          'productOriginalPrice': originalPrice.toString(),  // Original price before discount
+          'productDiscount': reductionPercent.toString(),  // Discount percentage
+          'productQuantity': quantity.toString(),
+          'productImage': imageUrl,
+          'productBrand': manufacturer,
+        });
+
+        print('  ✅ Product $productId: $productName x$quantity @ $calculatedPrice (original: $originalPrice, discount: $reductionPercent%)');
       }
 
-      // Calculate total
-      double total = 0;
-      for (var item in items) {
-        final price = double.tryParse(item['productPrice'] ?? '0') ?? 0;
-        final qty = int.tryParse(item['productQuantity'] ?? '1') ?? 1;
-        total += price * qty;
-      }
+      // Use totals from the module response
+      final totals = cartData['totals'] as Map<String, dynamic>?;
+      final total = totals?['products_tax_incl'] ?? 0.0;
 
       return {
         'cartId': cleanCartId,
         'items': items,
-        'totalAmount': total,
+        'totalAmount': (total is num) ? total.toDouble() : double.tryParse(total.toString()) ?? 0.0,
         'itemCount': items.fold<int>(0, (sum, item) => sum + (int.tryParse(item['productQuantity'] ?? '1') ?? 1)),
         'customerName': customerName,
         'customerEmail': customerEmail,
