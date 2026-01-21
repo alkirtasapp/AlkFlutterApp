@@ -1,13 +1,9 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart' as xml;
 import '../models/saved_cart_model.dart';
-import 'product_controller_store.dart';
 import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:alkirtas/config/app_config.dart';
@@ -17,51 +13,18 @@ class CartProvider with ChangeNotifier {
   static const String _cartBoxName = 'cartBox';
   static const String _cartKey = 'cartItems';
   static const String _savedCartsBoxName = 'savedCartsBox';
+  static const String _activeCartIdKey = 'activeCartId';  // Key to store active prestashop cart id
   Box? _cartBox;
   Box<SavedCart>? _savedCartsBox;
-
-  // Background sync state
-  Timer? _syncTimer;
-  String? _syncSessionId;
-  String? _syncOdooBaseUrl;
-  String? _syncQrData;
-  bool _isSyncing = false;
-  bool _syncComplete = false;
-  String _syncStatus = '';
-  Function(bool success, String message)? _onSyncComplete;
 
   // Global key for showing snackbars from anywhere
   static GlobalKey<ScaffoldMessengerState>? scaffoldMessengerKey;
 
+  // Active PrestaShop cart ID (session_id) - used to match against paid orders
+  String? _activeCartId;
+  String? get activeCartId => _activeCartId;
+
   List<Map<String, String>> get cartItems => _cartItems;
-  bool get isSyncing => _isSyncing;
-  bool get syncComplete => _syncComplete;
-  String get syncStatus => _syncStatus;
-  String? get activeSyncSessionId => _syncSessionId;
-
-  /// Safe notify listeners - avoids calling during build
-  void _safeNotifyListeners() {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      notifyListeners();
-    });
-  }
-
-  /// Show global notification when sync completes (works even if dialog is closed)
-  void _showSyncCompleteNotification() {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      Get.snackbar(
-        'Synchronisation Réussie',
-        'Votre panier a été synchronisé avec succès!',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green[600],
-        colorText: Colors.white,
-        icon: const Icon(Icons.check_circle, color: Colors.white),
-        duration: const Duration(seconds: 4),
-        margin: const EdgeInsets.all(12),
-        borderRadius: 12,
-      );
-    });
-  }
 
   /// Initialize the cart provider and load saved cart data
   Future<void> initialize() async {
@@ -69,9 +32,40 @@ class CartProvider with ChangeNotifier {
       _cartBox = await Hive.openBox(_cartBoxName);
       _savedCartsBox = await Hive.openBox<SavedCart>(_savedCartsBoxName);
       await _loadCartFromStorage();
-      print('✅ Cart initialized with ${_cartItems.length} items');
+      await _loadActiveCartId();
+      print('✅ Cart initialized with ${_cartItems.length} items, activeCartId: $_activeCartId');
     } catch (e) {
       print('❌ Error initializing cart: $e');
+    }
+  }
+
+  /// Load the active cart ID from storage
+  Future<void> _loadActiveCartId() async {
+    try {
+      if (_cartBox != null && _cartBox!.containsKey(_activeCartIdKey)) {
+        _activeCartId = _cartBox!.get(_activeCartIdKey);
+        print('📦 Loaded active cart ID: $_activeCartId');
+      }
+    } catch (e) {
+      print('❌ Error loading active cart ID: $e');
+    }
+  }
+
+  /// Save the active cart ID (PrestaShop cart ID used as session_id)
+  Future<void> setActiveCartId(String? cartId) async {
+    try {
+      _activeCartId = cartId;
+      if (_cartBox != null) {
+        if (cartId != null) {
+          await _cartBox!.put(_activeCartIdKey, cartId);
+          print('💾 Active cart ID saved: $cartId');
+        } else {
+          await _cartBox!.delete(_activeCartIdKey);
+          print('🗑️ Active cart ID cleared');
+        }
+      }
+    } catch (e) {
+      print('❌ Error saving active cart ID: $e');
     }
   }
 
@@ -169,6 +163,7 @@ class CartProvider with ChangeNotifier {
   Future<void> clearCart() async {
     _cartItems.clear(); // Clear the cart items
     await _saveCartToStorage(); // Save to storage after clearing
+    await setActiveCartId(null); // Clear the active cart ID
     notifyListeners(); // Notify widgets to rebuild
   }
 
@@ -310,283 +305,13 @@ class CartProvider with ChangeNotifier {
   }
 
   /// Find existing PrestaShop cart ID for current cart items
-  /// This enables reusing the same cart_id when rescanning a cart
-  /// to maintain traceability in Odoo
+  /// DISABLED: Always create fresh carts. Reusing cart IDs from paid carts
+  /// causes issues because Odoo finds the old paid cart and returns it as "verified"
+  /// immediately, skipping the actual payment flow.
   String? findExistingPrestashopCartId() {
-    try {
-      if (_savedCartsBox == null || _cartItems.isEmpty) {
-        return null;
-      }
-
-      // Get current cart product references for comparison
-      final currentRefs = _cartItems
-          .map((item) => item['productReference'] ?? '')
-          .where((ref) => ref.isNotEmpty)
-          .toSet();
-
-      if (currentRefs.isEmpty) {
-        return null;
-      }
-
-      // Search through saved carts for a matching one
-      final savedCarts = _savedCartsBox!.values.toList();
-
-      for (var savedCart in savedCarts) {
-        if (savedCart.prestashopCartId == null) continue;
-
-        // Get saved cart product references
-        final savedRefs = savedCart.items
-            .map((item) => item['productReference']?.toString() ?? '')
-            .where((ref) => ref.isNotEmpty)
-            .toSet();
-
-        // Check if the cart items match (same products)
-        if (currentRefs.length == savedRefs.length &&
-            currentRefs.containsAll(savedRefs)) {
-          print('🔗 Found existing PrestaShop cart ID: ${savedCart.prestashopCartId}');
-          return savedCart.prestashopCartId;
-        }
-      }
-
-      return null;
-    } catch (e) {
-      print('❌ Error finding existing PrestaShop cart ID: $e');
-      return null;
-    }
-  }
-
-  // ==================== BACKGROUND SYNC METHODS ====================
-
-  /// Start background polling for cart sync
-  /// This will continue even if QR dialog is closed
-  void startBackgroundSync({
-    required String sessionId,
-    required String odooBaseUrl,
-    required String qrData,
-    Function(bool success, String message)? onComplete,
-  }) {
-    // Stop any existing sync
-    stopBackgroundSync();
-
-    _syncSessionId = sessionId;
-    _syncOdooBaseUrl = odooBaseUrl;
-    _syncQrData = qrData;
-    _syncComplete = false;
-    _isSyncing = true;
-    _syncStatus = 'En attente de vérification...';
-    _onSyncComplete = onComplete;
-
-    print('🔄 Starting background sync for session: $sessionId');
-
-    // Start polling every 3 seconds
-    _syncTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      _pollForVerifiedCart();
-    });
-
-    _safeNotifyListeners();
-  }
-
-  /// Stop background polling
-  void stopBackgroundSync() {
-    _syncTimer?.cancel();
-    _syncTimer = null;
-    _syncSessionId = null;
-    _isSyncing = false;
-    print('🛑 Background sync stopped');
-    _safeNotifyListeners();
-  }
-
-  /// Poll for verified cart data
-  Future<void> _pollForVerifiedCart() async {
-    if (_syncSessionId == null || _syncOdooBaseUrl == null || _syncComplete) {
-      return;
-    }
-
-    try {
-      // Use simplified route that works better with external IPs
-      final url = '$_syncOdooBaseUrl/pos/mobile/sync/$_syncSessionId?db=alkirtas_backup';
-      print('📡 Background polling: $url');
-
-      // Create HTTP client with explicit connection timeout
-      final client = http.Client();
-      try {
-        final request = http.Request('GET', Uri.parse(url));
-        request.headers['Accept'] = 'application/json';
-        request.headers['Connection'] = 'keep-alive';
-
-        final streamedResponse = await client.send(request).timeout(
-          const Duration(seconds: 10),
-        );
-        final response = await http.Response.fromStream(streamedResponse);
-
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}...');
-
-      if (response.statusCode == 200) {
-        // Cart verified! Parse and update
-        final verifiedData = jsonDecode(response.body);
-        print('✅ Background sync: Cart verified! Data: $verifiedData');
-
-        // Stop polling
-        _syncTimer?.cancel();
-        _syncTimer = null;
-
-        // Update cart from verified data (temporarily to get correct data for history)
-        await _updateCartFromVerifiedData(verifiedData);
-
-        // Auto-save to history with PrestaShop cart ID for traceability
-        if (_syncQrData != null && _syncSessionId != null) {
-          await saveCartToHistory(_syncQrData!, prestashopCartId: _syncSessionId);
-          print('💾 Cart auto-saved to history with prestashopCartId: $_syncSessionId');
-        }
-
-        // Clear the current cart after successful sync
-        await clearCart();
-        print('🧹 Cart cleared after successful sync');
-
-        _syncComplete = true;
-        _isSyncing = false;
-        _syncStatus = '✓ Panier synchronisé!';
-
-        // Notify callback
-        _onSyncComplete?.call(true, 'Panier synchronisé avec succès!');
-
-        // Show global notification (works even if dialog is closed)
-        _showSyncCompleteNotification();
-
-        _safeNotifyListeners();
-
-      } else if (response.statusCode == 404) {
-        // Not ready yet, keep polling
-        print('⏳ Background sync: Not ready yet...');
-        _syncStatus = 'En attente du paiement...';
-        _safeNotifyListeners();
-      } else {
-        print('⚠️ Unexpected status: ${response.statusCode}');
-        print('   Body: ${response.body}');
-      }
-      } finally {
-        client.close();
-      }
-    } catch (e) {
-      print('⚠️ Background sync error: $e');
-      _syncStatus = 'Erreur: ${e.toString().split(':').last.trim()}';
-      _safeNotifyListeners();
-      // Continue polling on error
-    }
-  }
-
-  /// Update cart from verified data (background sync version)
-  Future<void> _updateCartFromVerifiedData(Map<String, dynamic> verifiedData) async {
-    try {
-      final cartItems = verifiedData['cartItems'] as List?;
-
-      if (cartItems == null || cartItems.isEmpty) {
-        print('❌ No cart items in verified data');
-        return;
-      }
-
-      print('📦 Updating cart with ${cartItems.length} verified items');
-
-      // Save original items for reference
-      final originalItems = List<Map<String, String>>.from(_cartItems);
-
-      // Clear current cart
-      _cartItems.clear();
-
-      // PrestaShop controller for fetching new products
-      final productController = ProductControllerStore();
-
-      // Add verified items
-      for (var item in cartItems) {
-        final productRef = (item['productReference'] ?? '').toString();
-        final verifiedQty = int.tryParse(item['productQuantity']?.toString() ?? '1') ?? 1;
-        final price = (item['productPrice'] ?? '0').toString();
-        final productName = item['productName']?.toString() ?? 'Product';
-
-        if (verifiedQty <= 0) continue;
-
-        // Find original item to get full product data
-        final originalItem = originalItems.firstWhere(
-          (cartItem) => cartItem['productReference'] == productRef,
-          orElse: () => {},
-        );
-
-        if (originalItem.isNotEmpty) {
-          // Use original data with updated quantity and price
-          _cartItems.add({
-            ...originalItem,
-            'productPrice': price,
-            'productQuantity': verifiedQty.toString(),
-          });
-        } else {
-          // New product from Odoo - fetch full details from PrestaShop
-          print('🔍 Fetching new product from PrestaShop: $productRef');
-
-          Map<String, dynamic>? prestashopProduct;
-          if (productRef.isNotEmpty) {
-            prestashopProduct = await productController.searchProductByReference(productRef);
-          }
-
-          if (prestashopProduct != null) {
-            // Use PrestaShop data for full product details
-            final name = prestashopProduct['name'];
-            final productNameStr = name is Map ? (name['language']?['value'] ?? name.toString()) : (name?.toString() ?? productName);
-
-            final description = prestashopProduct['description_short'];
-            final descriptionStr = description is Map ? (description['language']?['value'] ?? '') : (description?.toString() ?? '');
-
-            final imageUrls = prestashopProduct['image_urls'] as List? ?? [];
-
-            _cartItems.add({
-              'productId': prestashopProduct['id']?.toString() ?? productRef,
-              'productName': productNameStr,
-              'productPrice': price, // Use Odoo price
-              'productQuantity': verifiedQty.toString(),
-              'productReference': productRef,
-              'productBrand': prestashopProduct['brand']?.toString() ?? '',
-              'productDiscount': prestashopProduct['discount']?.toString() ?? '',
-              'productOldPrice': prestashopProduct['price']?.toString() ?? '',
-              'productNewPrice': prestashopProduct['ttc_price']?.toString() ?? '',
-              'productImage': imageUrls.isNotEmpty ? imageUrls[0] : '',
-              'productStock': prestashopProduct['quantity']?.toString() ?? '',
-              'productDescription': descriptionStr,
-              'productBrandId': prestashopProduct['id_manufacturer']?.toString() ?? '',
-              'productImageList': imageUrls.join(','),
-              'productFeatures': '',
-            });
-            print('✅ Added product from PrestaShop: $productNameStr');
-          } else {
-            // Fallback: use basic Odoo data
-            print('⚠️ Product not found in PrestaShop, using Odoo data: $productRef');
-            _cartItems.add({
-              'productId': item['productId']?.toString() ?? productRef,
-              'productName': productName,
-              'productPrice': price,
-              'productQuantity': verifiedQty.toString(),
-              'productReference': productRef,
-              'productBrand': '',
-              'productDiscount': '',
-              'productOldPrice': '',
-              'productNewPrice': '',
-              'productImage': '',
-              'productStock': '',
-              'productDescription': '',
-              'productBrandId': '',
-              'productImageList': '',
-              'productFeatures': '',
-            });
-          }
-        }
-      }
-
-      await _saveCartToStorage();
-      print('✅ Cart updated with ${_cartItems.length} items');
-      _safeNotifyListeners();
-
-    } catch (e) {
-      print('❌ Error updating cart from verified data: $e');
-    }
+    // Always return null to force creation of a new PrestaShop cart
+    // Each QR generation should create a fresh cart
+    return null;
   }
 
   // ==================== PRESTASHOP CART CREATION ====================
@@ -709,6 +434,156 @@ class CartProvider with ChangeNotifier {
     }
   }
 
+  // ==================== FETCH CUSTOMER POS ORDERS ====================
+
+  /// Fetch all POS orders for the current customer from PrestaShop
+  /// Uses the custom mobile_cart_api/orders endpoint for order history
+  Future<List<Map<String, dynamic>>> fetchCustomerCarts() async {
+    try {
+      // Check if user is logged in
+      if (UserData.id.isEmpty) {
+        print('⚠️ Cannot fetch orders: User not logged in');
+        return [];
+      }
+
+      print('🔍 Fetching POS orders for customer ${UserData.id}...');
+
+      final url = 'https://www.alkirtas.com/module/mobile_cart_api/orders?customer_id=${UserData.id}&ws_key=${AppConfig.prestashopApiKey}';
+      print('📡 URL: $url');
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode != 200) {
+        print('❌ Failed to fetch orders: ${response.statusCode}');
+        return [];
+      }
+
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+
+      if (data['success'] != true) {
+        print('❌ API error: ${data['error']?['message'] ?? 'Unknown error'}');
+        return [];
+      }
+
+      final ordersData = data['data']?['orders'] as List? ?? [];
+      print('✅ Found ${ordersData.length} POS orders');
+
+      List<Map<String, dynamic>> orders = [];
+      for (var order in ordersData) {
+        // Parse items from the order
+        final items = (order['items'] as List? ?? []).map((item) {
+          return {
+            'productId': item['product_id']?.toString() ?? '',
+            'productName': item['product_name']?.toString() ?? '',
+            'productReference': item['product_reference']?.toString() ?? '',
+            'productPrice': (item['unit_price'] is num)
+                ? (item['unit_price'] as num).toDouble()
+                : double.tryParse(item['unit_price']?.toString() ?? '0') ?? 0.0,
+            'productQuantity': item['quantity']?.toString() ?? '1',
+            'productImage': item['product_image']?.toString() ?? '',
+            'productBrand': '', // Not stored in POS orders
+            'subtotal': (item['subtotal'] is num)
+                ? (item['subtotal'] as num).toDouble()
+                : double.tryParse(item['subtotal']?.toString() ?? '0') ?? 0.0,
+            'discountPercent': (item['discount_percent'] is num)
+                ? (item['discount_percent'] as num).toDouble()
+                : double.tryParse(item['discount_percent']?.toString() ?? '0') ?? 0.0,
+            'isAddedByCashier': item['is_added_by_cashier'] ?? false,
+            'quantityChanged': item['quantity_changed'] ?? false,
+          };
+        }).toList();
+
+        orders.add({
+          'orderId': order['order_id']?.toString() ?? '',
+          'cartId': order['cart_id']?.toString() ?? '',
+          'sessionId': order['session_id']?.toString() ?? '',  // For matching with active cart
+          'posOrderName': order['pos_order_name']?.toString() ?? '',
+          'customerName': order['customer_name']?.toString() ?? '',
+          'posTotal': (order['total_amount'] is num)
+              ? (order['total_amount'] as num).toDouble()
+              : double.tryParse(order['total_amount']?.toString() ?? '0') ?? 0.0,
+          'paidAt': order['paid_at']?.toString() ?? '',
+          'dateAdd': order['date_add']?.toString() ?? '',
+          'itemCount': order['item_count'] ?? 0,
+          'hasModifications': order['has_modifications'] ?? false,
+          'items': items, // Items are included in the response
+        });
+      }
+
+      return orders;
+    } catch (e) {
+      print('❌ Error fetching customer orders: $e');
+      return [];
+    }
+  }
+
+  /// Fetch a specific order's details by order ID (if needed)
+  Future<Map<String, dynamic>?> fetchOrderDetails(String orderId) async {
+    try {
+      print('🔍 Fetching order details for order $orderId...');
+
+      final url = 'https://www.alkirtas.com/module/mobile_cart_api/orders?order_id=$orderId&ws_key=${AppConfig.prestashopApiKey}';
+      print('📡 URL: $url');
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode != 200) {
+        print('❌ Failed to fetch order: ${response.statusCode}');
+        return null;
+      }
+
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+
+      if (data['success'] != true) {
+        print('❌ API error: ${data['error']?['message'] ?? 'Unknown error'}');
+        return null;
+      }
+
+      final order = data['order'] as Map<String, dynamic>?;
+      if (order == null) {
+        print('❌ No order data found');
+        return null;
+      }
+
+      print('✅ Order fetched: ${order['pos_order_name']}');
+
+      // Parse items
+      final items = (order['items'] as List? ?? []).map((item) {
+        return {
+          'productId': item['product_id']?.toString() ?? '',
+          'productName': item['product_name']?.toString() ?? '',
+          'productReference': item['product_reference']?.toString() ?? '',
+          'productPrice': (item['unit_price'] is num)
+              ? (item['unit_price'] as num).toDouble()
+              : double.tryParse(item['unit_price']?.toString() ?? '0') ?? 0.0,
+          'productQuantity': item['quantity']?.toString() ?? '1',
+          'productImage': item['product_image']?.toString() ?? '',
+          'subtotal': (item['subtotal'] is num)
+              ? (item['subtotal'] as num).toDouble()
+              : double.tryParse(item['subtotal']?.toString() ?? '0') ?? 0.0,
+        };
+      }).toList();
+
+      return {
+        'orderId': order['order_id']?.toString() ?? '',
+        'cartId': order['cart_id']?.toString() ?? '',
+        'posOrderName': order['pos_order_name']?.toString() ?? '',
+        'customerName': order['customer_name']?.toString() ?? '',
+        'customerEmail': order['customer_email']?.toString() ?? '',
+        'posTotal': (order['total_amount'] is num)
+            ? (order['total_amount'] as num).toDouble()
+            : double.tryParse(order['total_amount']?.toString() ?? '0') ?? 0.0,
+        'paidAt': order['paid_at']?.toString() ?? '',
+        'itemCount': order['item_count'] ?? 0,
+        'hasModifications': order['has_modifications'] ?? false,
+        'items': items,
+      };
+    } catch (e) {
+      print('❌ Error fetching order details: $e');
+      return null;
+    }
+  }
+
   // ==================== PRESTASHOP CART CREATION ====================
 
   /// Create a cart on PrestaShop after successful sync
@@ -793,6 +668,46 @@ class CartProvider with ChangeNotifier {
     } catch (e) {
       print('❌ Error creating PrestaShop cart: $e');
       return null;
+    }
+  }
+
+  /// Delete a cart from PrestaShop
+  /// Called after payment is confirmed to clean up the cart
+  Future<bool> deletePrestaShopCart(String cartId) async {
+    try {
+      if (cartId.isEmpty) {
+        print('⚠️ Cannot delete PrestaShop cart: Cart ID is empty');
+        return false;
+      }
+
+      print('🗑️ Deleting PrestaShop cart ID: $cartId...');
+
+      final String url = 'https://www.alkirtas.com/api/carts/$cartId?ws_key=${AppConfig.prestashopApiKey}';
+
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/xml',
+        },
+      );
+
+      print('📡 PrestaShop delete response: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('✅ PrestaShop cart $cartId deleted successfully!');
+        return true;
+      } else if (response.statusCode == 404) {
+        // Cart doesn't exist - that's fine, might have been already deleted
+        print('ℹ️ PrestaShop cart $cartId not found (already deleted or does not exist)');
+        return true;
+      } else {
+        print('❌ Failed to delete PrestaShop cart: ${response.statusCode}');
+        print('   Response: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Error deleting PrestaShop cart: $e');
+      return false;
     }
   }
 }

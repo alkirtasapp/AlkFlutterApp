@@ -146,20 +146,9 @@ class _CartScreenState extends State<CartScreen> {
         // IMPORTANT: Change this for production!
         // Local testing: Use your computer's local IP (e.g., 'http://192.168.1.100:8069')
         // Production: Use 'https://www.odoo.alkirtas.com'
-        odooBaseUrl: 'http://192.168.1.132:8069', // Physical device on local Wi-Fi network
+       // odooBaseUrl: 'http://192.168.1.132:8069', // Physical device on local Wi-Fi network
       ),
-    ).then((success) {
-      if (success == true) {
-        // Cart was synced successfully
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✓ Panier synchronisé avec succès!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    });
+    );
   }
 
   // Old dialog method (keep for fullscreen QR or as backup)

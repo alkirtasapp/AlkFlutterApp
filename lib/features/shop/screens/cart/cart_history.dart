@@ -1,10 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../common/widgets/appbar/appbar.dart';
 import '../../../../utils/constants/size.dart';
 import '../../controllers/cart_provider.dart';
-import '../../models/saved_cart_model.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
 
 class CartHistoryScreen extends StatefulWidget {
   const CartHistoryScreen({super.key});
@@ -14,10 +15,93 @@ class CartHistoryScreen extends StatefulWidget {
 }
 
 class _CartHistoryScreenState extends State<CartHistoryScreen> {
+  List<Map<String, dynamic>> _paidCarts = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPaidCarts();
+  }
+
+  Future<void> _loadPaidCarts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      final carts = await cartProvider.fetchCustomerCarts();
+
+      // Check if any paid order matches the active cart's session ID
+      // If so, the payment was completed and we should clear the cart
+      final activeCartId = cartProvider.activeCartId;
+      print('🔍 Active cart ID from provider: $activeCartId');
+
+      if (activeCartId != null && activeCartId.isNotEmpty) {
+        // Debug: print all session IDs from orders
+        for (var order in carts) {
+          print('   Order ${order['posOrderName']}: sessionId=${order['sessionId']}, cartId=${order['cartId']}');
+        }
+
+        // Try to match with session_id (might have prestashop_ prefix)
+        // or with cartId (raw cart ID)
+        final matchingOrder = carts.firstWhere(
+          (order) {
+            final orderSessionId = order['sessionId']?.toString() ?? '';
+            final orderCartId = order['cartId']?.toString() ?? '';
+
+            // Match against activeCartId directly, or with prestashop_ prefix
+            return orderSessionId == activeCartId ||
+                   orderSessionId == 'prestashop_$activeCartId' ||
+                   orderCartId == activeCartId;
+          },
+          orElse: () => {},
+        );
+
+        if (matchingOrder.isNotEmpty) {
+          // Found a paid order matching the active cart - clear the cart!
+          print('✅ Found paid order matching active cart ID: $activeCartId');
+          print('   Order: ${matchingOrder['posOrderName']}');
+
+          // Delete the PrestaShop cart first
+          await cartProvider.deletePrestaShopCart(activeCartId);
+
+          // Then clear the local cart
+          await cartProvider.clearCart();
+          print('🧹 Cart cleared - payment confirmed via History');
+        } else {
+          print('⚠️ No matching order found for activeCartId: $activeCartId');
+        }
+      }
+
+      setState(() {
+        _paidCarts = carts;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Parse date string from PrestaShop
+  DateTime? _parseDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      return null;
+    }
+  }
 
   // Format date
-  String formatDate(DateTime date) {
-    // Use simple formatting without locale to avoid initialization issues
+  String formatDate(DateTime? date) {
+    if (date == null) return 'Date inconnue';
     final day = date.day.toString().padLeft(2, '0');
     final month = _getMonthName(date.month);
     final year = date.year;
@@ -36,10 +120,20 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
     return months[month - 1];
   }
 
-  // Show QR code dialog for a saved cart
-  void showSavedCartQR(BuildContext context, SavedCart savedCart) {
+  // Generate QR data for a cart
+  String _generateQrData(Map<String, dynamic> cart) {
+    return jsonEncode({
+      'cart_id': cart['cartId'],
+      'customer_id': UserData.id,
+    });
+  }
+
+  // Show QR code dialog for a paid cart
+  void _showCartQR(BuildContext context, Map<String, dynamic> cart) {
     final screenWidth = MediaQuery.of(context).size.width;
     final qrSize = (screenWidth * 0.5).clamp(200.0, 350.0);
+    final qrData = _generateQrData(cart);
+    final paidAt = _parseDate(cart['paidAt']);
 
     showDialog(
       context: context,
@@ -63,9 +157,18 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                           color: Colors.purple[700],
                         ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  if (cart['posOrderName'] != null && cart['posOrderName'].toString().isNotEmpty)
+                    Text(
+                      cart['posOrderName'].toString(),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  const SizedBox(height: 8),
                   Text(
-                    formatDate(savedCart.savedDate),
+                    formatDate(paidAt),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -84,7 +187,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                       ),
                     ),
                     child: QrImageView(
-                      data: savedCart.qrData,
+                      data: qrData,
                       version: QrVersions.auto,
                       size: qrSize,
                       backgroundColor: Colors.white,
@@ -108,7 +211,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                         Column(
                           children: [
                             Text(
-                              '${savedCart.itemCount}',
+                              '${cart['itemCount'] ?? 0}',
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.purple[700],
@@ -130,7 +233,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                         Column(
                           children: [
                             Text(
-                              '${savedCart.totalAmount.toStringAsFixed(3)} TND',
+                              '${(cart['posTotal'] as double).toStringAsFixed(3)} TND',
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.purple[700],
@@ -180,9 +283,13 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
     );
   }
 
-  // Show cart details - fetches from PrestaShop to get the latest modified cart
-  void showCartDetails(BuildContext context, SavedCart savedCart) {
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+  // Show order details - items are already included in the order data
+  void _showCartDetails(BuildContext context, Map<String, dynamic> order) {
+    // Items are now included directly in the order response from /orders endpoint
+    final items = (order['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final total = order['posTotal'] as double? ?? 0.0;
+    final paidAt = _parseDate(order['paidAt']);
+    final hasModifications = order['hasModifications'] as bool? ?? false;
 
     showModalBottomSheet(
       context: context,
@@ -196,86 +303,17 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
         minChildSize: 0.5,
         expand: false,
         builder: (context, scrollController) {
-          // Check if we have a PrestaShop cart ID - if so, fetch fresh data
-          if (savedCart.prestashopCartId != null && savedCart.prestashopCartId!.isNotEmpty) {
-            return FutureBuilder<Map<String, dynamic>?>(
-              future: cartProvider.fetchPrestaShopCart(savedCart.prestashopCartId!),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return _buildLoadingState(context);
-                }
-
-                if (snapshot.hasError || snapshot.data == null) {
-                  // Fallback to local data if PrestaShop fetch fails
-                  print('⚠️ Using local data - PrestaShop fetch failed: ${snapshot.error}');
-                  return _buildCartDetailsContent(
-                    context,
-                    scrollController,
-                    savedCart.items,
-                    savedCart.totalAmount,
-                    savedCart.savedDate,
-                    isFromPrestaShop: false,
-                  );
-                }
-
-                // Use fresh data from PrestaShop
-                final prestashopData = snapshot.data!;
-                final items = (prestashopData['items'] as List<Map<String, dynamic>>)
-                    .map((item) => item.map((k, v) => MapEntry(k, v)))
-                    .toList();
-                final total = prestashopData['totalAmount'] as double;
-                final customerName = prestashopData['customerName'] as String? ?? '';
-                final customerEmail = prestashopData['customerEmail'] as String? ?? '';
-
-                return _buildCartDetailsContent(
-                  context,
-                  scrollController,
-                  items.cast<Map<String, dynamic>>(),
-                  total,
-                  savedCart.savedDate,
-                  isFromPrestaShop: true,
-                  customerName: customerName,
-                  customerEmail: customerEmail,
-                );
-              },
-            );
-          } else {
-            // No PrestaShop cart ID - use local data
-            return _buildCartDetailsContent(
-              context,
-              scrollController,
-              savedCart.items,
-              savedCart.totalAmount,
-              savedCart.savedDate,
-              isFromPrestaShop: false,
-            );
-          }
+          return _buildCartDetailsContent(
+            context,
+            scrollController,
+            items,
+            total,
+            paidAt,
+            posOrderName: order['posOrderName']?.toString() ?? '',
+            hasModifications: hasModifications,
+          );
         },
       ),
-    );
-  }
-
-  // Loading state while fetching from PrestaShop
-  Widget _buildLoadingState(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const CircularProgressIndicator(color: Colors.purple),
-        const SizedBox(height: 16),
-        Text(
-          'Chargement du panier...',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[600],
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Récupération des données depuis PrestaShop',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
-              ),
-        ),
-      ],
     );
   }
 
@@ -285,10 +323,9 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
     ScrollController scrollController,
     List<Map<String, dynamic>> items,
     double totalAmount,
-    DateTime savedDate, {
-    bool isFromPrestaShop = false,
-    String customerName = '',
-    String customerEmail = '',
+    DateTime? paidAt, {
+    String posOrderName = '',
+    bool hasModifications = false,
   }) {
     return Column(
       children: [
@@ -323,24 +360,47 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                                 ),
                           ),
                         ),
-                        if (isFromPrestaShop) ...[
-                          const SizedBox(width: 8),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle, size: 12, color: Colors.green[700]),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Payé',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.green[700],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (hasModifications) ...[
+                          const SizedBox(width: 4),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.green[100],
+                              color: Colors.orange[100],
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.sync, size: 12, color: Colors.green[700]),
+                                Icon(Icons.edit, size: 12, color: Colors.orange[700]),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Synced',
+                                  'Modifié',
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: Colors.green[700],
+                                    color: Colors.orange[700],
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -350,44 +410,23 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                         ],
                       ],
                     ),
+                    if (posOrderName.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        posOrderName,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.green[700],
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Text(
-                      formatDate(savedDate),
+                      formatDate(paidAt),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.grey[600],
                           ),
                     ),
-                    // Customer info
-                    if (customerName.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.person, size: 16, color: Colors.purple[700]),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              customerName,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.purple[700],
-                                  ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (customerEmail.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 22),
-                          child: Text(
-                            customerEmail,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
                   ],
                 ),
               ),
@@ -426,95 +465,158 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                   itemBuilder: (context, index) {
                     final item = items[index];
                     final quantity = int.tryParse(item['productQuantity']?.toString() ?? '1') ?? 1;
-                    final price = double.tryParse(item['productPrice']?.toString() ?? '0') ?? 0;
-                    final discount = double.tryParse(item['productDiscount']?.toString() ?? '0') ?? 0;
-                    final total = (price - discount) * quantity;
+                    final unitPrice = item['productPrice'] as double? ?? 0.0;
+                    final subtotal = item['subtotal'] as double? ?? (unitPrice * quantity);
+                    final discountPercent = item['discountPercent'] as double? ?? 0.0;
+                    final isAddedByCashier = item['isAddedByCashier'] as bool? ?? false;
+                    final quantityChanged = item['quantityChanged'] as bool? ?? false;
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
-                        child: Row(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Product Image
-                            if (item['productImage'] != null && item['productImage'].toString().isNotEmpty)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  item['productImage'].toString(),
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    width: 60,
-                                    height: 60,
-                                    color: Colors.grey[200],
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Product Image
+                                if (item['productImage'] != null && item['productImage'].toString().isNotEmpty)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      item['productImage'].toString(),
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => Container(
+                                        width: 50,
+                                        height: 50,
+                                        color: Colors.grey[200],
+                                        child: Icon(Icons.shopping_bag, color: Colors.grey[400]),
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                     child: Icon(Icons.shopping_bag, color: Colors.grey[400]),
                                   ),
-                                ),
-                              )
-                            else
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(Icons.shopping_bag, color: Colors.grey[400]),
-                              ),
 
-                            const SizedBox(width: 12),
+                                const SizedBox(width: 12),
 
-                            // Product Details
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['productName']?.toString() ?? 'Produit',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (item['productBrand'] != null && item['productBrand'].toString().isNotEmpty)
-                                    Text(
-                                      item['productBrand'].toString(),
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            color: Colors.grey[600],
-                                          ),
-                                    ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Réf: ${item['productReference'] ?? 'N/A'}',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: Colors.grey[500],
-                                        ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                // Product Details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Qté: $quantity',
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.w600,
+                                        item['productName']?.toString() ?? 'Produit',
+                                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      // Price per unit
+                                      Text(
+                                        '${unitPrice.toStringAsFixed(3)} TND / unité',
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Colors.grey[600],
                                             ),
                                       ),
-                                      Text(
-                                        '${total.toStringAsFixed(3)} TND',
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      // Modification badges
+                                      if (isAddedByCashier || quantityChanged) ...[
+                                        const SizedBox(height: 4),
+                                        Wrap(
+                                          spacing: 4,
+                                          children: [
+                                            if (isAddedByCashier)
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue[50],
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  'Ajouté',
+                                                  style: TextStyle(
+                                                    fontSize: 9,
+                                                    color: Colors.blue[700],
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            if (quantityChanged)
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.orange[50],
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  'Qté modifiée',
+                                                  style: TextStyle(
+                                                    fontSize: 9,
+                                                    color: Colors.orange[700],
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+
+                                // Quantity and subtotal
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    // Quantity badge
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'x$quantity',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                               fontWeight: FontWeight.bold,
                                               color: Colors.purple[700],
                                             ),
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    // Subtotal
+                                    Text(
+                                      '${subtotal.toStringAsFixed(3)} TND',
+                                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green[700],
+                                          ),
+                                    ),
+                                    // Discount if any
+                                    if (discountPercent > 0)
+                                      Text(
+                                        '-${discountPercent.toStringAsFixed(0)}%',
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Colors.red[600],
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -563,192 +665,236 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
           'Historique des Paniers',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
+        actions: [
+          // Refresh button
+          IconButton(
+            onPressed: _loadPaidCarts,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Actualiser',
+          ),
+        ],
       ),
-      body: Consumer<CartProvider>(
-        builder: (context, cartProvider, child) {
-          final savedCarts = cartProvider.getSavedCarts();
+      body: _buildBody(),
+    );
+  }
 
-          if (savedCarts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.history,
-                    size: 80,
-                    color: Colors.grey[400],
+  Widget _buildBody() {
+    // Check if user is logged in
+    if (UserData.id.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person_off, size: 80, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Connectez-vous pour voir votre historique',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.grey[600],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Aucun panier sauvegardé',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.purple),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Erreur de chargement',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.grey[600],
                   ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 48),
-                    child: Text(
-                      'Appuyez sur l\'icône QR dans votre panier pour le sauvegarder',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[500],
-                          ),
-                      textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _loadPaidCarts,
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_paidCarts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.history, size: 80, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Aucun panier payé',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48),
+              child: Text(
+                'Vos paniers payés en magasin apparaîtront ici',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[500],
                     ),
-                  ),
-                ],
+                textAlign: TextAlign.center,
               ),
-            );
-          }
+            ),
+          ],
+        ),
+      );
+    }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(AlkSize.defaultSpace),
-            itemCount: savedCarts.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final savedCart = savedCarts[index];
+    return RefreshIndicator(
+      onRefresh: _loadPaidCarts,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(AlkSize.defaultSpace),
+        itemCount: _paidCarts.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final cart = _paidCarts[index];
+          final paidAt = _parseDate(cart['paidAt']);
+          final posTotal = cart['posTotal'] as double? ?? 0.0;
+          final posOrderName = cart['posOrderName']?.toString() ?? '';
+          final itemCount = cart['itemCount'] ?? 0;
+          final hasModifications = cart['hasModifications'] as bool? ?? false;
 
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: InkWell(
-                  onTap: () => showCartDetails(context, savedCart),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          return Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: InkWell(
+              onTap: () => _showCartDetails(context, cart),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // POS Order Name and Paid badge
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          formatDate(savedCart.savedDate),
-                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      if (savedCart.prestashopCartId != null && savedCart.prestashopCartId!.isNotEmpty) ...[
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green[100],
-                                            borderRadius: BorderRadius.circular(8),
+                                  if (posOrderName.isNotEmpty)
+                                    Text(
+                                      posOrderName,
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.check_circle, size: 12, color: Colors.green[700]),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Payé',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  color: Colors.green[700],
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
+                                    ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.check_circle, size: 12, color: Colors.green[700]),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Payé',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.green[700],
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ],
-                                    ],
+                                    ),
                                   ),
-                                  
+                                  if (hasModifications)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.edit, size: 12, color: Colors.orange[700]),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Modifié',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.orange[700],
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Action Buttons
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => showSavedCartQR(context, savedCart),
-                              icon: Icon(Icons.qr_code, color: Colors.purple[700], size: 28),
-                              tooltip: 'Afficher QR Code',
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  final navigator = Navigator.of(context);
-                                  final messenger = ScaffoldMessenger.of(context);
-
-                                  await cartProvider.loadSavedCart(savedCart);
-                                  messenger.showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Panier chargé'),
-                                      backgroundColor: Colors.green,
-                                      duration: Duration(seconds: 2),
+                              const SizedBox(height: 4),
+                              // Date
+                              Text(
+                                formatDate(paidAt),
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Colors.grey[600],
                                     ),
-                                  );
-                                  navigator.pop();
-                                },
-                                icon: const Icon(Icons.shopping_cart, size: 20),
-                                label: const Text('Charger'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green[600],
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Supprimer'),
-                                    content: const Text('Voulez-vous supprimer ce panier ?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text('Annuler'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          cartProvider.deleteSavedCart(savedCart.id);
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          'Supprimer',
-                                          style: TextStyle(color: Colors.red[700]),
+                              const SizedBox(height: 8),
+                              // Items and Total
+                              Row(
+                                children: [
+                                  Text(
+                                    '$itemCount articles',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: Colors.grey[700],
                                         ),
-                                      ),
-                                    ],
                                   ),
-                                );
-                              },
-                              icon: Icon(Icons.delete, color: Colors.red[700]),
-                            ),
-                          ],
+                                  const SizedBox(width: 16),
+                                  Text(
+                                    '${posTotal.toStringAsFixed(3)} TND',
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.purple[700],
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        // QR button
+                        IconButton(
+                          onPressed: () => _showCartQR(context, cart),
+                          icon: Icon(Icons.qr_code, color: Colors.purple[700], size: 28),
+                          tooltip: 'Afficher QR Code',
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-              );
-            },
+              ),
+            ),
           );
         },
       ),

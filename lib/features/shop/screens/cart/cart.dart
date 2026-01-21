@@ -175,11 +175,14 @@ class _CartScreenState extends State<CartScreen> {
         return;
       }
 
-      // Step 2: Generate simple QR data with cart_id + customer info
+      // Step 2: Save the active cart ID for later matching with paid orders
+      await cartProvider.setActiveCartId(prestashopCartId);
+
+      // Step 3: Generate simple QR data with cart_id + customer info
       final qrDataMap = generateSimpleQRData(prestashopCartId);
       final qrData = jsonEncode(qrDataMap);
 
-      // Step 3: Show QR dialog with polling (using cart_id as session_id for Odoo)
+      // Step 4: Show QR dialog with polling (using cart_id as session_id for Odoo)
       if (context.mounted) {
         showDialog(
           context: context,
@@ -191,19 +194,9 @@ class _CartScreenState extends State<CartScreen> {
             // IMPORTANT: Change this for production!
             // Local testing: Use your computer's local IP (e.g., 'http://192.168.1.100:8069')
             // Production: Use 'https://www.odoo.alkirtas.com'
-            odooBaseUrl: 'http://192.168.1.132:8069',
+            //odooBaseUrl: 'http://192.168.1.132:8069',
           ),
-        ).then((success) {
-          if (success == true && context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('✓ Panier synchronisé avec succès!'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        });
+        );
       }
     } catch (e) {
       // Close loading dialog if still open

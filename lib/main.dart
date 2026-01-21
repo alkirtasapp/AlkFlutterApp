@@ -17,6 +17,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:alkirtas/providers/coupon_provider.dart';
+import 'package:alkirtas/providers/loyalty_provider.dart';
 
 Future<void> main() async {
   // Wrap everything in error handling to prevent white screens
@@ -83,6 +84,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => ProductProvider()),
           ChangeNotifierProvider(create: (_) => CouponProvider()),
           ChangeNotifierProvider(create: (_) => AudioPlayerProvider()),
+          ChangeNotifierProvider(create: (_) => LoyaltyProvider()),
         ],
         child: const SplashWrapper(),
       ),
