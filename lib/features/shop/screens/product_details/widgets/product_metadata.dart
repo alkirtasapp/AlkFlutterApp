@@ -177,7 +177,9 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
                     overlayColor: Colors.purple,
                   ),
             AlkBrandTitleTextVerifIcon(
-              title:( widget.productBrand == 'False')|| ( widget.productBrand == 'false') ? 'A L K I R T A S' : widget.productBrand,
+              title: (widget.productBrand == 'False' || widget.productBrand == 'false' || widget.productBrand.isEmpty)
+                  ? 'A L K I R T A S'
+                  : widget.productBrand,
               brandTextSize: TextSizes.medium,
             ),
             SizedBox(height: AlkSize.spaceBtwSections),

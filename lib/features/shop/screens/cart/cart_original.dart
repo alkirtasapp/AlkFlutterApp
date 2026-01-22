@@ -143,10 +143,7 @@ class _CartScreenState extends State<CartScreen> {
         qrData: qrData,
         sessionId: sessionId,
         cartProvider: cartProvider,
-        // IMPORTANT: Change this for production!
-        // Local testing: Use your computer's local IP (e.g., 'http://192.168.1.100:8069')
-        // Production: Use 'https://www.odoo.alkirtas.com'
-       // odooBaseUrl: 'http://192.168.1.132:8069', // Physical device on local Wi-Fi network
+       
       ),
     );
   }

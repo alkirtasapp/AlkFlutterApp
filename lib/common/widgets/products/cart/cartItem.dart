@@ -56,7 +56,11 @@ class AlkCartItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AlkBrandTitleTextVerifIcon(title: productBrand ),
+              AlkBrandTitleTextVerifIcon(
+                title: (productBrand == 'False' || productBrand == 'false' || productBrand.isEmpty)
+                    ? 'A L K I R T A S'
+                    : productBrand,
+              ),
               Flexible(
                 child: AlkProductTitleText(
                   title: productName,

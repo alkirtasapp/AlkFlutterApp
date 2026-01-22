@@ -1,25 +1,24 @@
 /// Model representing an audiobook with its chapters/tracks
 class Audiobook {
   final String id;
+  final int? idProduct; // Link to PrestaShop product ID
   final String title;
-  final String author;
   final String? description;
   final String? coverUrl;
   final List<AudioChapter> chapters;
   final Duration totalDuration;
-  final String? narrator;
-  final String? language;
+
+  // Keep author for backwards compatibility but make it optional
+  String get author => '';
 
   Audiobook({
     required this.id,
+    this.idProduct,
     required this.title,
-    required this.author,
     this.description,
     this.coverUrl,
     required this.chapters,
     required this.totalDuration,
-    this.narrator,
-    this.language,
   });
 
   factory Audiobook.fromJson(Map<String, dynamic> json) {
@@ -29,27 +28,23 @@ class Audiobook {
         [];
     return Audiobook(
       id: json['id']?.toString() ?? '',
+      idProduct: json['id_product'] != null ? int.tryParse(json['id_product'].toString()) : null,
       title: json['title'] ?? 'Unknown Title',
-      author: json['author'] ?? 'Unknown Author',
       description: json['description'],
       coverUrl: json['cover_url'],
       chapters: chapters,
-      totalDuration: Duration(seconds: json['total_duration'] ?? 0),
-      narrator: json['narrator'],
-      language: json['language'],
+      totalDuration: Duration(seconds: json['total_duration_seconds'] ?? json['total_duration'] ?? 0),
     );
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'id_product': idProduct,
         'title': title,
-        'author': author,
         'description': description,
         'cover_url': coverUrl,
         'chapters': chapters.map((c) => c.toJson()).toList(),
-        'total_duration': totalDuration.inSeconds,
-        'narrator': narrator,
-        'language': language,
+        'total_duration_seconds': totalDuration.inSeconds,
       };
 }
 
@@ -77,7 +72,7 @@ class AudioChapter {
       title: json['title'] ?? 'Chapter ${json['index'] ?? 0}',
       audioUrl: json['audio_url'] ?? '',
       transcriptUrl: json['transcript_url'],
-      duration: Duration(seconds: json['duration'] ?? 0),
+      duration: Duration(seconds: json['duration_seconds'] ?? json['duration'] ?? 0),
       index: json['index'] ?? 0,
     );
   }

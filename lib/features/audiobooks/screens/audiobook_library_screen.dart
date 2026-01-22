@@ -4,9 +4,7 @@ import 'package:iconsax/iconsax.dart';
 import '../controllers/audio_player_provider.dart';
 import '../models/audiobook_model.dart';
 import '../services/audiobook_repository.dart';
-import '../services/audiobook_unlock_service.dart';
 import '../widgets/mini_player.dart';
-import '../widgets/unlock_code_dialog.dart';
 import 'audiobook_player_screen.dart';
 
 class AudiobookLibraryScreen extends StatefulWidget {
@@ -16,10 +14,7 @@ class AudiobookLibraryScreen extends StatefulWidget {
   State<AudiobookLibraryScreen> createState() => _AudiobookLibraryScreenState();
 }
 
-class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final AudiobookUnlockService _unlockService = AudiobookUnlockService();
+class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen> {
   final AudiobookRepository _repository = AudiobookRepository();
 
   List<Audiobook> _audiobooks = [];
@@ -29,13 +24,7 @@ class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _initServices();
-  }
-
-  Future<void> _initServices() async {
-    await _unlockService.init();
-    await _loadAudiobooks();
+    _loadAudiobooks();
   }
 
   Future<void> _loadAudiobooks({bool forceRefresh = false}) async {
@@ -59,12 +48,6 @@ class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -79,33 +62,11 @@ class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
             onPressed: () => _showSearchDialog(context),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(
-              icon: Icon(Iconsax.book),
-              text: 'Catalogue',
-            ),
-            Tab(
-              icon: Icon(Iconsax.heart),
-              text: 'Ma Bibliothèque',
-            ),
-          ],
-          labelColor: Theme.of(context).primaryColor,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: Theme.of(context).primaryColor,
-        ),
       ),
       body: Column(
         children: [
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildCatalogTab(),
-                _buildMyLibraryTab(),
-              ],
-            ),
+            child: _buildAudiobooksList(),
           ),
           // Mini Player at bottom
           const MiniPlayer(),
@@ -114,7 +75,7 @@ class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
     );
   }
 
-  Widget _buildCatalogTab() {
+  Widget _buildAudiobooksList() {
     // Show loading indicator
     if (_isLoading) {
       return const Center(
@@ -166,68 +127,7 @@ class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
         itemCount: _audiobooks.length,
         itemBuilder: (context, index) {
           final audiobook = _audiobooks[index];
-          final isUnlocked = _unlockService.isUnlocked(audiobook.id);
-          return _buildAudiobookCard(context, audiobook, isUnlocked);
-        },
-      ),
-    );
-  }
-
-  Widget _buildMyLibraryTab() {
-    // Show loading indicator
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    // Filter only unlocked audiobooks
-    final unlockedAudiobooks = _audiobooks
-        .where((audiobook) => _unlockService.isUnlocked(audiobook.id))
-        .toList();
-
-    // Show empty state if no unlocked books
-    if (unlockedAudiobooks.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Iconsax.lock_1,
-                size: 80,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Aucun livre audio déverrouillé',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Déverrouillez des livres audio avec des codes pour les voir ici',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Show unlocked audiobooks with pull-to-refresh
-    return RefreshIndicator(
-      onRefresh: () => _loadAudiobooks(forceRefresh: true),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: unlockedAudiobooks.length,
-        itemBuilder: (context, index) {
-          final audiobook = unlockedAudiobooks[index];
-          return _buildAudiobookCard(context, audiobook, true);
+          return _buildAudiobookCard(context, audiobook);
         },
       ),
     );
@@ -265,180 +165,123 @@ class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
     );
   }
 
-  Widget _buildAudiobookCard(BuildContext context, Audiobook audiobook, bool isUnlocked) {
+  Widget _buildAudiobookCard(BuildContext context, Audiobook audiobook) {
     final primaryColor = Theme.of(context).primaryColor;
 
-    return Opacity(
-      opacity: isUnlocked ? 1.0 : 0.7,
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 2,
-        child: InkWell(
-          onTap: () => _handleAudiobookTap(context, audiobook, isUnlocked),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                // Cover with lock overlay
-                Stack(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: primaryColor.withOpacity(0.1),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: ColorFiltered(
-                          colorFilter: isUnlocked
-                              ? const ColorFilter.mode(
-                                  Colors.transparent,
-                                  BlendMode.multiply,
-                                )
-                              : ColorFilter.mode(
-                                  Colors.grey.shade400,
-                                  BlendMode.saturation,
-                                ),
-                          child: audiobook.coverUrl != null
-                              ? Image.network(
-                                  audiobook.coverUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) =>
-                                      _buildDefaultBookCover(context),
-                                )
-                              : _buildDefaultBookCover(context),
-                        ),
-                      ),
-                    ),
-                    // Lock icon overlay
-                    if (!isUnlocked)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: Colors.black.withOpacity(0.3),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Iconsax.lock,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      child: InkWell(
+        onTap: () => _playAudiobook(context, audiobook),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Cover
+              Container(
+                width: 80,
+                height: 100,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: primaryColor.withOpacity(0.1),
                 ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: audiobook.coverUrl != null
+                      ? Image.network(
+                          audiobook.coverUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              _buildDefaultBookCover(context),
+                        )
+                      : _buildDefaultBookCover(context),
+                ),
+              ),
 
-                const SizedBox(width: 16),
+              const SizedBox(width: 16),
 
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              audiobook.title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: isUnlocked ? null : Colors.grey[600],
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (!isUnlocked)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.shade100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Verrouillé',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.orange.shade800,
-                                ),
-                              ),
-                            ),
-                        ],
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      audiobook.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (audiobook.description != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        audiobook.author,
+                        audiobook.description!,
                         style: TextStyle(
                           color: Colors.grey[600],
-                          fontSize: 14,
+                          fontSize: 13,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 4,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Iconsax.clock, size: 14, color: Colors.grey[500]),
-                              const SizedBox(width: 4),
-                              Text(
-                                _formatTotalDuration(audiobook.totalDuration),
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Iconsax.book_1, size: 14, color: Colors.grey[500]),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${audiobook.chapters.length} chap.',
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                  ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Iconsax.clock, size: 14, color: Colors.grey[500]),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatTotalDuration(audiobook.totalDuration),
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Iconsax.book_1, size: 14, color: Colors.grey[500]),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${audiobook.chapters.length} chap.',
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
+              ),
 
-                // Play/Lock button
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isUnlocked ? primaryColor : Colors.grey.shade400,
-                  ),
-                  child: Icon(
-                    isUnlocked ? Iconsax.play5 : Iconsax.lock_1,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+              // Play button
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: primaryColor,
                 ),
-              ],
-            ),
+                child: const Icon(
+                  Iconsax.play5,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -477,28 +320,6 @@ class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
     return '${minutes} min';
   }
 
-  Future<void> _handleAudiobookTap(
-    BuildContext context,
-    Audiobook audiobook,
-    bool isUnlocked,
-  ) async {
-    if (isUnlocked) {
-      // Play the audiobook
-      _playAudiobook(context, audiobook);
-    } else {
-      // Show unlock dialog
-      final unlocked = await UnlockCodeDialog.show(
-        context,
-        audiobookTitle: audiobook.title,
-      );
-
-      if (unlocked) {
-        // Refresh UI to show unlocked state
-        setState(() {});
-      }
-    }
-  }
-
   void _playAudiobook(BuildContext context, Audiobook audiobook) async {
     final audioProvider = Provider.of<AudioPlayerProvider>(context, listen: false);
     await audioProvider.loadAudiobook(audiobook);
@@ -518,16 +339,7 @@ class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
       context: context,
       delegate: AudiobookSearchDelegate(
         audiobooks: _audiobooks,
-        unlockService: _unlockService,
         onPlay: (audiobook) => _playAudiobook(context, audiobook),
-        onUnlock: (audiobook) async {
-          final unlocked = await UnlockCodeDialog.show(
-            context,
-            audiobookTitle: audiobook.title,
-          );
-          if (unlocked) setState(() {});
-          return unlocked;
-        },
       ),
     );
   }
@@ -535,15 +347,11 @@ class _AudiobookLibraryScreenState extends State<AudiobookLibraryScreen>
 
 class AudiobookSearchDelegate extends SearchDelegate<Audiobook?> {
   final List<Audiobook> audiobooks;
-  final AudiobookUnlockService unlockService;
   final void Function(Audiobook) onPlay;
-  final Future<bool> Function(Audiobook) onUnlock;
 
   AudiobookSearchDelegate({
     required this.audiobooks,
-    required this.unlockService,
     required this.onPlay,
-    required this.onUnlock,
   });
 
   @override
@@ -586,7 +394,7 @@ class AudiobookSearchDelegate extends SearchDelegate<Audiobook?> {
             Icon(Iconsax.search_normal, size: 60, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'Entrez le titre ou l\'auteur d\'un livre audio',
+              'Entrez le titre d\'un livre audio',
               style: TextStyle(color: Colors.grey[600]),
             ),
           ],
@@ -594,11 +402,10 @@ class AudiobookSearchDelegate extends SearchDelegate<Audiobook?> {
       );
     }
 
-    // Filter audiobooks by title or author
+    // Filter audiobooks by title
     final searchQuery = query.toLowerCase();
     final results = audiobooks.where((book) {
-      return book.title.toLowerCase().contains(searchQuery) ||
-          book.author.toLowerCase().contains(searchQuery);
+      return book.title.toLowerCase().contains(searchQuery);
     }).toList();
 
     if (results.isEmpty) {
@@ -622,13 +429,12 @@ class AudiobookSearchDelegate extends SearchDelegate<Audiobook?> {
       itemCount: results.length,
       itemBuilder: (context, index) {
         final audiobook = results[index];
-        final isUnlocked = unlockService.isUnlocked(audiobook.id);
-        return _buildSearchResultCard(context, audiobook, isUnlocked);
+        return _buildSearchResultCard(context, audiobook);
       },
     );
   }
 
-  Widget _buildSearchResultCard(BuildContext context, Audiobook audiobook, bool isUnlocked) {
+  Widget _buildSearchResultCard(BuildContext context, Audiobook audiobook) {
     final primaryColor = Theme.of(context).primaryColor;
 
     return Card(
@@ -656,34 +462,30 @@ class AudiobookSearchDelegate extends SearchDelegate<Audiobook?> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: Text(
-          audiobook.author,
-          style: TextStyle(color: Colors.grey[600]),
-        ),
+        subtitle: audiobook.description != null
+            ? Text(
+                audiobook.description!,
+                style: TextStyle(color: Colors.grey[600]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            : null,
         trailing: Container(
           width: 40,
           height: 40,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isUnlocked ? primaryColor : Colors.grey.shade400,
+            color: primaryColor,
           ),
-          child: Icon(
-            isUnlocked ? Iconsax.play5 : Iconsax.lock_1,
+          child: const Icon(
+            Iconsax.play5,
             color: Colors.white,
             size: 20,
           ),
         ),
-        onTap: () async {
-          if (isUnlocked) {
-            close(context, audiobook);
-            onPlay(audiobook);
-          } else {
-            final unlocked = await onUnlock(audiobook);
-            if (unlocked && context.mounted) {
-              close(context, audiobook);
-              onPlay(audiobook);
-            }
-          }
+        onTap: () {
+          close(context, audiobook);
+          onPlay(audiobook);
         },
       ),
     );

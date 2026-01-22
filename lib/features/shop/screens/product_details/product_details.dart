@@ -5,6 +5,7 @@ import 'package:readmore/readmore.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/features/shop/screens/product_details/widgets/bottom_add_to_cart.dart';
 import 'package:alkirtas/features/shop/screens/product_details/widgets/product_features.dart';
+import 'package:alkirtas/features/audiobooks/widgets/audio_sample_player.dart';
 import '../../../../common/widgets/texts/section_heading.dart';
 import '../../../../utils/constants/size.dart';
 import '../../controllers/product_card_controller.dart';
@@ -124,6 +125,12 @@ class _ProductDetailsState extends State<ProductDetails> {
               productImages: widget.productImageList,
               productName: widget.productName,
             ),
+
+            // Audio sample player (appears if product has linked sample)
+            AudioSamplePlayer(
+              productId: int.tryParse(widget.productId) ?? 0,
+            ),
+
             Padding(
               padding: EdgeInsets.only(
                   right: AlkSize.defaultSpace,

@@ -122,7 +122,7 @@ class AudioPlayerProvider extends ChangeNotifier {
     final audiobook = Audiobook(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: title,
-      author: author,
+      
       coverUrl: coverUrl,
       chapters: [
         AudioChapter(
