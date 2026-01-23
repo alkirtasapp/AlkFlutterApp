@@ -97,10 +97,6 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
     String? discountText;
     if (discountValue > 0) {
       discountText = '${discountValue.toStringAsFixed(0)}%';
-      print(
-          'Displaying discount for product ${productData!['id']}: $discountText');
-    } else {
-      print('No discount to display for product ${productData!['id']}');
     }
 
     final imageUrl =
@@ -173,7 +169,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
                       left: 1,
                       child: AlkRoundedContainer(
                         radius: AlkSize.sm,
-                        backgroundColor: Colors.purple.shade300,
+                        backgroundColor: AlkColors.AppSecColor,
                         padding: const EdgeInsets.symmetric(
                           horizontal: AlkSize.sm,
                           vertical: AlkSize.xs,
@@ -246,7 +242,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
                         ),
                         Container(
                           decoration: BoxDecoration(
-                            color: AlkColors.primaryColor,
+                            color: AlkColors.AppSecColor,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(AlkSize.cardRadiusMd),
                               bottomRight:

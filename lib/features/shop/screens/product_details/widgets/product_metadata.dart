@@ -73,7 +73,7 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
                 widget.productDiscount != '0')
               AlkRoundedContainer(
                 radius: AlkSize.sm,
-                backgroundColor: Colors.purple.shade300,
+                backgroundColor: AlkColors.AppSecColor,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AlkSize.sm,
                   vertical: AlkSize.xs,
@@ -174,7 +174,7 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
                     image: AlkImages.darkAppLogo,
                     width: 52,
                     height: 52,
-                    overlayColor: Colors.purple,
+                    overlayColor: AlkColors.AppSecColor,
                   ),
             AlkBrandTitleTextVerifIcon(
               title: (widget.productBrand == 'False' || widget.productBrand == 'false' || widget.productBrand.isEmpty)

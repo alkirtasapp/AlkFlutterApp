@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 part 'coupon_provider.g.dart';
 
@@ -72,12 +73,8 @@ class CouponProvider extends ChangeNotifier {
   }
 
   Future<bool> addCoupon(String code) async {
-    print('[CouponProvider] Attempting to add coupon: $code');
     final url = 'https://www.alkirtas.com/api/cart_rules?display=full&limit=1&filter[code]=$code&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
-    print('[CouponProvider] API URL: $url');
     final response = await http.get(Uri.parse(url));
-    print('[CouponProvider] API Response status:  [38;5;2m${response.statusCode} [0m');
-    print('[CouponProvider] API Response body: ${response.body}');
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data is Map && data['cart_rules'] != null && data['cart_rules'].isNotEmpty) {
@@ -100,29 +97,23 @@ class CouponProvider extends ChangeNotifier {
           if (coupon.expiryDate.isAfter(DateTime.now())) {
             _coupons.add(coupon);
             await _saveCoupons();
-            print('[CouponProvider] Coupon added: ${coupon.code}');
             notifyListeners();
             return true;
           } else {
-            print('[CouponProvider] Coupon expired: ${coupon.code}');
+            AlkLoggerHelper.warning("Coupon expired: ${coupon.code}");
             return false;
           }
-        } else {
-          print('[CouponProvider] Coupon already exists: ${coupon.code}');
         }
         return true;
-      } else {
-        print('[CouponProvider] No valid cart_rules found for code: $code');
       }
     } else {
-      print('[CouponProvider] API call failed with status: ${response.statusCode}');
+      AlkLoggerHelper.error("Coupon API failed: ${response.statusCode}");
     }
     return false;
   }
 
   void selectCoupon(Coupon? coupon) {
     _selectedCoupon = coupon;
-    print('[CouponProvider] Coupon selected: ${coupon?.code}');
     notifyListeners();
   }
 
@@ -137,7 +128,6 @@ class CouponProvider extends ChangeNotifier {
       final key = box.keyAt(box.values.toList().indexOf(c));
       await box.delete(key);
     }
-    print('[CouponProvider] Coupon removed: ${coupon.code}');
     notifyListeners();
   }
 

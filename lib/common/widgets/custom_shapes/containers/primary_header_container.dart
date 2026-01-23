@@ -18,7 +18,7 @@ class AlkPrimaryHeaderContainer extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.purple.shade400, const Color(0xFF7F2461)],
+            colors: [AlkColors.AppSecColor,AlkColors.AppFirstColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             stops: const [0.2, 1],

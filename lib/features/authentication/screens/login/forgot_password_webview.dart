@@ -1,3 +1,4 @@
+import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -30,7 +31,7 @@ class ForgotPasswordWebView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Réinitialiser le mot de passe',style: TextStyle(color: Colors.white),),
-        backgroundColor: Colors.purple[600], 
+        backgroundColor: AlkColors.AppFirstColor, 
         
       ),
       body: WebViewWidget(controller: controller), // Use WebViewWidget

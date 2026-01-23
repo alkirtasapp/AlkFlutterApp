@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class AddressController extends GetxController {
   var isLoading = false.obs;
@@ -44,10 +45,10 @@ class AddressController extends GetxController {
           AddressData.clearAddress();
         }
       } else {
-        print("Failed to load address: ${response.statusCode}");
+        AlkLoggerHelper.error("Address load failed: ${response.statusCode}");
       }
     } catch (e) {
-      print("Error fetching address: $e");
+      AlkLoggerHelper.error("Address fetch failed", e);
     } finally {
       isLoading.value = false;
     }
@@ -87,17 +88,15 @@ class AddressController extends GetxController {
       );
 
       if (response.statusCode == 201) {
-        print("Address created successfully!");
-
         var jsonResponse = json.decode(utf8.decode(response.bodyBytes));
         if (jsonResponse['address'] != null) {
           AddressData.id = jsonResponse['address']['id'];
         }
       } else {
-        print("Failed to create address. Status code: ${response.statusCode}");
+        AlkLoggerHelper.error("Address creation failed: ${response.statusCode}");
       }
     } catch (e) {
-      print("Error creating address: $e");
+      AlkLoggerHelper.error("Address creation failed", e);
     } finally {
       isLoading.value = false;
     }

@@ -1,3 +1,4 @@
+import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
@@ -52,7 +53,6 @@ class _CartQRDialogState extends State<CartQRDialog> {
     if (_savedToHistory) return;
     _savedToHistory = true;
     // Cart is kept - will be cleared when payment is confirmed via History page
-    print('📱 QR displayed - cart kept until payment confirmed in History');
   }
 
   // Show QR code in fullscreen
@@ -136,7 +136,7 @@ class _CartQRDialogState extends State<CartQRDialog> {
                   'QR Code du Panier',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.purple[700],
+                        color: AlkColors.AppSecColor,
                       ),
                 ),
                 const SizedBox(height: 16),
@@ -180,12 +180,12 @@ class _CartQRDialogState extends State<CartQRDialog> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.purple[300]!,
+                        color: AlkColors.AppSecColor!,
                         width: 3,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.purple[100]!,
+                          color: AlkColors.AppSecColor!,
                           blurRadius: 12,
                           spreadRadius: 3,
                         ),
@@ -217,7 +217,7 @@ class _CartQRDialogState extends State<CartQRDialog> {
                             Icon(
                               Icons.fullscreen,
                               size: 16,
-                              color: Colors.purple[600],
+                              color: AlkColors.AppSecColor,
                             ),
                             const SizedBox(width: 4),
                             Flexible(
@@ -225,7 +225,7 @@ class _CartQRDialogState extends State<CartQRDialog> {
                                 'Appuyez pour agrandir',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.purple[700],
+                                  color: AlkColors.AppSecColor,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -287,7 +287,7 @@ class _CartQRDialogState extends State<CartQRDialog> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple[600],
+                      backgroundColor: AlkColors.AppFirstColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(

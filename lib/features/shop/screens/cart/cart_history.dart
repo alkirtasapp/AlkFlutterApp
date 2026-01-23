@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../common/widgets/appbar/appbar.dart';
 import '../../../../utils/constants/size.dart';
 import '../../controllers/cart_provider.dart';
@@ -38,14 +40,8 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
       // Check if any paid order matches the active cart's session ID
       // If so, the payment was completed and we should clear the cart
       final activeCartId = cartProvider.activeCartId;
-      print('🔍 Active cart ID from provider: $activeCartId');
 
       if (activeCartId != null && activeCartId.isNotEmpty) {
-        // Debug: print all session IDs from orders
-        for (var order in carts) {
-          print('   Order ${order['posOrderName']}: sessionId=${order['sessionId']}, cartId=${order['cartId']}');
-        }
-
         // Try to match with session_id (might have prestashop_ prefix)
         // or with cartId (raw cart ID)
         final matchingOrder = carts.firstWhere(
@@ -63,17 +59,11 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
 
         if (matchingOrder.isNotEmpty) {
           // Found a paid order matching the active cart - clear the cart!
-          print('✅ Found paid order matching active cart ID: $activeCartId');
-          print('   Order: ${matchingOrder['posOrderName']}');
-
           // Delete the PrestaShop cart first
           await cartProvider.deletePrestaShopCart(activeCartId);
 
           // Then clear the local cart
           await cartProvider.clearCart();
-          print('🧹 Cart cleared - payment confirmed via History');
-        } else {
-          print('⚠️ No matching order found for activeCartId: $activeCartId');
         }
       }
 
@@ -154,7 +144,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                     'QR Code du Panier',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.purple[700],
+                          color: AlkColors.AppSecColor,
                         ),
                   ),
                   const SizedBox(height: 8),
@@ -182,7 +172,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.purple[300]!,
+                        color: AlkColors.AppSecColor!,
                         width: 3,
                       ),
                     ),
@@ -214,13 +204,13 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                               '${cart['itemCount'] ?? 0}',
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.purple[700],
+                                    color: AlkColors.AppSecColor,
                                   ),
                             ),
                             Text(
                               'Articles',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[600],
+                                    color: AlkColors.AppSecColor,
                                   ),
                             ),
                           ],
@@ -236,7 +226,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                               '${(cart['posTotal'] as double).toStringAsFixed(3)} TND',
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.purple[700],
+                                    color: AlkColors.AppSecColor,
                                   ),
                             ),
                             Text(
@@ -259,7 +249,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple[400],
+                        backgroundColor: AlkColors.AppSecColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -288,8 +278,12 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
     // Items are now included directly in the order response from /orders endpoint
     final items = (order['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final total = order['posTotal'] as double? ?? 0.0;
-    final paidAt = _parseDate(order['paidAt']);
+    final paidAt = _parseDate(order['paidAt'] ?? order['dateAdd']);
     final hasModifications = order['hasModifications'] as bool? ?? false;
+    final isWebsiteOrder = order['isWebsiteOrder'] as bool? ?? false;
+    final orderState = order['orderState']?.toString() ?? 'Payé';
+    final prestashopOrderRef = order['prestashopOrderRef']?.toString() ?? '';
+    final posOrderName = order['posOrderName']?.toString() ?? '';
 
     showModalBottomSheet(
       context: context,
@@ -309,8 +303,10 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
             items,
             total,
             paidAt,
-            posOrderName: order['posOrderName']?.toString() ?? '',
+            posOrderName: isWebsiteOrder ? prestashopOrderRef : posOrderName,
             hasModifications: hasModifications,
+            isWebsiteOrder: isWebsiteOrder,
+            orderState: orderState,
           );
         },
       ),
@@ -326,7 +322,35 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
     DateTime? paidAt, {
     String posOrderName = '',
     bool hasModifications = false,
+    bool isWebsiteOrder = false,
+    String orderState = 'Payé',
   }) {
+    // Get state color based on order state
+    Color stateColor = Colors.green[700]!;
+    Color stateBgColor = Colors.green[100]!;
+    IconData stateIcon = Icons.check_circle;
+
+    if (isWebsiteOrder) {
+      final lowerState = orderState.toLowerCase();
+      if (lowerState.contains('annul') || lowerState.contains('cancel')) {
+        stateColor = Colors.red[700]!;
+        stateBgColor = Colors.red[100]!;
+        stateIcon = Icons.cancel;
+      } else if (lowerState.contains('attente') || lowerState.contains('wait') || lowerState.contains('pending')) {
+        stateColor = Colors.orange[700]!;
+        stateBgColor = Colors.orange[100]!;
+        stateIcon = Icons.hourglass_empty;
+      } else if (lowerState.contains('livr') || lowerState.contains('deliver')) {
+        stateColor = Colors.blue[700]!;
+        stateBgColor = Colors.blue[100]!;
+        stateIcon = Icons.local_shipping;
+      } else if (lowerState.contains('expédi') || lowerState.contains('ship')) {
+        stateColor = Colors.purple[700]!;
+        stateBgColor = Colors.purple[100]!;
+        stateIcon = Icons.inventory_2;
+      }
+    }
+
     return Column(
       children: [
         // Handle bar
@@ -354,7 +378,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                       children: [
                         Flexible(
                           child: Text(
-                            'Détails du Panier',
+                            isWebsiteOrder ? 'Détails de la Commande' : 'Détails du Panier',
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -364,26 +388,26 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.green[100],
+                            color: stateBgColor,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.check_circle, size: 12, color: Colors.green[700]),
+                              Icon(stateIcon, size: 12, color: stateColor),
                               const SizedBox(width: 4),
                               Text(
-                                'Payé',
+                                orderState,
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: Colors.green[700],
+                                  color: stateColor,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        if (hasModifications) ...[
+                        if (hasModifications && !isWebsiteOrder) ...[
                           const SizedBox(width: 4),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -485,12 +509,18 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                                 if (item['productImage'] != null && item['productImage'].toString().isNotEmpty)
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      item['productImage'].toString(),
+                                    child: CachedNetworkImage(
+                                      imageUrl: item['productImage'].toString(),
                                       width: 50,
                                       height: 50,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => Container(
+                                      placeholder: (context, url) => Container(
+                                        width: 50,
+                                        height: 50,
+                                        color: Colors.grey[200],
+                                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                      ),
+                                      errorWidget: (context, url, error) => Container(
                                         width: 50,
                                         height: 50,
                                         color: Colors.grey[200],
@@ -585,14 +615,14 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: Colors.purple[100],
+                                        color: Colors.grey[100],
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
                                         'x$quantity',
                                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.purple[700],
+                                              color: AlkColors.AppSecColor,
                                             ),
                                       ),
                                     ),
@@ -646,7 +676,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                 '${totalAmount.toStringAsFixed(3)} TND',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.purple[700],
+                      color: AlkColors.AppSecColor,
                     ),
               ),
             ],
@@ -700,8 +730,8 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
     }
 
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.purple),
+      return Center(
+        child: CircularProgressIndicator(color: AlkColors.AppSecColor),
       );
     }
 
@@ -765,11 +795,44 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final cart = _paidCarts[index];
-          final paidAt = _parseDate(cart['paidAt']);
+          final paidAt = _parseDate(cart['paidAt'] ?? cart['dateAdd']);
           final posTotal = cart['posTotal'] as double? ?? 0.0;
           final posOrderName = cart['posOrderName']?.toString() ?? '';
+          final prestashopOrderRef = cart['prestashopOrderRef']?.toString() ?? '';
           final itemCount = cart['itemCount'] ?? 0;
           final hasModifications = cart['hasModifications'] as bool? ?? false;
+          final isWebsiteOrder = cart['isWebsiteOrder'] as bool? ?? false;
+          final orderState = cart['orderState']?.toString() ?? 'Payé';
+
+          // Determine order name to display
+          final orderName = isWebsiteOrder ? prestashopOrderRef : posOrderName;
+
+          // Get state color based on order state
+          Color stateColor = Colors.green[700]!;
+          Color stateBgColor = Colors.green[100]!;
+          IconData stateIcon = Icons.check_circle;
+
+          if (isWebsiteOrder) {
+            // Dynamic color based on order state
+            final lowerState = orderState.toLowerCase();
+            if (lowerState.contains('annul') || lowerState.contains('cancel')) {
+              stateColor = Colors.red[700]!;
+              stateBgColor = Colors.red[100]!;
+              stateIcon = Icons.cancel;
+            } else if (lowerState.contains('attente') || lowerState.contains('wait') || lowerState.contains('pending')) {
+              stateColor = Colors.orange[700]!;
+              stateBgColor = Colors.orange[100]!;
+              stateIcon = Icons.hourglass_empty;
+            } else if (lowerState.contains('livr') || lowerState.contains('deliver')) {
+              stateColor = Colors.blue[700]!;
+              stateBgColor = Colors.blue[100]!;
+              stateIcon = Icons.local_shipping;
+            } else if (lowerState.contains('expédi') || lowerState.contains('ship')) {
+              stateColor = Colors.purple[700]!;
+              stateBgColor = Colors.purple[100]!;
+              stateIcon = Icons.inventory_2;
+            }
+          }
 
           return Card(
             elevation: 2,
@@ -792,42 +855,70 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // POS Order Name and Paid badge
+                              // Order Name and Status badges
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 4,
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
-                                  if (posOrderName.isNotEmpty)
+                                  if (orderName.isNotEmpty)
                                     Text(
-                                      posOrderName,
+                                      orderName,
                                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                             fontWeight: FontWeight.bold,
                                           ),
                                     ),
+                                  // Order type badge (POS vs Website)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Colors.green[100],
+                                      color: isWebsiteOrder ? Colors.indigo[100] : Colors.teal[100],
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.check_circle, size: 12, color: Colors.green[700]),
+                                        Icon(
+                                          isWebsiteOrder ? Icons.language : Icons.store,
+                                          size: 12,
+                                          color: isWebsiteOrder ? Colors.indigo[700] : Colors.teal[700],
+                                        ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'Payé',
+                                          isWebsiteOrder ? 'Web' : 'Magasin',
                                           style: TextStyle(
                                             fontSize: 10,
-                                            color: Colors.green[700],
+                                            color: isWebsiteOrder ? Colors.indigo[700] : Colors.teal[700],
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  if (hasModifications)
+                                  // Status badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: stateBgColor,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(stateIcon, size: 12, color: stateColor),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          orderState,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: stateColor,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (hasModifications && !isWebsiteOrder)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
@@ -875,7 +966,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                                     '${posTotal.toStringAsFixed(3)} TND',
                                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.purple[700],
+                                          color: AlkColors.AppSecColor,
                                         ),
                                   ),
                                 ],
@@ -883,12 +974,15 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                             ],
                           ),
                         ),
-                        // QR button
-                        IconButton(
-                          onPressed: () => _showCartQR(context, cart),
-                          icon: Icon(Icons.qr_code, color: Colors.purple[700], size: 28),
-                          tooltip: 'Afficher QR Code',
-                        ),
+                        // QR button (only for POS orders)
+                        if (!isWebsiteOrder)
+                          IconButton(
+                            onPressed: () => _showCartQR(context, cart),
+                            icon: Icon(Icons.qr_code, color: AlkColors.AppSecColor, size: 28),
+                            tooltip: 'Afficher QR Code',
+                          )
+                        else
+                          Icon(Icons.shopping_bag_outlined, color: Colors.indigo[400], size: 28),
                       ],
                     ),
                   ],

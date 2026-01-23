@@ -21,6 +21,7 @@ import 'package:provider/provider.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/providers/coupon_provider.dart';
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key}); // Remove cartId
@@ -152,11 +153,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
         total += discountedPrice * quantity;
       } else {
-        print("❌ Failed to fetch product price for product ID: $productId");
+        AlkLoggerHelper.error("Product price fetch failed: $productId");
       }
     }
 
-    print("✅ Total Products (after discounts): $total");
     return total;
   }
 
@@ -197,11 +197,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
         totalWithTaxAndDiscounts += finalPrice * quantity;
       } else {
-        print("❌ Failed to fetch product price for product ID: $productId");
+        AlkLoggerHelper.error("Product price fetch failed: $productId");
       }
     }
 
-    print("✅ Total Products WT (with tax and discounts): $totalWithTaxAndDiscounts");
     return totalWithTaxAndDiscounts;
   }
 
@@ -210,8 +209,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cartProvider = Provider.of<CartProvider>(context);
     final couponProvider = Provider.of<CouponProvider>(context);
     final selectedCoupon = couponProvider.selectedCoupon;
-
-    print("🛒 CartProvider is available. Cart items: ${cartProvider.cartItems.length}");
 
     double subtotal = cartProvider.cartItems.isNotEmpty ? cartProvider.cartItems.fold(0.0, (sum, item) {
       final price = double.tryParse(item['productPrice'] ?? '0') ?? 0.0;
@@ -505,7 +502,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     child: ElevatedButton(
                       style: ButtonStyle(
                         backgroundColor: MaterialStateProperty.all(
-                          isTermsAccepted ? Colors.purpleAccent[700] : Colors.grey, // Button color changes
+                          isTermsAccepted ? AlkColors.AppFirstColor : Colors.grey, // Button color changes
                         ),
                       ),
                       onPressed: isTermsAccepted && !isLoading
@@ -541,8 +538,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 }
 
                                 if (AddressData.id.isNotEmpty) {
-                                  print("✅ Address confirmed: ${AddressData.id}");
-
                                   // Step 2: Create Cart
                                   final CartController cartController = Get.put(CartController());
                                   final cartId = await cartController.createCartWithAddress(
@@ -550,8 +545,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     idAddressDelivery: AddressData.id,
                                     idCarrier: selectedCarrier?.id ?? 7,
                                   );
-
-                                  print("✅ Cart created successfully with ID: $cartId");
 
                                   // Step 3: Create Order
                                   final OrderController orderController = OrderController();
@@ -573,8 +566,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   );
 
                                   if (orderSuccess) {
-                                    print("✅ Order created successfully!");
-
                                     // Show success notification
                                     Get.snackbar(
                                       "Succès",
@@ -590,7 +581,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     // Redirect to the home page
                                     Get.offAll(() => const NavigationMenu(selectedMenu: 0));
                                   } else {
-                                    print("❌ Order creation failed!");
+                                    AlkLoggerHelper.error("Order creation failed");
                                     Get.snackbar(
                                       "Erreur",
                                       "Échec de la création de la commande. Veuillez réessayer.",
@@ -603,7 +594,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     );
                                   }
                                 } else {
-                                  print("❌ Address creation failed! Cannot proceed.");
+                                  AlkLoggerHelper.error("Address creation failed");
                                   Get.snackbar(
                                     "Erreur",
                                     "Échec de la création de l'adresse. Veuillez réessayer.",
@@ -616,7 +607,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   );
                                 }
                               } catch (e) {
-                                print("❌ Error during checkout: $e");
+                                AlkLoggerHelper.error("Checkout failed", e);
                                 Get.snackbar(
                                   "Erreur",
                                   "Une erreur s'est produite. Veuillez réessayer.",
@@ -643,7 +634,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
           if (isLoading)
             Container(
-              color: Colors.purple.withOpacity(0.5),
+              color: AlkColors.AppFirstColor.withOpacity(0.5),
               child: Center(
                 child: CircularProgressIndicator(),
               ),

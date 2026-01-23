@@ -1,3 +1,4 @@
+import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:alkirtas/utils/constants/images_strings.dart';
 import 'package:alkirtas/utils/constants/size.dart';
 import 'package:flutter/material.dart';
@@ -80,8 +81,8 @@ class _AlkLoginHeaderState extends State<AlkLoginHeader>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Colors.purple.shade100.withOpacity(0.3),
-                        Colors.purple.shade50.withOpacity(0.1),
+                         AlkColors.AppSecColor.withOpacity(0.3),
+                  AlkColors.AppSecColor.withOpacity(0.1),
                       ],
                     ),
                   ),
@@ -114,7 +115,7 @@ class _AlkLoginHeaderState extends State<AlkLoginHeader>
                   'Bienvenue',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.purple.shade700,
+                        color: AlkColors.AppFirstColor,
                       ),
                 ),
                 const SizedBox(height: 8),

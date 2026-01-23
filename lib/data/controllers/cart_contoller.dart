@@ -11,6 +11,7 @@ import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class CartController extends GetxController {
   var isLoading = false.obs;
@@ -31,10 +32,10 @@ class CartController extends GetxController {
           await createNewCart(ProductProvider().cartItems);
         }
       } else {
-        print("Failed to load cart: ${response.statusCode}");
+        AlkLoggerHelper.error("Cart load failed: ${response.statusCode}");
       }
     } catch (e) {
-      print("Error fetching cart: $e");
+      AlkLoggerHelper.error("Cart fetch failed", e);
     } finally {
       isLoading.value = false;
     }
@@ -42,7 +43,6 @@ class CartController extends GetxController {
 
   Future<void> createNewCart(List<Map<String, String>> cartItems) async {
     try {
-      print("Creating new cart for customer ${UserData.id}");
       String url = "https://www.alkirtas.com/api/carts?ws_key=${AppConfig.prestashopApiKey}";
       
       String cartRowsXml = cartItems.map((item) {
@@ -84,12 +84,11 @@ class CartController extends GetxController {
       if (response.statusCode == 201) {
         var jsonResponse = json.decode(response.body);
         CartData.id = jsonResponse["cart"]["id"].toString();
-        print("New cart created successfully with ID: ${CartData.id}");
       } else {
-        print("Failed to create cart: ${response.statusCode}, ${response.body}");
+        AlkLoggerHelper.error("Cart creation failed: ${response.statusCode}");
       }
     } catch (e) {
-      print("Error creating cart: $e");
+      AlkLoggerHelper.error("Cart creation failed", e);
     }
   }
 
@@ -138,9 +137,6 @@ class CartController extends GetxController {
       body: xmlBody.trim(),
     );
 
-    print("Response Status: ${response.statusCode}");
-    print("Response Body: ${response.body}");
-
     if (response.statusCode == 201 || response.statusCode == 200) {
       final document = xml.XmlDocument.parse(response.body);
       final cartIdElement = document.findAllElements("id").first;
@@ -174,9 +170,8 @@ class CartController extends GetxController {
         );
       }
 
-      print("✅ Cart items synced successfully!");
     } else {
-      print("❌ Failed to fetch cart items: ${response.body}");
+      AlkLoggerHelper.error("Cart items sync failed: ${response.statusCode}");
     }
   }
 
@@ -231,9 +226,6 @@ class CartController extends GetxController {
         body: xmlBody.trim(),
       );
 
-      print("Response Status: ${response.statusCode}");
-      print("Response Body: ${response.body}");
-
       if (response.statusCode == 201 || response.statusCode == 200) {
         final document = xml.XmlDocument.parse(response.body);
         final cartIdElement = document.findAllElements("id").first;
@@ -242,7 +234,7 @@ class CartController extends GetxController {
         throw Exception("Failed to create cart: ${response.statusCode}, ${response.body}");
       }
     } catch (e) {
-      print("❌ Error creating cart: $e");
+      AlkLoggerHelper.error("Cart creation with address failed", e);
       rethrow;
     }
   }

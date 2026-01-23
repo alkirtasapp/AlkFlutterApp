@@ -1,10 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
-class TLoggerHelper {
+class AlkLoggerHelper {
   static final Logger _logger = Logger(
-    printer: PrettyPrinter(),
-    // Customize the log levels based on your needs
-    level: Level.debug,
+    printer: PrettyPrinter(
+      methodCount:0,  
+      errorMethodCount: 5,   // Show stack trace for errors
+      noBoxingByDefault: true, // Remove borders
+      
+    ),
+    // In release mode: only show warnings and errors
+    // In debug mode: show all logs including debug
+    level: kReleaseMode ? Level.warning : Level.debug,
   );
 
   static void debug(String message) {

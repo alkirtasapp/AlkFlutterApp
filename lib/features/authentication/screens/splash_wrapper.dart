@@ -7,6 +7,7 @@ import 'package:alkirtas/config/home_sections_config.dart';
 import 'package:alkirtas/api/banner_api.dart';
 import 'package:alkirtas/api/category_api.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class SplashWrapper extends StatefulWidget {
   const SplashWrapper({super.key});
@@ -28,21 +29,15 @@ class _SplashWrapperState extends State<SplashWrapper> {
 
   Future<void> preloadAppData() async {
     try {
-      print("🚀 Starting App Preload...");
-
       // Clear the static cache
       CategoryProductController.clearCache();
 
       // Load sections and categories from server first (in parallel)
-      print("⏳ Loading sections and categories from server...");
       final sectionsResult = getHomeSections();
       final categoriesResult = CategoryApi.fetchHomeCategories();
 
       final sections = await sectionsResult;
       await categoriesResult; // Just wait for it to cache
-
-      print("✅ Sections loaded! Found ${sections.length} sections.");
-      print("✅ Categories loaded!");
 
       // Collect all category IDs from sections and prioritize the FIRST section
       final List<int> priorityCategories = [];
@@ -54,7 +49,6 @@ class _SplashWrapperState extends State<SplashWrapper> {
         for (var tab in firstSection.tabs) {
           priorityCategories.add(tab.categoryId);
         }
-        print("🎯 Priority section: ${firstSection.title} with ${priorityCategories.length} categories");
       }
 
       // Collect remaining categories from other sections
@@ -66,8 +60,6 @@ class _SplashWrapperState extends State<SplashWrapper> {
         }
       }
 
-      print("⏳ Preloading priority categories first: $priorityCategories");
-      
       // Load priority categories first
       List<Future<void>> priorityPreloadTasks = priorityCategories.map((catId) {
         final controller = CategoryProductController(categoryId: catId, limit: 8);
@@ -76,15 +68,13 @@ class _SplashWrapperState extends State<SplashWrapper> {
 
       // Wait only for priority categories
       await Future.wait(priorityPreloadTasks, eagerError: false);
-      
-      print("✅ Priority categories preloaded!");
 
       // Prefetch banner images
-      print("⏳ Fetching and prefetching banner images...");
       final bannerUrls = await BannerApi.fetchBannerUrls();
       await Future.wait(bannerUrls.map((url) => precacheImage(CachedNetworkImageProvider(url), context)));
       SplashWrapper.preloadedBannerUrls = bannerUrls;
-      print("✅ Banner images prefetched!");
+
+      AlkLoggerHelper.info("App preload complete: ${priorityCategories.length} priority categories, ${bannerUrls.length} banners");
 
       // Set app as ready after priority categories and banners are loaded
       if (mounted) {
@@ -92,19 +82,15 @@ class _SplashWrapperState extends State<SplashWrapper> {
       }
 
       // Load remaining categories in the background
-      print("🔄 Loading remaining categories in background: $remainingCategories");
       for (var catId in remainingCategories) {
         final controller = CategoryProductController(categoryId: catId, limit: 8);
-        controller.fetchCategoryProducts().then((_) {
-          print("✅ Background loaded category: $catId");
-        }).catchError((e) {
-          print("⚠️ Error loading category $catId in background: $e");
+        controller.fetchCategoryProducts().catchError((e) {
+          AlkLoggerHelper.warning("Error loading category $catId in background: $e");
         });
       }
 
     } catch (e, stackTrace) {
-      print("❌ Error during app preload: $e");
-      print("   StackTrace: $stackTrace");
+      AlkLoggerHelper.error("Error during app preload: $e", stackTrace);
       if (mounted) {
         setState(() => isReady = true);
       }

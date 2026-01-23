@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../../common/widgets/appbar/appbar.dart';
 import '../../../../../common/widgets/custom_shapes/curved_edges/curved_edges_widgets.dart';
 import '../../../../../common/widgets/images/AlkRoundedImages.dart';
@@ -35,11 +36,13 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
                 minScale: 1.0,
                 maxScale: 5.0,
                 child: Center(
-                  child: Image.network(
-                    imageUrl,
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
                     fit: BoxFit.contain,
                     width: double.infinity,
                     height: double.infinity,
+                    placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                    errorWidget: (context, url, error) => const Center(child: Icon(Icons.image_not_supported)),
                   ),
                 ),
               ),
@@ -99,18 +102,13 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
                           minScale: 1.0,
                           maxScale: 4.0,
                           child: Center(
-                            child: Image.network(
-                              widget.productImages.isNotEmpty
+                            child: CachedNetworkImage(
+                              imageUrl: widget.productImages.isNotEmpty
                                   ? widget.productImages[selectedIndex]
                                   : 'https://www.alkirtas.com/img/p/placeholder.jpg',
                               fit: BoxFit.contain,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return const Center(child: CircularProgressIndicator());
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Center(child: Icon(Icons.image_not_supported));
-                              },
+                              placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) => const Center(child: Icon(Icons.image_not_supported)),
                             ),
                           ),
                         ),

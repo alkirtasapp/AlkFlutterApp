@@ -20,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 import '../../../../utils/backendData/userData.dart';
 
@@ -110,7 +111,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               if (pending != null) {
                 prefs.remove('pendingNavigation');
-                print('Redirecting after login to: $pending');
 
                 if (pending == 'Promos') {
                   Get.offAll(
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
        setState(() {
          isLoading = false;
        });
-       print('Login error: $e');
+       AlkLoggerHelper.error("Login failed", e);
 
        // Provide more specific error messages based on the error type
        String errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.purple.shade50.withOpacity(0.3),
+                  AlkColors.AppSecColor.withOpacity(0.3),
                   Colors.white,
                   Colors.white,
                 ],
@@ -285,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 5,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.purple.shade600,
+                                AlkColors.AppFirstColor
                               ),
                             ),
                           ),
@@ -295,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.purple.shade700,
+                              color: AlkColors.AppSecColor
                             ),
                           ),
                           const SizedBox(height: 8),

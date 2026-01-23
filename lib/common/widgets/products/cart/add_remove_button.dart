@@ -1,3 +1,4 @@
+import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
@@ -34,7 +35,7 @@ class AlkProductQuantityAddRemove extends StatelessWidget {
           height: 32,
           size: AlkSize.md,
           color: Colors.white,
-          backgroundColor: Colors.purple.shade300,
+          backgroundColor: AlkColors.AppSecColor.withOpacity(0.5),
         ),
       ],
     );

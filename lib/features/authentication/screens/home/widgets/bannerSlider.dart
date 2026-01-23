@@ -74,7 +74,7 @@ class AlkBannerSlider extends StatelessWidget {
                       margin: const EdgeInsets.only(right: 10),
                       backgroundColor:
                           controller.carousalCurrentIndex.value == i
-                              ? AlkColors.primaryColor
+                              ? AlkColors.AppSecColor
                               : AlkColors.grey,
                     ),
                 ],

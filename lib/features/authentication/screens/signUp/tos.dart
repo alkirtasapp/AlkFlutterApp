@@ -1,3 +1,4 @@
+import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:flutter/material.dart';
 
 class TermsAndConditionsScreen extends StatelessWidget {
@@ -8,7 +9,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Conditions d\'utilisation',style: TextStyle(color: Colors.white),),
-        backgroundColor: Colors.purple[400],
+        backgroundColor: AlkColors.AppFirstColor,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

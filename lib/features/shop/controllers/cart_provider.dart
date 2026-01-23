@@ -7,6 +7,7 @@ import '../models/saved_cart_model.dart';
 import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class CartProvider with ChangeNotifier {
   final List<Map<String, String>> _cartItems = [];
@@ -24,6 +25,9 @@ class CartProvider with ChangeNotifier {
   String? _activeCartId;
   String? get activeCartId => _activeCartId;
 
+  // Cache for order states (id -> name mapping)
+  Map<String, String> _orderStatesCache = {};
+
   List<Map<String, String>> get cartItems => _cartItems;
 
   /// Initialize the cart provider and load saved cart data
@@ -33,9 +37,9 @@ class CartProvider with ChangeNotifier {
       _savedCartsBox = await Hive.openBox<SavedCart>(_savedCartsBoxName);
       await _loadCartFromStorage();
       await _loadActiveCartId();
-      print('✅ Cart initialized with ${_cartItems.length} items, activeCartId: $_activeCartId');
+      AlkLoggerHelper.info('Cart initialized with ${_cartItems.length} items, activeCartId: $_activeCartId');
     } catch (e) {
-      print('❌ Error initializing cart: $e');
+      AlkLoggerHelper.error('Error initializing cart', e);
     }
   }
 
@@ -44,10 +48,10 @@ class CartProvider with ChangeNotifier {
     try {
       if (_cartBox != null && _cartBox!.containsKey(_activeCartIdKey)) {
         _activeCartId = _cartBox!.get(_activeCartIdKey);
-        print('📦 Loaded active cart ID: $_activeCartId');
+        AlkLoggerHelper.debug('Loaded active cart ID: $_activeCartId');
       }
     } catch (e) {
-      print('❌ Error loading active cart ID: $e');
+      AlkLoggerHelper.error('Error loading active cart ID', e);
     }
   }
 
@@ -58,14 +62,14 @@ class CartProvider with ChangeNotifier {
       if (_cartBox != null) {
         if (cartId != null) {
           await _cartBox!.put(_activeCartIdKey, cartId);
-          print('💾 Active cart ID saved: $cartId');
+          AlkLoggerHelper.debug('Active cart ID saved: $cartId');
         } else {
           await _cartBox!.delete(_activeCartIdKey);
-          print('🗑️ Active cart ID cleared');
+          AlkLoggerHelper.debug('Active cart ID cleared');
         }
       }
     } catch (e) {
-      print('❌ Error saving active cart ID: $e');
+      AlkLoggerHelper.error('Error saving active cart ID', e);
     }
   }
 
@@ -88,12 +92,12 @@ class CartProvider with ChangeNotifier {
               _cartItems.add(cartItem);
             }
           }
-          print('📦 Loaded ${_cartItems.length} items from cart storage');
+          AlkLoggerHelper.debug('Loaded ${_cartItems.length} items from cart storage');
           notifyListeners();
         }
       }
     } catch (e) {
-      print('❌ Error loading cart from storage: $e');
+      AlkLoggerHelper.error('Error loading cart from storage', e);
     }
   }
 
@@ -104,10 +108,10 @@ class CartProvider with ChangeNotifier {
         // Convert cart items to JSON string
         final String cartJson = jsonEncode(_cartItems);
         await _cartBox!.put(_cartKey, cartJson);
-        print('💾 Cart saved to storage (${_cartItems.length} items)');
+        AlkLoggerHelper.debug('Cart saved to storage (${_cartItems.length} items)');
       }
     } catch (e) {
-      print('❌ Error saving cart to storage: $e');
+      AlkLoggerHelper.error('Error saving cart to storage', e);
     }
   }
 
@@ -194,12 +198,12 @@ class CartProvider with ChangeNotifier {
   Future<SavedCart?> saveCartToHistory(String qrData, {String? prestashopCartId}) async {
     try {
       if (_cartItems.isEmpty) {
-        print('⚠️ Cannot save empty cart to history');
+        AlkLoggerHelper.warning('Cannot save empty cart to history');
         return null;
       }
 
       if (_savedCartsBox == null) {
-        print('❌ Saved carts box not initialized');
+        AlkLoggerHelper.error('Saved carts box not initialized');
         return null;
       }
 
@@ -223,11 +227,11 @@ class CartProvider with ChangeNotifier {
 
       // Save to Hive
       await _savedCartsBox!.put(cartId, savedCart);
-      print('✅ Cart saved to history with ${_cartItems.length} items - Total: ${savedCart.totalAmount} - PrestashopCartId: $prestashopCartId');
+      AlkLoggerHelper.info('Cart saved to history with ${_cartItems.length} items - Total: ${savedCart.totalAmount} - PrestashopCartId: $prestashopCartId');
 
       return savedCart;
     } catch (e) {
-      print('❌ Error saving cart to history: $e');
+      AlkLoggerHelper.error('Error saving cart to history', e);
       return null;
     }
   }
@@ -236,7 +240,7 @@ class CartProvider with ChangeNotifier {
   List<SavedCart> getSavedCarts() {
     try {
       if (_savedCartsBox == null) {
-        print('❌ Saved carts box not initialized');
+        AlkLoggerHelper.error('Saved carts box not initialized');
         return [];
       }
 
@@ -245,7 +249,7 @@ class CartProvider with ChangeNotifier {
       carts.sort((a, b) => b.savedDate.compareTo(a.savedDate));
       return carts;
     } catch (e) {
-      print('❌ Error getting saved carts: $e');
+      AlkLoggerHelper.error('Error getting saved carts', e);
       return [];
     }
   }
@@ -266,9 +270,9 @@ class CartProvider with ChangeNotifier {
 
       await _saveCartToStorage();
       notifyListeners();
-      print('✅ Loaded saved cart with ${_cartItems.length} items');
+      AlkLoggerHelper.info('Loaded saved cart with ${_cartItems.length} items');
     } catch (e) {
-      print('❌ Error loading saved cart: $e');
+      AlkLoggerHelper.error('Error loading saved cart', e);
     }
   }
 
@@ -276,15 +280,15 @@ class CartProvider with ChangeNotifier {
   Future<void> deleteSavedCart(String cartId) async {
     try {
       if (_savedCartsBox == null) {
-        print('❌ Saved carts box not initialized');
+        AlkLoggerHelper.error('Saved carts box not initialized');
         return;
       }
 
       await _savedCartsBox!.delete(cartId);
       notifyListeners();
-      print('✅ Deleted saved cart: $cartId');
+      AlkLoggerHelper.info('Deleted saved cart: $cartId');
     } catch (e) {
-      print('❌ Error deleting saved cart: $e');
+      AlkLoggerHelper.error('Error deleting saved cart', e);
     }
   }
 
@@ -292,15 +296,15 @@ class CartProvider with ChangeNotifier {
   Future<void> clearCartHistory() async {
     try {
       if (_savedCartsBox == null) {
-        print('❌ Saved carts box not initialized');
+        AlkLoggerHelper.error('Saved carts box not initialized');
         return;
       }
 
       await _savedCartsBox!.clear();
       notifyListeners();
-      print('✅ Cleared all saved carts from history');
+      AlkLoggerHelper.info('Cleared all saved carts from history');
     } catch (e) {
-      print('❌ Error clearing cart history: $e');
+      AlkLoggerHelper.error('Error clearing cart history', e);
     }
   }
 
@@ -329,16 +333,16 @@ class CartProvider with ChangeNotifier {
         cleanCartId = cartId.substring('prestashop_'.length);
       }
 
-      print('🔍 Fetching PrestaShop cart with calculated prices: $cleanCartId');
+      AlkLoggerHelper.debug('Fetching PrestaShop cart with calculated prices: $cleanCartId');
 
       // Use the custom mobile_cart_api module endpoint for calculated prices
       final url = 'https://www.alkirtas.com/module/mobile_cart_api/details?cart_id=$cleanCartId&ws_key=${AppConfig.prestashopApiKey}';
-      print('📡 URL: $url');
+      AlkLoggerHelper.debug('URL: $url');
 
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode != 200) {
-        print('❌ Failed to fetch cart: ${response.statusCode}');
+        AlkLoggerHelper.error('Failed to fetch cart: ${response.statusCode}');
         return null;
       }
 
@@ -346,17 +350,17 @@ class CartProvider with ChangeNotifier {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
 
       if (data['success'] != true) {
-        print('❌ API error: ${data['error']?['message'] ?? 'Unknown error'}');
+        AlkLoggerHelper.error('API error: ${data['error']?['message'] ?? 'Unknown error'}');
         return null;
       }
 
       final cartData = data['cart'] as Map<String, dynamic>?;
       if (cartData == null) {
-        print('❌ No cart data found');
+        AlkLoggerHelper.error('No cart data found');
         return null;
       }
 
-      print('✅ Cart fetched: ${cartData['id']}');
+      AlkLoggerHelper.info('Cart fetched: ${cartData['id']}');
 
       // Get customer info from response
       String customerName = '';
@@ -367,12 +371,12 @@ class CartProvider with ChangeNotifier {
         final lastname = customer['lastname']?.toString() ?? '';
         customerName = '$firstname $lastname'.trim();
         customerEmail = customer['email']?.toString() ?? '';
-        print('👤 Customer: $customerName ($customerEmail)');
+        AlkLoggerHelper.debug('Customer: $customerName');
       }
 
       // Get cart items with calculated prices
       final cartItems = cartData['items'] as List? ?? [];
-      print('📦 Cart has ${cartItems.length} products');
+      AlkLoggerHelper.debug('Cart has ${cartItems.length} products');
 
       // Convert items to our format
       List<Map<String, dynamic>> items = [];
@@ -413,7 +417,7 @@ class CartProvider with ChangeNotifier {
           'productBrand': manufacturer,
         });
 
-        print('  ✅ Product $productId: $productName x$quantity @ $calculatedPrice (original: $originalPrice, discount: $reductionPercent%)');
+        AlkLoggerHelper.debug('Product $productId: $productName x$quantity @ $calculatedPrice (original: $originalPrice, discount: $reductionPercent%)');
       }
 
       // Use totals from the module response
@@ -429,44 +433,158 @@ class CartProvider with ChangeNotifier {
         'customerEmail': customerEmail,
       };
     } catch (e) {
-      print('❌ Error fetching PrestaShop cart: $e');
+      AlkLoggerHelper.error('Error fetching PrestaShop cart', e);
       return null;
     }
   }
 
   // ==================== FETCH CUSTOMER POS ORDERS ====================
 
-  /// Fetch all POS orders for the current customer from PrestaShop
-  /// Uses the custom mobile_cart_api/orders endpoint for order history
+  /// Fetch order state name by ID from PrestaShop
+  /// Uses cache to avoid repeated API calls
+  Future<String> _fetchOrderStateName(String stateId) async {
+    // Check cache first
+    if (_orderStatesCache.containsKey(stateId)) {
+      return _orderStatesCache[stateId]!;
+    }
+
+    try {
+      final url = 'https://www.alkirtas.com/api/order_states?filter[id]=$stateId&display=full&ws_key=${AppConfig.prestashopApiKey}&output_format=JSON';
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        final states = data['order_states'] as List?;
+        if (states != null && states.isNotEmpty) {
+          final stateName = states[0]['name']?.toString() ?? 'Inconnu';
+          _orderStatesCache[stateId] = stateName;
+          return stateName;
+        }
+      }
+    } catch (e) {
+      AlkLoggerHelper.error('Error fetching order state $stateId', e);
+    }
+
+    return 'Inconnu';
+  }
+
+  /// Fetch PrestaShop website orders from core API
+  Future<List<Map<String, dynamic>>> _fetchPrestaShopOrders() async {
+    try {
+      if (UserData.id.isEmpty) {
+        return [];
+      }
+
+      AlkLoggerHelper.debug('Fetching PrestaShop website orders for customer ${UserData.id}...');
+
+      final url = 'https://www.alkirtas.com/api/orders?filter[id_customer]=${UserData.id}&display=full&ws_key=${AppConfig.prestashopApiKey}&output_format=JSON';
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode != 200) {
+        AlkLoggerHelper.error('Failed to fetch PrestaShop orders: ${response.statusCode}');
+        return [];
+      }
+
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      final ordersData = data['orders'] as List? ?? [];
+      AlkLoggerHelper.info('Found ${ordersData.length} PrestaShop website orders');
+
+      List<Map<String, dynamic>> orders = [];
+
+      for (var order in ordersData) {
+        // Get order state name
+        final stateId = order['current_state']?.toString() ?? '0';
+        final stateName = await _fetchOrderStateName(stateId);
+
+        // Parse order rows (products)
+        final associations = order['associations'] as Map<String, dynamic>? ?? {};
+        final orderRows = associations['order_rows'] as List? ?? [];
+
+        List<Map<String, dynamic>> items = [];
+        for (var row in orderRows) {
+          items.add({
+            'productId': row['product_id']?.toString() ?? '',
+            'productName': row['product_name']?.toString() ?? '',
+            'productReference': row['product_reference']?.toString() ?? '',
+            'productPrice': double.tryParse(row['product_price']?.toString() ?? '0') ?? 0.0,
+            'productQuantity': row['product_quantity']?.toString() ?? '1',
+            'productImage': '', // Would need separate API call to get product image
+            'subtotal': (double.tryParse(row['product_price']?.toString() ?? '0') ?? 0.0) *
+                (int.tryParse(row['product_quantity']?.toString() ?? '1') ?? 1),
+            'discountPercent': 0.0,
+            'isAddedByCashier': false,
+            'quantityChanged': false,
+          });
+        }
+
+        // Calculate item count
+        int itemCount = 0;
+        for (var row in orderRows) {
+          itemCount += int.tryParse(row['product_quantity']?.toString() ?? '1') ?? 1;
+        }
+
+        orders.add({
+          'orderId': order['id']?.toString() ?? '',
+          'cartId': order['id_cart']?.toString() ?? '',
+          'sessionId': '', // No session for website orders
+          'posOrderName': '', // No POS order name for website orders
+          'prestashopOrderRef': order['reference']?.toString() ?? '',
+          'customerName': '', // Could fetch from customer API if needed
+          'posTotal': double.tryParse(order['total_paid']?.toString() ?? '0') ?? 0.0,
+          'paidAt': order['date_add']?.toString() ?? '',
+          'dateAdd': order['date_add']?.toString() ?? '',
+          'itemCount': itemCount,
+          'hasModifications': false,
+          'items': items,
+          // PrestaShop specific fields
+          'isWebsiteOrder': true,
+          'orderState': stateName,
+          'orderStateId': stateId,
+          'paymentMethod': order['payment']?.toString() ?? '',
+          'invoiceNumber': order['invoice_number']?.toString() ?? '',
+          'deliveryNumber': order['delivery_number']?.toString() ?? '',
+        });
+      }
+
+      return orders;
+    } catch (e) {
+      AlkLoggerHelper.error('Error fetching PrestaShop orders', e);
+      return [];
+    }
+  }
+
+  /// Fetch all orders for the current customer (POS orders + PrestaShop website orders)
+  /// Uses the custom mobile_cart_api/orders endpoint for POS orders
+  /// and core PrestaShop API for website orders
   Future<List<Map<String, dynamic>>> fetchCustomerCarts() async {
     try {
       // Check if user is logged in
       if (UserData.id.isEmpty) {
-        print('⚠️ Cannot fetch orders: User not logged in');
+        AlkLoggerHelper.warning('Cannot fetch orders: User not logged in');
         return [];
       }
 
-      print('🔍 Fetching POS orders for customer ${UserData.id}...');
+      AlkLoggerHelper.debug('Fetching POS orders for customer ${UserData.id}...');
 
       final url = 'https://www.alkirtas.com/module/mobile_cart_api/orders?customer_id=${UserData.id}&ws_key=${AppConfig.prestashopApiKey}';
-      print('📡 URL: $url');
+      AlkLoggerHelper.debug('URL: $url');
 
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode != 200) {
-        print('❌ Failed to fetch orders: ${response.statusCode}');
+        AlkLoggerHelper.error('Failed to fetch orders: ${response.statusCode}');
         return [];
       }
 
       final data = jsonDecode(utf8.decode(response.bodyBytes));
 
       if (data['success'] != true) {
-        print('❌ API error: ${data['error']?['message'] ?? 'Unknown error'}');
+        AlkLoggerHelper.error('API error: ${data['error']?['message'] ?? 'Unknown error'}');
         return [];
       }
 
       final ordersData = data['data']?['orders'] as List? ?? [];
-      print('✅ Found ${ordersData.length} POS orders');
+      AlkLoggerHelper.info('Found ${ordersData.length} POS orders');
 
       List<Map<String, dynamic>> orders = [];
       for (var order in ordersData) {
@@ -507,12 +625,27 @@ class CartProvider with ChangeNotifier {
           'itemCount': order['item_count'] ?? 0,
           'hasModifications': order['has_modifications'] ?? false,
           'items': items, // Items are included in the response
+          'isWebsiteOrder': false, // POS order flag
+          'orderState': 'Payé', // POS orders are always paid
         });
       }
 
+      // Also fetch PrestaShop website orders
+      final prestashopOrders = await _fetchPrestaShopOrders();
+      orders.addAll(prestashopOrders);
+
+      // Sort all orders by date (newest first)
+      orders.sort((a, b) {
+        final dateA = DateTime.tryParse(a['paidAt']?.toString() ?? a['dateAdd']?.toString() ?? '') ?? DateTime(1970);
+        final dateB = DateTime.tryParse(b['paidAt']?.toString() ?? b['dateAdd']?.toString() ?? '') ?? DateTime(1970);
+        return dateB.compareTo(dateA); // Descending order
+      });
+
+      AlkLoggerHelper.info('Total orders: ${orders.length} (POS: ${orders.where((o) => o['isWebsiteOrder'] != true).length}, Website: ${prestashopOrders.length})');
+
       return orders;
     } catch (e) {
-      print('❌ Error fetching customer orders: $e');
+      AlkLoggerHelper.error('Error fetching customer orders', e);
       return [];
     }
   }
@@ -520,32 +653,32 @@ class CartProvider with ChangeNotifier {
   /// Fetch a specific order's details by order ID (if needed)
   Future<Map<String, dynamic>?> fetchOrderDetails(String orderId) async {
     try {
-      print('🔍 Fetching order details for order $orderId...');
+      AlkLoggerHelper.debug('Fetching order details for order $orderId...');
 
       final url = 'https://www.alkirtas.com/module/mobile_cart_api/orders?order_id=$orderId&ws_key=${AppConfig.prestashopApiKey}';
-      print('📡 URL: $url');
+      AlkLoggerHelper.debug('URL: $url');
 
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode != 200) {
-        print('❌ Failed to fetch order: ${response.statusCode}');
+        AlkLoggerHelper.error('Failed to fetch order: ${response.statusCode}');
         return null;
       }
 
       final data = jsonDecode(utf8.decode(response.bodyBytes));
 
       if (data['success'] != true) {
-        print('❌ API error: ${data['error']?['message'] ?? 'Unknown error'}');
+        AlkLoggerHelper.error('API error: ${data['error']?['message'] ?? 'Unknown error'}');
         return null;
       }
 
       final order = data['order'] as Map<String, dynamic>?;
       if (order == null) {
-        print('❌ No order data found');
+        AlkLoggerHelper.error('No order data found');
         return null;
       }
 
-      print('✅ Order fetched: ${order['pos_order_name']}');
+      AlkLoggerHelper.info('Order fetched: ${order['pos_order_name']}');
 
       // Parse items
       final items = (order['items'] as List? ?? []).map((item) {
@@ -579,7 +712,7 @@ class CartProvider with ChangeNotifier {
         'items': items,
       };
     } catch (e) {
-      print('❌ Error fetching order details: $e');
+      AlkLoggerHelper.error('Error fetching order details', e);
       return null;
     }
   }
@@ -592,17 +725,17 @@ class CartProvider with ChangeNotifier {
     try {
       // Check if user is logged in
       if (UserData.id.isEmpty) {
-        print('⚠️ Cannot create PrestaShop cart: User not logged in');
+        AlkLoggerHelper.warning('Cannot create PrestaShop cart: User not logged in');
         return null;
       }
 
       // Check if cart has items
       if (_cartItems.isEmpty) {
-        print('⚠️ Cannot create PrestaShop cart: Cart is empty');
+        AlkLoggerHelper.warning('Cannot create PrestaShop cart: Cart is empty');
         return null;
       }
 
-      print('🛒 Creating PrestaShop cart for user ${UserData.id}...');
+      AlkLoggerHelper.debug('Creating PrestaShop cart for user ${UserData.id}...');
 
       final String url = 'https://www.alkirtas.com/api/carts?ws_key=${AppConfig.prestashopApiKey}';
 
@@ -650,7 +783,7 @@ class CartProvider with ChangeNotifier {
         body: xmlBody.trim(),
       );
 
-      print('📡 PrestaShop response: ${response.statusCode}');
+      AlkLoggerHelper.debug('PrestaShop response: ${response.statusCode}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         // Parse XML response to get cart ID
@@ -658,15 +791,15 @@ class CartProvider with ChangeNotifier {
         final cartIdElement = document.findAllElements('id').first;
         final cartId = cartIdElement.text;
 
-        print('✅ PrestaShop cart created successfully! ID: $cartId');
+        AlkLoggerHelper.info('PrestaShop cart created successfully! ID: $cartId');
         return cartId;
       } else {
-        print('❌ Failed to create PrestaShop cart: ${response.statusCode}');
-        print('   Response: ${response.body}');
+        AlkLoggerHelper.error('Failed to create PrestaShop cart: ${response.statusCode}');
+        AlkLoggerHelper.debug('Response: ${response.body}');
         return null;
       }
     } catch (e) {
-      print('❌ Error creating PrestaShop cart: $e');
+      AlkLoggerHelper.error('Error creating PrestaShop cart', e);
       return null;
     }
   }
@@ -676,11 +809,11 @@ class CartProvider with ChangeNotifier {
   Future<bool> deletePrestaShopCart(String cartId) async {
     try {
       if (cartId.isEmpty) {
-        print('⚠️ Cannot delete PrestaShop cart: Cart ID is empty');
+        AlkLoggerHelper.warning('Cannot delete PrestaShop cart: Cart ID is empty');
         return false;
       }
 
-      print('🗑️ Deleting PrestaShop cart ID: $cartId...');
+      AlkLoggerHelper.debug('Deleting PrestaShop cart ID: $cartId...');
 
       final String url = 'https://www.alkirtas.com/api/carts/$cartId?ws_key=${AppConfig.prestashopApiKey}';
 
@@ -691,22 +824,22 @@ class CartProvider with ChangeNotifier {
         },
       );
 
-      print('📡 PrestaShop delete response: ${response.statusCode}');
+      AlkLoggerHelper.debug('PrestaShop delete response: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        print('✅ PrestaShop cart $cartId deleted successfully!');
+        AlkLoggerHelper.info('PrestaShop cart $cartId deleted successfully!');
         return true;
       } else if (response.statusCode == 404) {
         // Cart doesn't exist - that's fine, might have been already deleted
-        print('ℹ️ PrestaShop cart $cartId not found (already deleted or does not exist)');
+        AlkLoggerHelper.debug('PrestaShop cart $cartId not found (already deleted or does not exist)');
         return true;
       } else {
-        print('❌ Failed to delete PrestaShop cart: ${response.statusCode}');
-        print('   Response: ${response.body}');
+        AlkLoggerHelper.error('Failed to delete PrestaShop cart: ${response.statusCode}');
+        AlkLoggerHelper.debug('Response: ${response.body}');
         return false;
       }
     } catch (e) {
-      print('❌ Error deleting PrestaShop cart: $e');
+      AlkLoggerHelper.error('Error deleting PrestaShop cart', e);
       return false;
     }
   }

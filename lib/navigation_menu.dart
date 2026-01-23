@@ -109,7 +109,7 @@ class _NavigationMenuState extends State<NavigationMenu>
                   onPressed: () {
                     Get.to(() => const AudiobookPlayerScreen());
                   },
-                  backgroundColor: AlkColors.primaryColor,
+                  backgroundColor:AlkColors.AppFirstColor,
                   child: audioProvider.isPlaying
                       ? const Icon(Iconsax.pause, color: Colors.white)
                       : const Icon(Iconsax.play, color: Colors.white),

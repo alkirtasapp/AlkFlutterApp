@@ -1,3 +1,4 @@
+import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
@@ -42,8 +43,8 @@ class StoreCategoryDrawer extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.purple.shade700,
-            Colors.purple.shade400,
+            AlkColors.AppFirstColor,
+            AlkColors.AppSecColor,
           ],
         ),
       ),
@@ -112,7 +113,7 @@ class StoreCategoryDrawer extends StatelessWidget {
               children: [
                 Icon(
                   Icons.arrow_back_ios,
-                  color: Colors.purple.shade700,
+                  color: AlkColors.AppSecColor,
                   size: 18,
                 ),
                 const SizedBox(width: 8),
@@ -120,7 +121,7 @@ class StoreCategoryDrawer extends StatelessWidget {
                   child: Text(
                     'Retour vers ${controller.navigationStack.last}',
                     style: TextStyle(
-                      color: Colors.purple.shade700,
+                      color: AlkColors.AppSecColor,
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                     ),
@@ -128,7 +129,7 @@ class StoreCategoryDrawer extends StatelessWidget {
                 ),
                 Icon(
                   Icons.chevron_right,
-                  color: Colors.purple.shade300,
+                  color: AlkColors.AppSecColor.withOpacity(0.50),
                 ),
               ],
             ),
@@ -175,7 +176,7 @@ class StoreCategoryDrawer extends StatelessWidget {
             ),
             child: Icon(
               Iconsax.folder_2,
-              color: isSelected ? Colors.purple.shade700 : Colors.grey.shade700,
+              color: isSelected ? AlkColors.AppSecColor : Colors.grey.shade700,
               size: 20,
             ),
           ),
@@ -189,11 +190,11 @@ class StoreCategoryDrawer extends StatelessWidget {
               style: TextStyle(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                 fontSize: 15,
-                color: isSelected ? Colors.purple.shade700 : Colors.grey.shade800,
+                color: isSelected ? AlkColors.AppSecColor: Colors.grey.shade800,
               ),
             ),
           ),
-          iconColor: Colors.purple.shade700,
+          iconColor: AlkColors.AppSecColor,
           collapsedIconColor: Colors.grey.shade600,
           children: [
             if (controller.categoriesController.categoryTree.containsKey(category.value))
@@ -229,7 +230,7 @@ class StoreCategoryDrawer extends StatelessWidget {
             padding: const EdgeInsets.all(6),
             child: Icon(
               Iconsax.category_2,
-              color: isSelected ? Colors.purple.shade600 : Colors.grey.shade500,
+              color: isSelected ? AlkColors.AppSecColor : Colors.grey.shade500,
               size: 16,
             ),
           ),
@@ -248,11 +249,11 @@ class StoreCategoryDrawer extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? Colors.purple.shade700 : Colors.grey.shade700,
+                color: isSelected ? AlkColors.AppSecColor : Colors.grey.shade700,
               ),
             ),
           ),
-          iconColor: Colors.purple.shade600,
+          iconColor: AlkColors.AppSecColor,
           collapsedIconColor: Colors.grey.shade500,
           children: [
             if (controller.categoriesController.categoryTree.containsKey(subcategory['id']))
@@ -307,7 +308,7 @@ class StoreCategoryDrawer extends StatelessWidget {
               Icon(
                 Iconsax.arrow_right_3,
                 size: 14,
-                color: isSelected ? Colors.purple.shade600 : Colors.grey.shade400,
+                color: isSelected ? AlkColors.AppSecColor : Colors.grey.shade400,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -316,7 +317,7 @@ class StoreCategoryDrawer extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected ? Colors.purple.shade700 : Colors.grey.shade600,
+                    color: isSelected ? AlkColors.AppSecColor : Colors.grey.shade600,
                   ),
                 ),
               ),
@@ -324,7 +325,7 @@ class StoreCategoryDrawer extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.purple.shade600,
+                    color: AlkColors.AppSecColor,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

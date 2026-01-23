@@ -1,5 +1,7 @@
+import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 import '../models/audio_sample.dart';
 import '../services/audio_sample_service.dart';
 
@@ -68,7 +70,7 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
         try {
           await _player.setUrl(sample.audioUrl);
         } catch (e) {
-          print('Error setting audio URL: $e');
+          AlkLoggerHelper.error("Audio URL load failed", e);
         }
       }
     }
@@ -105,8 +107,8 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
         : 0.0;
 
     // Gradient colors from app theme
-    final gradientStart = Colors.purple.shade400;
-    const gradientEnd = Color(0xFF7F2461);
+    final gradientStart = AlkColors.AppSecColor;
+    final gradientEnd = AlkColors.AppFirstColor;
     const textColor = Color(0xFF6C757D);
 
     return Container(

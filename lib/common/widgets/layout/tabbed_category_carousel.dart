@@ -70,7 +70,7 @@ class _TabbedCategoryCarouselState extends State<TabbedCategoryCarousel>
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.purple.shade400,const Color(0xFF7F2461)],
+                colors: [AlkColors.AppSecColor,AlkColors.AppFirstColor],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 stops: const [0.2, 1],
@@ -88,7 +88,7 @@ class _TabbedCategoryCarouselState extends State<TabbedCategoryCarousel>
                   Icon(
                     widget.section.icon,
                     size: 24,
-                    color: Colors.white,
+                    color: AlkColors.white,
                   ),
                   const SizedBox(width: 12),
                   Flexible(
@@ -121,9 +121,9 @@ class _TabbedCategoryCarouselState extends State<TabbedCategoryCarousel>
             child: TabBar(
               controller: _tabController,
               isScrollable: true,
-              labelColor: AlkColors.primaryColor,
+              labelColor: AlkColors.AppSecColor,
               unselectedLabelColor: Colors.grey,
-              indicatorColor: AlkColors.primaryColor,
+              indicatorColor: AlkColors.AppSecColor,
               tabs: widget.section.tabs
                   .map((tab) => Tab(text: tab.name))
                   .toList(),

@@ -1,18 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
-class QuantityController{
-Future<int?> fetchQuantity(int productId) async {
+class QuantityController {
+  Future<int?> fetchQuantity(int productId) async {
     try {
       final stockApi =
           'https://www.alkirtas.com/api/stock_availables?display=full&limit=10&filter[id_product]=[$productId]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final response = await http.get(Uri.parse(stockApi));
-      //  Log Request
-      print('🔍 Fetching stock for Product ID: $productId'); 
-      //  Log Full API Response
-      print('📥 API Raw Response: ${response.body}'); 
 
       if (response.statusCode == 200) {
         final stockData = json.decode(utf8.decode(response.bodyBytes));
@@ -26,24 +23,20 @@ Future<int?> fetchQuantity(int productId) async {
           for (var stock in stockEntries) {
             if (stock['id_product'].toString() == productId.toString()) {
               int quantity = int.tryParse(stock['quantity'].toString()) ?? 0;
-
-              print(
-                  '✅ Stock for Product ID $productId: $quantity units'); // ✅ Log Correct Quantity
               return quantity;
             }
           }
 
-          print('⚠️ Product ID $productId not found in stock_availables list');
+          AlkLoggerHelper.warning('Product ID $productId not found in stock_availables list');
         } else {
-          print('⚠️ No stock data available for Product ID: $productId');
+          AlkLoggerHelper.warning('No stock data available for Product ID: $productId');
         }
       } else {
-        print('❌ API Request Failed. Status Code: ${response.statusCode}');
+        AlkLoggerHelper.error('API Request Failed. Status Code: ${response.statusCode}');
       }
     } catch (e) {
-      print('🔥 Error fetching stock quantity for Product ID $productId: $e');
+      AlkLoggerHelper.error('Stock fetch error for Product $productId', e);
     }
-
-    print('❌ Returning NULL for Product ID: $productId'); // ✅ Log Null Return
     return null;
-  } } 
+  }
+} 

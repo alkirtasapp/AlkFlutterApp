@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class BrandController {
   Future<Map<String, dynamic>?> fetchBrandData(int brandIndex) async {
@@ -32,7 +33,7 @@ class BrandController {
         }
       }
     } catch (e) {
-      print('Error fetching brands: $e');
+      AlkLoggerHelper.error("Brand fetch failed", e);
     }
     return null;
   }
@@ -56,7 +57,7 @@ class BrandController {
         }
       }
     } catch (e) {
-      print('❌ Error fetching brand name for ID $brandId: $e');
+      AlkLoggerHelper.error("Brand name fetch failed for $brandId", e);
     }
     return null;
   }

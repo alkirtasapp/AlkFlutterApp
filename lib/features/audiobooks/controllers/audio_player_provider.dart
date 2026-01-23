@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/utils/logging/logger.dart';
 import '../models/audiobook_model.dart';
 
 /// Provider for managing audio playback state
@@ -195,8 +196,8 @@ class AudioPlayerProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      // Transcript loading failed - not critical, just log it
-      debugPrint('Failed to load transcript: $e');
+      // Transcript loading failed - not critical
+      AlkLoggerHelper.warning("Transcript load failed: $e");
     }
   }
 

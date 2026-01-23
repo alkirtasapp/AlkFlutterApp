@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 /// Service class for parsing URLs from QR codes to extract category and product IDs
 class UrlParserService {
@@ -6,31 +6,25 @@ class UrlParserService {
   /// Returns a Map with 'type' (category/product) and 'id' (the extracted ID)
   static Map<String, dynamic>? parseAlkirtasUrl(String url) {
     try {
-      debugPrint('🔍 QR Parser: Original URL: $url');
-
       // Normalize the URL
       String normalizedUrl = _normalizeUrl(url);
-      debugPrint('🔍 QR Parser: Normalized URL: $normalizedUrl');
 
       // Check if it's a category URL
       final categoryResult = _extractCategoryId(normalizedUrl);
       if (categoryResult != null) {
-        debugPrint('✅ QR Parser: Found category - ID: ${categoryResult['id']}');
         return categoryResult;
       }
 
       // Check if it's a product URL
       final productResult = _extractProductId(normalizedUrl);
       if (productResult != null) {
-        debugPrint('✅ QR Parser: Found product - ID: ${productResult['id']}');
         return productResult;
       }
 
       // If no pattern matches, return null
-      debugPrint('❌ QR Parser: No pattern matched for URL: $normalizedUrl');
       return null;
     } catch (e) {
-      debugPrint('❌ QR Parser Error: $e');
+      AlkLoggerHelper.error("QR parse failed", e);
       return null;
     }
   }

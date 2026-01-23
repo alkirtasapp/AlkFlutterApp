@@ -6,10 +6,11 @@ import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/features/shop/screens/product_details/widgets/bottom_add_to_cart.dart';
 import 'package:alkirtas/features/shop/screens/product_details/widgets/product_features.dart';
 import 'package:alkirtas/features/audiobooks/widgets/audio_sample_player.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 import '../../../../common/widgets/texts/section_heading.dart';
 import '../../../../utils/constants/size.dart';
 import '../../controllers/product_card_controller.dart';
-import '../../controllers/product_controller_store.dart'; // Added to fetch product features
+import '../../controllers/product_controller_store.dart';
 import 'widgets/product_detail_image_slider.dart';
 import 'widgets/product_metadata.dart';
 import 'widgets/reference.dart';
@@ -62,19 +63,14 @@ class _ProductDetailsState extends State<ProductDetails> {
 
   Future<void> _fetchProductFeatures() async {
     try {
-      print("🟡 Fetching product features for ID: ${widget.productId}");
-
       final ProductControllerStore productController = ProductControllerStore();
       List<String> fetchedFeatures = await productController.fetchProductFeatures(widget.productId);
-
-      print("✅ Features Fetched: $fetchedFeatures");
 
       setState(() {
         productFeatures = fetchedFeatures;
         isLoadingFeatures = false;
       });
     } catch (e) {
-      print("❌ Error fetching product features: $e");
       setState(() {
         isLoadingFeatures = false;
       });
@@ -95,11 +91,8 @@ class _ProductDetailsState extends State<ProductDetails> {
         ? widget.productDescription
         : 'Description non disponible'; // Fallback description
 
-    print("Product Price: ${productPrice.isNotEmpty ? productPrice : 'N/A'}");
-    print("Product discount: ${widget.productDiscount}");
-    print("Product OLD Price: ${widget.productOldPrice}");
-    print("Product NEW Price: ${widget.productNewPrice}");
-    print("product features: $productFeatures");
+    final discountInfo = widget.productDiscount.isNotEmpty ? " | Discount: ${widget.productDiscount}" : "";
+    AlkLoggerHelper.info("Product: ${widget.productName} | Ref: ${widget.productReference} | Brand: ${widget.productBrand} | Price: $productPrice$discountInfo");
 
     return Scaffold(
       bottomNavigationBar: AlkBottomAddToCart(

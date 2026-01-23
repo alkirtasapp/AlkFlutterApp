@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:alkirtas/providers/app_config_provider.dart';
+
 class AlkColors{
   AlkColors._();
-   
+
 
    // App Basic Colors
   static const Color primaryColor = Colors.purple;
+
+  // Dynamic colors from server config (with fallback defaults)
+  static Color get AppFirstColor => AppConfigProvider.instance.appFirstColor;
+  static Color get AppSecColor => AppConfigProvider.instance.appSecColor;
+
+  // Fallback constants (used if provider not initialized)
+  static const Color defaultFirstColor = Color.fromARGB(255, 216, 80, 38);
+  static const Color defaultSecColor = Color.fromARGB(255, 52, 192, 33);
   static const Color secondary = Color(0xFFFFE24B);
   static const Color accent = Color(0xFFb0c7ff);
 

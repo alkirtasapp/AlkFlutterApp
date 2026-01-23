@@ -6,8 +6,9 @@ import 'package:alkirtas/data/controllers/product_list_Category.dart';
 import 'dart:async';
 import 'package:alkirtas/data/controllers/discount_controller.dart';
 import 'package:alkirtas/data/controllers/tax_controller.dart';
-import 'package:alkirtas/data/controllers/quantity_controller.dart'; // Import QuantityController
+import 'package:alkirtas/data/controllers/quantity_controller.dart';
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class CategoryProductController {
   // --- Static Cache and State Management ---
@@ -38,7 +39,7 @@ class CategoryProductController {
     _staticIsLoading.clear();
     _staticError.clear();
     _staticFetchCompleters.clear();
-    print("🧹 CategoryProductController static cache cleared.");
+    AlkLoggerHelper.debug("CategoryProductController static cache cleared.");
   }
 
   // --- New static method to fetch products from multiple categories ---
@@ -47,24 +48,20 @@ class CategoryProductController {
     List<Map<String, dynamic>> allProducts = [];
     List<Future<void>> fetchFutures = []; // To run fetches concurrently
 
-    print("🔄 Starting multi-category fetch for IDs: $categoryIds (Limit: $limit)");
-
     for (int currentCategoryId in categoryIds) {
       // Check cache first
       if (_staticCachedProducts.containsKey(currentCategoryId)) {
-        print("✅ Cache hit for Category ID: $currentCategoryId in multi-fetch.");
         // Add cached products directly (will be sorted later)
         allProducts.addAll(_staticCachedProducts[currentCategoryId] ?? []);
       } else {
         // If not cached and not already fetching, start the fetch
         if (!_staticFetchCompleters.containsKey(currentCategoryId)) {
-         
+
           final controller = CategoryProductController(categoryId: currentCategoryId, limit: limit);
           // Add the future to the list, don't await here
           fetchFutures.add(controller.fetchCategoryProducts());
         } else {
           // If already fetching, just add its completer's future
-          print("⏳ Awaiting existing fetch for Category ID: $currentCategoryId in multi-fetch.");
           fetchFutures.add(_staticFetchCompleters[currentCategoryId]!.future);
         }
       }
@@ -72,20 +69,12 @@ class CategoryProductController {
 
     // Wait for all necessary fetches to complete
     if (fetchFutures.isNotEmpty) {
-      print("⏳ Waiting for ${fetchFutures.length} fetch operations to complete...");
       await Future.wait(fetchFutures);
-      print("✅ All fetch operations completed.");
 
       // After fetches are done, gather products from newly populated cache entries
       for (int currentCategoryId in categoryIds) {
-        // Only add if not already added from cache initially
         if (!_staticCachedProducts.containsKey(currentCategoryId)) {
-           // This check might be redundant if fetch always populates, but safe
-           print("➕ Adding newly fetched products for Category ID: $currentCategoryId");
            allProducts.addAll(_staticCachedProducts[currentCategoryId] ?? []);
-        } else {
-           // Check if it was added *during* the await phase (unlikely but possible)
-           // A simpler approach is to rebuild the list *after* await
         }
       }
        // Alternative: Clear and rebuild after await to avoid duplicates
@@ -108,38 +97,31 @@ class CategoryProductController {
         uniqueProducts.add(product);
       }
     }
-     print("🔍 Found ${allProducts.length} products initially, ${uniqueProducts.length} unique products after filtering.");
     allProducts = uniqueProducts;
 
-
-    // 2. Sort by ID descending (as requested)
-    // Ensure 'id' is treated as a number for sorting
+    // 2. Sort by ID descending
     allProducts.sort((a, b) {
        int idA = int.tryParse(a['id']?.toString() ?? '0') ?? 0;
        int idB = int.tryParse(b['id']?.toString() ?? '0') ?? 0;
-       return idB.compareTo(idA); // Descending order
+       return idB.compareTo(idA);
     });
-    print("📊 Sorted unique products by ID descending.");
 
     // 3. Apply limit
     List<Map<String, dynamic>> limitedProducts = allProducts.take(limit).toList();
-    print("✂️ Limited results to $limit products. Final count: ${limitedProducts.length}");
 
     return limitedProducts;
   }
 
 
-  // --- Existing Fetch Logic for a single category (Remains the same) ---
+  // --- Existing Fetch Logic for a single category ---
   Future<void> fetchCategoryProducts() async {
     // Check if already loading or completed
     if (_staticFetchCompleters.containsKey(categoryId)) {
-      print("ℹ️ Fetch already in progress or completed for Category ID: $categoryId. Awaiting completion.");
       await _staticFetchCompleters[categoryId]!.future;
       return;
     }
     // Check cache
     if (_staticCachedProducts.containsKey(categoryId)) {
-      print("✅ Cache hit for Category ID: $categoryId. Skipping fetch.");
       _staticIsLoading[categoryId] = false;
       _staticError[categoryId] = null;
       return;
@@ -151,8 +133,6 @@ class CategoryProductController {
     _staticIsLoading[categoryId] = true;
     _staticError[categoryId] = null;
 
-    print("🔄 Starting product fetch loop for Category ID: $categoryId (Target: $limit active)...");
-
     List<Map<String, dynamic>> activeProductsFound = [];
     List<Map<String, dynamic>> productsToProcess = [];
 
@@ -160,16 +140,13 @@ class CategoryProductController {
       final ProductListCategory productListCategory = ProductListCategory();
 
       // Step 1: Fetch ALL Product IDs
-      print("📡 Fetching ALL product IDs for Category ID: $categoryId using ProductListCategory...");
       List<int> allProductIds = await productListCategory.fetchProductIdsFromCategory(categoryId);
       if (allProductIds.isEmpty) {
-        print("ℹ️ No product IDs found for Category ID: $categoryId via ProductListCategory.");
         _staticCachedProducts[categoryId] = [];
         completer.complete();
         _staticIsLoading[categoryId] = false;
         return;
       }
-      print("✅ Found ${allProductIds.length} total product IDs for Category ID: $categoryId.");
 
       // Step 2: Loop Fetching Details in Batches
       int currentIdIndex = 0;
@@ -180,24 +157,22 @@ class CategoryProductController {
         List<int> batchIds = allProductIds.sublist(currentIdIndex, endIndex);
         if (batchIds.isEmpty) break;
 
-        print(" -> Fetching details batch (${currentIdIndex + 1}-${endIndex}) for Category ID: $categoryId...");
         String idFilter = batchIds.join('|');
         final productDetailsApi = 'https://www.alkirtas.com/api/products?display=full&filter[id]=[$idFilter]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
         final response = await http.get(Uri.parse(productDetailsApi));
         currentIdIndex = endIndex; // Move index
 
         if (response.statusCode != 200) {
-          print(" ⚠️ Failed to load product details batch (Status: ${response.statusCode}). Skipping batch.");
+          AlkLoggerHelper.warning("Failed to load product details batch (Status: ${response.statusCode}). Skipping batch.");
           continue;
         }
         final productData = json.decode(utf8.decode(response.bodyBytes));
         if (productData == null || !productData.containsKey('products') || productData['products'] == null) {
-          print(" ⚠️ No product details returned in batch. Skipping batch.");
+          AlkLoggerHelper.warning("No product details returned in batch. Skipping batch.");
           continue;
         }
 
         List<Map<String, dynamic>> rawProductsBatch = List<Map<String, dynamic>>.from(productData['products']);
-        print(" ✅ Received details for ${rawProductsBatch.length} products in batch.");
 
         // Filter for active and add to list
         for (var product in rawProductsBatch) {
@@ -205,47 +180,36 @@ class CategoryProductController {
             if (activeProductsFound.length < limit) {
               // Add to temporary list for processing, not directly to final list yet
               productsToProcess.add(product);
-              print(" + Found potential active product ${product['id']}. Total potential: ${productsToProcess.length}");
             } else {
-              print(" - Limit ($limit) reached for potential products. Stopping search within batch.");
               break; // Stop checking this batch
             }
           }
         }
         if (productsToProcess.length >= limit) {
-           print(" 🏁 Target of $limit potential active products reached. Stopping fetch loop.");
            break; // Stop fetching more batches
         }
       } // End while loop
 
       // --- Step 3: Process Details for Found Potential Active Products ---
       if (productsToProcess.isNotEmpty) {
-        print("⚙️ Processing details for ${productsToProcess.length} potential active products found...");
         List<Future<void>> processingTasks = [];
         for (var product in productsToProcess) {
-          // Process details and add the processed product to the final list
            processingTasks.add(_processProductDetails(product).then((processedProduct) {
-             // Only add if processing didn't fail implicitly and limit not reached
              if (activeProductsFound.length < limit) {
                 activeProductsFound.add(processedProduct);
-                print(" ++ Added processed active product ${processedProduct['id']}. Total active: ${activeProductsFound.length}");
              }
            }));
         }
         await Future.wait(processingTasks);
-         print("✅ Processing tasks completed for category $categoryId.");
-      } else {
-        print("ℹ️ No potential active products found to process details for Category ID: $categoryId.");
       }
 
       // Step 4: Cache the final list of processed, active products
-      _staticCachedProducts[categoryId] = activeProductsFound; // Cache the processed list
-      print("✅✅ Successfully fetched and processed ${activeProductsFound.length} active products for Category ID: $categoryId (Target was $limit).");
+      _staticCachedProducts[categoryId] = activeProductsFound;
+      AlkLoggerHelper.debug("Category $categoryId: ${activeProductsFound.length} products cached");
       completer.complete();
 
     } catch (e, stacktrace) {
-      print('❌❌ Error during product fetch/process loop for category $categoryId: $e');
-      print(stacktrace); // Print stacktrace for debugging
+      AlkLoggerHelper.error('Error during product fetch/process loop for category $categoryId: $e', stacktrace);
       _staticError[categoryId] = 'Failed to load products: $e';
       _staticCachedProducts.remove(categoryId); // Clear potentially partial cache
       if (!completer.isCompleted) completer.completeError(e); // Complete with error if not already done
@@ -266,7 +230,7 @@ class CategoryProductController {
       dynamic taxRulesGroupId = product['id_tax_rules_group'];
 
       if (productId == 0) {
-        print("❌ Skipping detail processing for product with invalid ID: ${product['id']}");
+        AlkLoggerHelper.warning("Skipping detail processing for product with invalid ID: ${product['id']}");
         // Return product as is, maybe with default error values?
         product['discount'] = 0.0;
         product['ttc_price'] = priceHT;
@@ -316,7 +280,7 @@ class CategoryProductController {
       await Future.wait(tasks);
 
     } catch (e) {
-      print("❌ Error processing product details via external controllers for ${product['id']}: $e");
+      AlkLoggerHelper.error("Error processing product details via external controllers for ${product['id']}", e);
       // Apply default values on error to avoid null issues downstream
       product['discount'] ??= 0.0;
       product['ttc_price'] ??= double.tryParse(product['price'].toString()) ?? 0.0;
@@ -349,7 +313,7 @@ class CategoryProductController {
       cleanText = cleanText.replaceAll(RegExp(r'\s+'), ' ').trim();
       return cleanText.isEmpty ? "No description available" : cleanText;
     } catch (e) {
-      print("Error cleaning description: $e");
+      AlkLoggerHelper.error("Error cleaning description", e);
       return "No description available"; // Fallback on parsing error
     }
   }

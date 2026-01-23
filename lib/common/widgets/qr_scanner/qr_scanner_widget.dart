@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/constants/size.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class AlkQrScannerWidget extends StatefulWidget {
   final Function(String) onQrCodeScanned;
@@ -20,22 +21,28 @@ class AlkQrScannerWidget extends StatefulWidget {
 }
 
 class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late MobileScannerController _scannerController;
   late AnimationController _animationController;
   late Animation<double> _animation;
   bool _hasPermission = false;
   bool _isLoading = true;
   String? _errorMessage;
-  bool _isProcessing = false; // Flag to prevent multiple scans
-  DateTime? _lastScanTime; // Track last scan time
-  String? _lastScannedCode; // Track last scanned code to prevent duplicates
+  bool _isProcessing = false;
+  DateTime? _lastScanTime;
+  String? _lastScannedCode;
+
+  // Stabilization: require code to be held in frame for a duration
+  static const int _stabilizationMs = 500; // 1 second hold required
+  String? _candidateCode;
+  DateTime? _candidateFirstSeen;
+  double _focusProgress = 0.0;
 
   @override
   void initState() {
     super.initState();
     _scannerController = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
+      detectionSpeed: DetectionSpeed.normal,
       returnImage: false,
     );
 
@@ -65,7 +72,6 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
         _isLoading = false;
       });
     } else if (status.isDenied || status.isRestricted) {
-      // Request permission
       status = await Permission.camera.request();
       if (status.isGranted) {
         setState(() {
@@ -83,14 +89,14 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
       setState(() {
         _hasPermission = false;
         _isLoading = false;
-        _errorMessage = 'Permission caméra définitivement refusée.\nAllez dans les paramètres pour l\'activer.';
+        _errorMessage =
+            'Permission caméra définitivement refusée.\nAllez dans les paramètres pour l\'activer.';
       });
     }
   }
 
   void _openSettings() async {
     await openAppSettings();
-    // Recheck permission after returning from settings
     await Future.delayed(const Duration(seconds: 1));
     _checkCameraPermission();
   }
@@ -115,59 +121,84 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
             MobileScanner(
               controller: _scannerController,
               onDetect: (capture) {
-                // Prevent multiple scans in quick succession
-                if (_isProcessing) {
-                  debugPrint('⏸️ Scanner locked - processing previous scan');
+                if (_isProcessing) return;
+
+                final List<Barcode> barcodes = capture.barcodes;
+                if (barcodes.isEmpty || barcodes.first.rawValue == null) {
+                  // No code detected - reset candidate
+                  if (_candidateCode != null) {
+                    setState(() {
+                      _candidateCode = null;
+                      _candidateFirstSeen = null;
+                      _focusProgress = 0.0;
+                    });
+                  }
                   return;
                 }
 
-                final List<Barcode> barcodes = capture.barcodes;
-                for (final barcode in barcodes) {
-                  if (barcode.rawValue != null) {
-                    final scannedCode = barcode.rawValue!;
-                    final now = DateTime.now();
+                final scannedCode = barcodes.first.rawValue!;
+                final now = DateTime.now();
 
-                    // Check if this is a duplicate scan within 3 seconds
-                    if (_lastScannedCode == scannedCode &&
-                        _lastScanTime != null &&
-                        now.difference(_lastScanTime!).inSeconds < 3) {
-                      debugPrint('⚠️ Duplicate scan ignored: $scannedCode');
-                      return;
-                    }
+                // Check if duplicate of recently processed code
+                if (_lastScannedCode == scannedCode &&
+                    _lastScanTime != null &&
+                    now.difference(_lastScanTime!).inSeconds < 5) {
+                  return;
+                }
 
-                    // Additional check: prevent ANY scan within 1.5 seconds
-                    if (_lastScanTime != null &&
-                        now.difference(_lastScanTime!).inMilliseconds < 1500) {
-                      debugPrint('⏸️ Scan too quick - waiting...');
-                      return;
-                    }
+                // STABILIZATION: Track how long code has been in frame
+                if (_candidateCode != scannedCode) {
+                  // New code detected - start tracking
+                  AlkLoggerHelper.debug("QR candidate: $scannedCode");
+                  setState(() {
+                    _candidateCode = scannedCode;
+                    _candidateFirstSeen = now;
+                    _focusProgress = 0.0;
+                  });
+                  return;
+                }
 
-                    // Mark as processing
+                // Same code - check if held long enough
+                if (_candidateFirstSeen != null) {
+                  final heldDuration =
+                      now.difference(_candidateFirstSeen!).inMilliseconds;
+                  final progress =
+                      (heldDuration / _stabilizationMs).clamp(0.0, 1.0);
+
+                  if (progress < 1.0) {
+                    // Still focusing - update progress
                     setState(() {
-                      _isProcessing = true;
-                      _lastScanTime = now;
-                      _lastScannedCode = scannedCode;
+                      _focusProgress = progress;
                     });
-
-                    debugPrint('✅ QR/Barcode scanned: $scannedCode');
-
-                    // Pause scanner while processing
-                    _scannerController.stop();
-
-                    // Call the callback
-                    widget.onQrCodeScanned(scannedCode);
-
-                    // Reset processing flag and restart scanner after 3 seconds
-                    Future.delayed(const Duration(seconds: 3), () {
-                      if (mounted) {
-                        setState(() {
-                          _isProcessing = false;
-                        });
-                        _scannerController.start();
-                      }
-                    });
-                    break;
+                    return;
                   }
+
+                  // CODE ACCEPTED!
+                  AlkLoggerHelper.info("QR scanned: $scannedCode (${heldDuration}ms)");
+
+                  _isProcessing = true;
+                  _lastScanTime = now;
+                  _lastScannedCode = scannedCode;
+                  _scannerController.stop();
+
+                  setState(() {
+                    _focusProgress = 1.0;
+                  });
+
+                  widget.onQrCodeScanned(scannedCode);
+
+                  // Reset after 3 seconds
+                  Future.delayed(const Duration(seconds: 3), () {
+                    if (mounted) {
+                      setState(() {
+                        _isProcessing = false;
+                        _candidateCode = null;
+                        _candidateFirstSeen = null;
+                        _focusProgress = 0.0;
+                      });
+                      _scannerController.start();
+                    }
+                  });
                 }
               },
             ),
@@ -176,7 +207,8 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
           ] else if (_isLoading) ...[
             const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AlkColors.primaryColor),
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AlkColors.primaryColor),
               ),
             ),
           ] else ...[
@@ -205,7 +237,8 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                     ),
                     const SizedBox(height: AlkSize.spaceBtwItems / 2),
                     Text(
-                      _errorMessage ?? 'Permission caméra nécessaire pour scanner les QR codes',
+                      _errorMessage ??
+                          'Permission caméra nécessaire pour scanner les QR codes',
                       style: Theme.of(context).textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
@@ -218,7 +251,8 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: AlkColors.primaryColor),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AlkSize.cardRadiusMd),
+                                borderRadius:
+                                    BorderRadius.circular(AlkSize.cardRadiusMd),
                               ),
                             ),
                             child: const Text('Paramètres'),
@@ -227,11 +261,13 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                         const SizedBox(width: AlkSize.spaceBtwItems),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: widget.onClose ?? () => Navigator.of(context).pop(),
+                            onPressed:
+                                widget.onClose ?? () => Navigator.of(context).pop(),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AlkColors.primaryColor,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AlkSize.cardRadiusMd),
+                                borderRadius:
+                                    BorderRadius.circular(AlkSize.cardRadiusMd),
                               ),
                             ),
                             child: const Text('Fermer'),
@@ -287,10 +323,11 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                         Flexible(
                           child: Text(
                             'Scanner Code QR / Code-barres',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -299,9 +336,7 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                   ),
                 ),
                 IconButton(
-                  onPressed: () {
-                    _scannerController.toggleTorch();
-                  },
+                  onPressed: () => _scannerController.toggleTorch(),
                   icon: Icon(
                     Icons.flashlight_on,
                     color: _scannerController.torchState.value == TorchState.on
@@ -328,38 +363,69 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                 decoration: BoxDecoration(
                   color: _isProcessing
                       ? Colors.green.withOpacity(0.8)
-                      : Colors.black.withOpacity(0.7),
+                      : _candidateCode != null
+                          ? AlkColors.primaryColor.withOpacity(0.9)
+                          : Colors.black.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(AlkSize.cardRadiusLg),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      _isProcessing ? Icons.check_circle : Icons.qr_code,
-                      color: _isProcessing ? Colors.white : AlkColors.primaryColor,
+                      _isProcessing
+                          ? Icons.check_circle
+                          : _candidateCode != null
+                              ? Icons.center_focus_strong
+                              : Icons.qr_code,
+                      color: Colors.white,
                       size: 32,
                     ),
                     const SizedBox(height: AlkSize.spaceBtwItems / 2),
                     Text(
                       _isProcessing
                           ? 'Code scanné ✓'
-                          : 'Placez le code dans le cadre',
+                          : _candidateCode != null
+                              ? 'Maintenez le code...'
+                              : 'Placez le code dans le cadre',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: AlkSize.sm),
-                    Text(
-                      _isProcessing
-                          ? 'Traitement en cours...'
-                          : 'QR code ou code-barres produit\nDétection automatique',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
+                    // Progress bar when focusing
+                    if (_candidateCode != null && !_isProcessing) ...[
+                      const SizedBox(height: AlkSize.sm),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: _focusProgress,
+                          backgroundColor: Colors.white30,
+                          valueColor:
+                              const AlwaysStoppedAnimation<Color>(Colors.white),
+                          minHeight: 6,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                      const SizedBox(height: AlkSize.sm / 2),
+                      Text(
+                        '${(_focusProgress * 100).toInt()}%',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: AlkSize.sm),
+                      Text(
+                        _isProcessing
+                            ? 'Traitement en cours...'
+                            : 'Gardez le code stable 1 seconde',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -373,7 +439,11 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
     return Container(
       decoration: ShapeDecoration(
         shape: _QrScannerOverlayShape(
-          borderColor: AlkColors.primaryColor,
+          borderColor: _isProcessing
+              ? Colors.green
+              : _candidateCode != null
+                  ? AlkColors.primaryColor
+                  : AlkColors.primaryColor,
           borderWidth: 3.0,
           overlayColor: Colors.black.withOpacity(0.6),
           cutOutSize: MediaQuery.of(context).size.width * 0.7,
@@ -413,13 +483,12 @@ class _QrScannerOverlayShape extends ShapeBorder {
   Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
     Path path = Path()..fillType = PathFillType.evenOdd;
 
-    // Calculate center and cutout area
     final center = rect.center;
     final cutOutLeft = center.dx - cutOutSize / 2;
     final cutOutTop = center.dy - cutOutSize / 2;
-    final cutOutRect = Rect.fromLTWH(cutOutLeft, cutOutTop, cutOutSize, cutOutSize);
+    final cutOutRect =
+        Rect.fromLTWH(cutOutLeft, cutOutTop, cutOutSize, cutOutSize);
 
-    // Add overlay rectangles (areas outside the cutout)
     path.addRect(Rect.fromLTWH(0, 0, rect.width, rect.height));
     path.addRect(cutOutRect);
 
@@ -432,15 +501,11 @@ class _QrScannerOverlayShape extends ShapeBorder {
       ..color = overlayColor
       ..style = PaintingStyle.fill;
 
-    final borderPaint = Paint()
-      ..color = borderColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = borderWidth;
-
     final center = rect.center;
     final cutOutLeft = center.dx - cutOutSize / 2;
     final cutOutTop = center.dy - cutOutSize / 2;
-    final cutOutRect = Rect.fromLTWH(cutOutLeft, cutOutTop, cutOutSize, cutOutSize);
+    final cutOutRect =
+        Rect.fromLTWH(cutOutLeft, cutOutTop, cutOutSize, cutOutSize);
 
     // Draw overlay
     canvas.drawPath(getInnerPath(rect), paint);
@@ -461,7 +526,8 @@ class _QrScannerOverlayShape extends ShapeBorder {
     final cornerPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = borderWidth * 2;
+      ..strokeWidth = borderWidth * 2
+      ..strokeCap = StrokeCap.round;
 
     const cornerLength = 20.0;
 

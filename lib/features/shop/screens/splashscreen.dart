@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/constants/images_strings.dart';
 import 'package:flutter/material.dart';
 
@@ -139,8 +140,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           boxShadow: [
                             BoxShadow(
                               color: isDark
-                                  ? Colors.purple.withOpacity(0.3)
-                                  : Colors.deepPurple.withOpacity(0.25),
+                                  ? AlkColors.AppFirstColor.withOpacity(0.3)
+                                  : AlkColors.AppFirstColor.withOpacity(0.3),
                               blurRadius: 40,
                               spreadRadius: 10,
                             ),
@@ -178,7 +179,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.purple.withOpacity(0.3),
+                                  color: AlkColors.AppFirstColor.withOpacity(0.3),
                                   width: 3,
                                 ),
                               ),
@@ -191,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             child: CircularProgressIndicator(
                               strokeWidth: 3,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                isDark ? Colors.purpleAccent : Colors.purple,
+                                 AlkColors.AppFirstColor.withOpacity(0.3),
                               ),
                             ),
                           ),
@@ -225,7 +226,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               colors: [
                                 isDark ? Colors.white70 : Colors.black87,
                                 isDark ? Colors.white : Colors.black,
-                                isDark ? Colors.purpleAccent : Colors.purple,
+                                isDark ? AlkColors.AppFirstColor.withOpacity(0.3):AlkColors.AppFirstColor.withOpacity(0.3),
                                 isDark ? Colors.white : Colors.black,
                                 isDark ? Colors.white70 : Colors.black87,
                               ],
@@ -287,7 +288,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        Colors.purple.withOpacity(0.2),
+                        AlkColors.AppFirstColor.withOpacity(0.3),
                         Colors.transparent,
                       ],
                     ),
@@ -321,10 +322,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   height: 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.purple,
+                    color: AlkColors.AppFirstColor,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.purple.withOpacity(0.5),
+                        color: AlkColors.AppFirstColor.withOpacity(0.5),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),

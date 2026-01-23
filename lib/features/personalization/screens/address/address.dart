@@ -195,7 +195,7 @@ class _AddressScreenState extends State<AddressScreen> {
                           'Succès',
                           'Votre adresse a été mise à jour avec succès !',
                           snackPosition: SnackPosition.TOP,
-                          backgroundColor: AlkColors.primaryColor,
+                          backgroundColor: AlkColors.AppFirstColor,
                           colorText: Colors.white,
                         );
                       }
@@ -206,7 +206,7 @@ class _AddressScreenState extends State<AddressScreen> {
                       style: TextStyle(color: Colors.white),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AlkColors.primaryColor,
+                      backgroundColor: AlkColors.AppFirstColor,
                       padding: const EdgeInsets.symmetric(
                         vertical: AlkSize.defaultSpace / 1.5,
                       ),

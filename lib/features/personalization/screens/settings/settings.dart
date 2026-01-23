@@ -227,7 +227,7 @@ class _SettingScreenState extends State<SettingScreen> {
                     width: double.infinity,
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: AlkColors.primaryColor,
+                        backgroundColor: AlkColors.AppFirstColor,
                       ),
                       onPressed: () => _handleLogout(context),
                       child: const Text(
@@ -322,8 +322,8 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.blue.shade600,
-                    Colors.indigo.shade800,
+                    AlkColors.AppFirstColor.withOpacity(0.7),
+                    AlkColors.AppSecColor.withOpacity(0.7),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -331,7 +331,7 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.purple.withOpacity(0.3),
+                    color: AlkColors.AppFirstColor.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -455,7 +455,7 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
                   Text(
                     'Code-barres',
                     style: TextStyle(
-                      color: Colors.deepPurple.shade700,
+                      color: AlkColors.AppFirstColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -477,11 +477,11 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
                     backgroundColor: Colors.white,
                     eyeStyle: QrEyeStyle(
                       eyeShape: QrEyeShape.square,
-                      color: Colors.deepPurple.shade700,
+                      color: AlkColors.AppFirstColor,
                     ),
                     dataModuleStyle: QrDataModuleStyle(
                       dataModuleShape: QrDataModuleShape.square,
-                      color: Colors.deepPurple.shade700,
+                      color: AlkColors.AppFirstColor,
                     ),
                   ),
                 ],
@@ -719,7 +719,7 @@ class _CouponPopupState extends State<CouponPopup> {
                                             child: Text(
                                               '-${coupon.reductionAmount!.toStringAsFixed(2)} MAD',
                                               style: TextStyle(
-                                                color: Colors.blue.shade800,
+                                                color: AlkColors.AppSecColor,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),

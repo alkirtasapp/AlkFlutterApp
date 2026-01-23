@@ -1,3 +1,4 @@
+import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -158,7 +159,7 @@ class _StorePageState extends State<StoreDrawer> {
                             controller.clearSearch();
                             setState(() => productListKey = UniqueKey());
                           },
-                          backgroundColor: Colors.purple,
+                          backgroundColor: AlkColors.AppSecColor,
                           deleteIconColor: Colors.white,
                         ),
                       if (controller.selectedSortOption != "None")
@@ -181,7 +182,7 @@ class _StorePageState extends State<StoreDrawer> {
                             color: Colors.white,
                           ),
                           onDeleted: () => controller.updateSortOption("None"),
-                          backgroundColor: Colors.deepPurple.shade400,
+                          backgroundColor: AlkColors.AppSecColor,
                           deleteIconColor: Colors.white,
                         ),
                     ],
@@ -245,7 +246,7 @@ class _StorePageState extends State<StoreDrawer> {
                                   child: LinearProgressIndicator(
                                     borderRadius: BorderRadius.circular(10),
                                     minHeight: 10,
-                                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.purple),
+                                    valueColor: AlwaysStoppedAnimation<Color>(AlkColors.AppSecColor),
                                   ),
                                 ),
                               ),

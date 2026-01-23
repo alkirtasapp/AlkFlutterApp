@@ -6,6 +6,7 @@ import 'package:html/parser.dart' as htmlParser;
 import 'package:alkirtas/data/controllers/details_controller.dart';
 import 'package:alkirtas/data/controllers/product_list_Category.dart';
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class ProductCardControllerTax {
   final DetailsController detailsController = DetailsController();
@@ -29,7 +30,6 @@ class ProductCardControllerTax {
       // Step 1: Fetch product IDs if not already fetched
       if (cachedProductIds == null) {
         if (_fetchingProductsFuture != null) {
-          print("🔄 Waiting for existing fetch productIds...");
           await _fetchingProductsFuture;
         } else {
           _fetchingProductsFuture = _fetchProductIds();
@@ -40,11 +40,8 @@ class ProductCardControllerTax {
 
       // Step 2: Wait for any ongoing product details fetch
       if (_fetchingProductsDetailsFuture != null) {
-        print("🔄 Waiting for existing fetch product details...");
         await _fetchingProductsDetailsFuture;
       }
-
-      print("🔍 Final Product IDs: $cachedProductIds");
 
       // Step 3: Fetch all product details in one API request
       if (cachedProducts == null && cachedProductIds != null) {
@@ -57,37 +54,31 @@ class ProductCardControllerTax {
         cachedProducts = cachedProducts?.reversed.toList();
       }
 
-      print("✅ Final Products details");
-
       // Use random index with productIndex
       if (cachedProducts != null && cachedProducts!.isNotEmpty) {
-        final randomIndex = productIndex % cachedProducts!.length; // Use modulo here
-        print("✅ Fetching product at index : $randomIndex");
+        final randomIndex = productIndex % cachedProducts!.length;
         return cachedProducts![randomIndex];
       }
       return null;
     } catch (e) {
-      print('❌ Error fetching all products: $e');
+      AlkLoggerHelper.error("Products fetch failed", e);
       return null;
     }
   }
 
   Future<void> _fetchAndProcessAllProductDetails(List<int> productIds) async {
-    print("📡 Fetching product Details...");
-
     String productIdsQuery = productIds.join('|');
     final productApi =
         'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsQuery]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
     final response = await http.get(Uri.parse(productApi));
     if (response.statusCode != 200) {
-      print("❌ Failed to fetch product details.");
+      AlkLoggerHelper.error("Product details fetch failed: ${response.statusCode}");
       return;
     }
 
     final productData = json.decode(utf8.decode(response.bodyBytes));
     if (!productData.containsKey('products')) {
-      print("❌ No product data found.");
       return;
     }
 
@@ -107,14 +98,11 @@ class ProductCardControllerTax {
     }
 
     await Future.wait(asyncTasks);
-    print(" Processed All Product Data");
     cachedProducts = processedProducts;
   }
 
   ///  Fetches product IDs only ONCE and caches them
   Future<void> _fetchProductIds() async {
-    print("📡 Fetching productIds...");
-
     final List<int> productIds = [];
     int attempts = 0; // To prevent infinite loops
     const int maxAttempts = 5; // Limit the number of attempts to fetch more IDs
@@ -142,13 +130,11 @@ class ProductCardControllerTax {
 
           final response = await http.get(Uri.parse(productApi));
           if (response.statusCode != 200) {
-            print("❌ Failed to fetch product details for filtering.");
             continue;
           }
 
           final productData = json.decode(utf8.decode(response.bodyBytes));
           if (!productData.containsKey('products')) {
-            print("❌ No product data found for filtering.");
             continue;
           }
 
@@ -175,18 +161,15 @@ class ProductCardControllerTax {
         if (productIds.length >= productsPerCategory) {
           break;
         }
-
-        print("🔄 Loading more product IDs for Category ID: $categoryId...");
       }
     }
 
     if (productIds.isEmpty) {
-      print("❌ No active product IDs fetched.");
+      AlkLoggerHelper.warning("No active product IDs found");
       return;
     }
 
-    cachedProductIds = productIds; // Store fetched IDs
-    print("✅ Cached Product IDs: $cachedProductIds"); // Logs only once!
+    cachedProductIds = productIds;
   }
 
   //
@@ -225,7 +208,7 @@ class ProductCardControllerTax {
 
       await Future.wait(tasks);
     } catch (e) {
-      print("❌ Error processing product ${product['id']}: $e");
+      AlkLoggerHelper.error("Product ${product['id']} processing failed", e);
     }
   }
 
@@ -253,7 +236,7 @@ class ProductCardControllerTax {
         };
       }
     } catch (e) {
-      print('❌ Error fetching discount for product $productId');
+      AlkLoggerHelper.error("Discount fetch failed for product $productId", e);
     }
     return null;
   }
@@ -290,7 +273,7 @@ class ProductCardControllerTax {
 
       return (double.parse(priceHT.toString())) * (1 + (taxRate / 100));
     } catch (e) {
-      print('❌ Error fetching TTC price');
+      AlkLoggerHelper.error("TTC price fetch failed", e);
       return double.tryParse(priceHT.toString());
     }
   }

@@ -23,8 +23,8 @@ class App extends StatelessWidget {
           // Show a proper loading screen with MaterialApp wrapper
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: TAppTheme.lightTheme,
-            darkTheme: TAppTheme.darkTheme,
+            theme: AlkAppTheme.lightTheme,
+            darkTheme: AlkAppTheme.darkTheme,
             home: const Scaffold(
               body: Center(
                 child: CircularProgressIndicator(),
@@ -36,8 +36,8 @@ class App extends StatelessWidget {
           return GetMaterialApp(
             debugShowCheckedModeBanner: false,
             themeMode: ThemeMode.light,
-            theme: TAppTheme.lightTheme,
-            darkTheme: TAppTheme.darkTheme,
+            theme: AlkAppTheme.lightTheme,
+            darkTheme: AlkAppTheme.darkTheme,
             // redirect to login Screen
             home: hasSeenOnboarding ? LoginScreen() : const AnimatedOnboardingScreen(),
           );

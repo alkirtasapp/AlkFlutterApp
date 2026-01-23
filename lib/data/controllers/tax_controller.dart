@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class TaxController {
   Future<double?> fetchTTCPrice(
@@ -51,7 +52,7 @@ class TaxController {
 
       return priceTTC;
     } catch (e) {
-      print('Error fetching TTC price: $e');
+      AlkLoggerHelper.error("TTC price fetch failed", e);
       return double.tryParse(priceHT.toString()); // If error, return HT price
     }
   }

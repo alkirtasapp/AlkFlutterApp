@@ -17,7 +17,7 @@ class AlkProductFeatures extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.purple.shade50,
+            AlkColors.AppSecColor.withOpacity(0.2),
             Colors.white,
           ],
           begin: Alignment.topLeft,
@@ -25,12 +25,12 @@ class AlkProductFeatures extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.purple.shade100,
+          color: AlkColors.AppSecColor.withOpacity(0.2),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.purple.shade100.withOpacity(0.3),
+            color: AlkColors.AppSecColor.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -56,7 +56,7 @@ class AlkProductFeatures extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.purple.shade50,
+                  color: Colors.grey.shade50,
                   width: 1,
                 ),
               ),
@@ -68,8 +68,8 @@ class AlkProductFeatures extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.purple.shade400,
-                          const Color(0xFF7F2461),
+                          AlkColors.AppSecColor,
+                          AlkColors.AppFirstColor,
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -92,7 +92,7 @@ class AlkProductFeatures extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Colors.purple.shade700,
+                            color: AlkColors.AppFirstColor,
                             letterSpacing: 0.3,
                           ),
                         ),

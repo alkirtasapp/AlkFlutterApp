@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:alkirtas/services/url_parser_service.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 import 'package:alkirtas/navigation_menu.dart';
 import 'package:alkirtas/features/shop/controllers/product_controller_store.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
@@ -41,11 +42,10 @@ class QrNavigationController extends GetxController {
         }
       } else {
         // Not a valid URL, treat as product barcode (EAN13)
-        debugPrint('No valid URL found, treating as barcode: $scannedCode');
         return await _searchProductByBarcode(scannedCode);
       }
     } catch (e) {
-      debugPrint('Error processing scanned code: $e');
+      AlkLoggerHelper.error("QR scan failed", e);
       _showErrorSnackBar('Erreur lors du traitement du code');
       return false;
     }
@@ -102,7 +102,7 @@ class QrNavigationController extends GetxController {
 
       return true;
     } catch (e) {
-      debugPrint('Error navigating to category: $e');
+      AlkLoggerHelper.error("Category navigation failed", e);
       _showErrorSnackBar('Erreur lors de la navigation vers la catégorie');
       return false;
     }
@@ -171,7 +171,7 @@ class QrNavigationController extends GetxController {
 
       return true;
     } catch (e) {
-      debugPrint('Error navigating to product: $e');
+      AlkLoggerHelper.error("Product navigation failed", e);
       _showErrorSnackBar('Erreur lors du chargement du produit: ${e.toString()}');
       return false;
     }
@@ -246,7 +246,7 @@ class QrNavigationController extends GetxController {
 
       return true;
     } catch (e) {
-      debugPrint('Error searching product by barcode: $e');
+      AlkLoggerHelper.error("Barcode search failed", e);
       _showErrorSnackBar('Erreur lors de la recherche du produit');
       return false;
     }

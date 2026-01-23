@@ -30,8 +30,6 @@ class AlkCartItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  //  print("AlkCartItem - productPrice: $productPrice");
-
     final productProvider = Get.find<ProductProvider>();
 
     return Row(
@@ -89,7 +87,7 @@ class AlkCartItem extends StatelessWidget {
 
         // Delete Button
         IconButton(
-          icon: Icon(Icons.delete_outlined, color: Colors.purple.shade300),
+          icon: Icon(Icons.delete_outlined, color: AlkColors.AppSecColor),
           onPressed: () {
             productProvider.removeFromCart(productName);
 
@@ -99,7 +97,7 @@ class AlkCartItem extends StatelessWidget {
               "$productName a été retiré du panier",
               snackPosition: SnackPosition.TOP,
               duration: Duration(seconds: 2),
-              backgroundColor: Colors.purple.shade300,
+              backgroundColor: AlkColors.AppSecColor,
               colorText: Colors.white,
               isDismissible: true, 
               

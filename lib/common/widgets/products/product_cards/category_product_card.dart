@@ -150,7 +150,7 @@ class CategoryProductCard extends StatelessWidget {
                       left: 4,
                       child: AlkRoundedContainer(
                         radius: AlkSize.sm,
-                        backgroundColor: Colors.purple.shade300, // Use theme color
+                        backgroundColor: AlkColors.AppSecColor, // Use theme color
                         padding: const EdgeInsets.symmetric(
                             horizontal: AlkSize.sm, vertical: AlkSize.xs),
                         child: Text(discountText,
@@ -203,7 +203,7 @@ class CategoryProductCard extends StatelessWidget {
                       ),
                       Container(
                         decoration: BoxDecoration(
-                          color: isInStock ? AlkColors.primaryColor : AlkColors.grey,
+                          color: isInStock ? AlkColors.AppFirstColor : AlkColors.grey,
                           borderRadius: BorderRadius.only(
                               topLeft: Radius.circular(AlkSize.cardRadiusMd),
                               bottomRight: Radius.circular(
@@ -247,7 +247,7 @@ class CategoryProductCard extends StatelessWidget {
                                           isDismissible: true,
                                           dismissDirection: DismissDirection.horizontal,
                                           duration: const Duration(seconds: 2),
-                                          backgroundColor: Colors.purple.shade300,
+                                          backgroundColor: AlkColors.AppSecColor,
                                           colorText: AlkColors.white,
                                           margin: const EdgeInsets.all(10),
                                           borderRadius: 8);

@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 import 'custom_themes/chip_theme.dart';
 import 'custom_themes/text_field_theme.dart';
 
-class TAppTheme {
-  TAppTheme._();
+class AlkAppTheme {
+  AlkAppTheme._();
 
 //light theme
 

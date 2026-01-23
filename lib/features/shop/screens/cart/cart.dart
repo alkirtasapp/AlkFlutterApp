@@ -12,10 +12,11 @@ import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/backendData/addressData.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart' as xml;
-import 'package:provider/provider.dart'; // Import Provider
-import 'package:qr_flutter/qr_flutter.dart'; // Import QR Flutter
-import 'package:alkirtas/features/shop/screens/cart/cart_qr_dialog.dart'; // Import new QR dialog with polling
+import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:alkirtas/features/shop/screens/cart/cart_qr_dialog.dart';
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 import 'dart:convert';
 import 'dart:typed_data';
@@ -53,11 +54,6 @@ class _CartScreenState extends State<CartScreen> {
       'customer_email': UserData.email.isNotEmpty ? UserData.email : null,
     };
 
-    print('📦 Simple QR Data Generated:');
-    print('   PrestaShop Cart ID: $prestashopCartId');
-    print('   Customer Name: ${qrData['customer_name']}');
-    print('   Customer Email: ${qrData['customer_email']}');
-
     return qrData;
   }
 
@@ -68,17 +64,16 @@ class _CartScreenState extends State<CartScreen> {
       // Check if we already have a PrestaShop cart ID for this cart
       final existingCartId = cartProvider.findExistingPrestashopCartId();
       if (existingCartId != null) {
-        print('🔗 Reusing existing PrestaShop cart ID: $existingCartId');
+        AlkLoggerHelper.info("QR cart ready: $existingCartId (reused)");
         return existingCartId;
       }
 
       // Create new cart on PrestaShop
-      print('🆕 Creating new PrestaShop cart...');
       final cartId = await createCart(cartProvider.cartItems);
-      print('✅ PrestaShop cart created with ID: $cartId');
+      AlkLoggerHelper.info("QR cart created: $cartId");
       return cartId;
     } catch (e) {
-      print('❌ Error creating PrestaShop cart: $e');
+      AlkLoggerHelper.error("PrestaShop cart creation failed", e);
       return null;
     }
   }
@@ -232,10 +227,8 @@ class _CartScreenState extends State<CartScreen> {
 
         // Navigate to Checkout Screen with the generated cartId
         Get.to(() => CheckoutScreen());
-
-        print("Cart placed successfully!");
       } catch (e) {
-        print("Error during checkout: $e");
+        AlkLoggerHelper.error("Checkout failed", e);
       }
     }
   }
@@ -281,11 +274,8 @@ class _CartScreenState extends State<CartScreen> {
         "Content-Type": "application/xml",
         "Accept": "application/xml",
       },
-      body: xmlBody.trim(), // Ensure no extra spaces
+      body: xmlBody.trim(),
     );
-
-    print("Response Status: ${response.statusCode}");
-    print("Response Body: ${response.body}");
 
     // Parse response
     if (response.statusCode == 201 || response.statusCode == 200) {
@@ -301,12 +291,6 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
-
-    print("🛒 Cart Items in CartScreen:");
-    for (var item in cartProvider.cartItems) {
-      print(
-          "Product ID: ${item['productId']}, Quantity: ${item['productQuantity']}, Price: ${item['productPrice']}");
-    }
 
     return Scaffold(
       appBar: AlkAppBar(
@@ -460,7 +444,7 @@ class _CartScreenState extends State<CartScreen> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: Colors.purple[700],
+                              color: AlkColors.AppSecColor,
                             ),
                           ),
                           Text(
@@ -468,7 +452,7 @@ class _CartScreenState extends State<CartScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.purple[700],
+                              color: AlkColors.AppSecColor,
                             ),
                           ),
                         ],
@@ -485,7 +469,7 @@ class _CartScreenState extends State<CartScreen> {
                         checkout(cartProvider);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple[400],
+                        backgroundColor: AlkColors.AppSecColor,
                         padding: EdgeInsets.symmetric(
                             vertical: AlkSize.buttonHeight),
                         shape: RoundedRectangleBorder(

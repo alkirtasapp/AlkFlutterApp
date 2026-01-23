@@ -119,7 +119,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
               AlkCircularIcon(
                 icon: Iconsax.minus,
                 size: 25,
-                backgroundColor: Colors.purple[400],
+                backgroundColor:AlkColors.AppFirstColor,
                 height: 40,
                 width: 40,
                 color: Colors.white,
@@ -131,7 +131,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
               AlkCircularIcon(
                 icon: Iconsax.add,
                 size: 25,
-                backgroundColor: Colors.purple[400],
+                backgroundColor: AlkColors.AppFirstColor,
                 height: 40,
                 width: 40,
                 color: Colors.white,
@@ -167,7 +167,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
                       "${widget.productName} a été ajouté au panier en quantité: $quantity",
                       snackPosition: SnackPosition.TOP,
                       duration: Duration(seconds: 2),
-                      backgroundColor: Colors.purple.shade300,
+                      backgroundColor: AlkColors.AppSecColor,
                       colorText: Colors.white,
                       onTap: (snack) => Get.to(() => CartScreen()),
                       isDismissible: true,
@@ -176,7 +176,7 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
                 : null, // Disable button when out of stock
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.all(AlkSize.md),
-              backgroundColor: isInStock ? Colors.purple[400] : Colors.grey,
+              backgroundColor: isInStock ? AlkColors.AppFirstColor : Colors.grey,
               side: const BorderSide(color: Colors.grey),
             ),
             child: Text(isInStock ? 'Ajouter au Panier' : 'Rupture de stock',style: Theme.of(context).textTheme.titleMedium!.apply(color: Colors.white),),

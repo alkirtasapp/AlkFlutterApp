@@ -18,6 +18,8 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:alkirtas/providers/coupon_provider.dart';
 import 'package:alkirtas/providers/loyalty_provider.dart';
+import 'package:alkirtas/providers/app_config_provider.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 Future<void> main() async {
   // Wrap everything in error handling to prevent white screens
@@ -26,7 +28,6 @@ Future<void> main() async {
 
     // Load environment variables
     await dotenv.load(fileName: ".env");
-    print("✅ Environment variables loaded");
 
     // Initialize Firebase with configuration from env
     await Firebase.initializeApp(
@@ -38,10 +39,8 @@ Future<void> main() async {
         storageBucket: AppConfig.firebaseStorageBucket,
       ),
     );
-    print("✅ Firebase initialized");
 
     await FirebaseApi().initNotifications();
-    print("✅ Notifications initialized");
 
     // Initialize Firebase Analytics
     final analytics = FirebaseAnalytics.instance;
@@ -52,35 +51,30 @@ Future<void> main() async {
     Hive.registerAdapter(SavedCartAdapter());
     await Hive.openBox<Coupon>('couponsBox');
     await Hive.openBox<SavedCart>('savedCartsBox');
-    print("✅ Hive initialized");
 
     // Clear caches on app restart (will be re-cached when screens load)
-    // Products cache
     var productBox = await Hive.openBox('productCache');
     await productBox.clear();
-    print("✅ Product cache cleared on app restart");
-
-    // Banners cache
     var bannerBox = await Hive.openBox('bannerBox');
     await bannerBox.clear();
-    print("✅ Banner cache cleared on app restart");
-
-    // Sections cache
     var sectionsBox = await Hive.openBox('sectionsBox');
     await sectionsBox.clear();
-    print("✅ Sections cache cleared on app restart");
-
-    print("📦 All caches will be re-populated when screens load");
 
     // Initialize CartProvider and load saved cart (cart persists across restarts)
     final cartProvider = CartProvider();
     await cartProvider.initialize();
-    print("✅ Cart provider initialized");
+
+    // Initialize AppConfigProvider and load remote colors
+    final appConfigProvider = AppConfigProvider();
+    await appConfigProvider.loadConfig();
+
+    AlkLoggerHelper.info("App initialized: env, firebase, hive, cart, appConfig | caches cleared");
 
     runApp(
       MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: cartProvider),
+          ChangeNotifierProvider.value(value: appConfigProvider),
           ChangeNotifierProvider(create: (_) => ProductProvider()),
           ChangeNotifierProvider(create: (_) => CouponProvider()),
           ChangeNotifierProvider(create: (_) => AudioPlayerProvider()),
@@ -90,8 +84,7 @@ Future<void> main() async {
       ),
     );
   } catch (e, stackTrace) {
-    print("❌ CRITICAL ERROR during app initialization: $e");
-    print("   StackTrace: $stackTrace");
+    AlkLoggerHelper.error("CRITICAL: App initialization failed: $e", stackTrace);
 
     // Still try to run the app even if initialization fails
     runApp(

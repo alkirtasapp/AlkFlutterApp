@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/utils/logging/logger.dart';
 import '../models/audio_sample.dart';
 
 class AudioSampleService {
@@ -20,7 +21,7 @@ class AudioSampleService {
       }
       return null;
     } catch (e) {
-      print('Error fetching audio sample: $e');
+      AlkLoggerHelper.error("Audio sample fetch failed", e);
       return null;
     }
   }

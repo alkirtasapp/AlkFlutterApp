@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../utils/constants/size.dart';
 import '../products/product_cards/store_product_card.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class AlkStoreGridDrawer extends StatelessWidget {
   final int itemCount;
@@ -18,8 +19,7 @@ class AlkStoreGridDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("🛒 Building Grid for Category ID: $categoryId with ${preloadedProducts.length} products on current page");
-
+    
     return GridView.builder(
       itemCount: preloadedProducts.length,
       padding: EdgeInsets.all(6.0),
@@ -32,8 +32,6 @@ class AlkStoreGridDrawer extends StatelessWidget {
       ),
       itemBuilder: (_, index) {
         final productData = preloadedProducts[index];
-        final productName = productData['name'] ?? 'Unknown Product';
-        print("🛍️ Displaying Product: $productName (ID: ${productData['id']})");
 
         return ProductCardStore(
           categoryId: categoryId,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/utils/logging/logger.dart';
 import '../models/audiobook_model.dart';
 
 /// Repository to fetch audiobooks from server
@@ -54,7 +55,7 @@ class AudiobookRepository {
         throw Exception('Failed to load audiobooks: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching audiobooks: $e');
+      AlkLoggerHelper.error("Audiobooks fetch failed", e);
       // Return cached data if available, otherwise empty list
       return _cachedAudiobooks ?? [];
     }
@@ -69,7 +70,7 @@ class AudiobookRepository {
         try {
           audiobooks.add(_parseAudiobook(item));
         } catch (e) {
-          print('Error parsing audiobook: $e');
+          AlkLoggerHelper.error("Audiobook parse failed", e);
         }
       }
     }
@@ -140,11 +141,11 @@ class AudiobookRepository {
           return null;
         }
       } else {
-        print('Failed to fetch audiobook for product $productId: ${response.statusCode}');
+        AlkLoggerHelper.error("Audiobook fetch failed for product $productId: ${response.statusCode}");
         return _productAudiobookCache[productId];
       }
     } catch (e) {
-      print('Error fetching audiobook for product $productId: $e');
+      AlkLoggerHelper.error("Audiobook fetch failed for product $productId", e);
       return _productAudiobookCache[productId];
     }
   }
@@ -174,7 +175,7 @@ class AudiobookRepository {
       }
       return _cachedAudiobooks ?? [];
     } catch (e) {
-      print('Error fetching audiobooks from module: $e');
+      AlkLoggerHelper.error("Module audiobooks fetch failed", e);
       return _cachedAudiobooks ?? [];
     }
   }

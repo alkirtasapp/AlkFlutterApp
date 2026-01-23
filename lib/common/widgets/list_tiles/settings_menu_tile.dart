@@ -19,7 +19,7 @@ class AlkSettingMenuTile extends StatelessWidget {
       leading: Icon(
         icon,
         size: 28,
-        color: AlkColors.primaryColor,
+        color: AlkColors.AppFirstColor,
       ),
       title: Text(
         title,

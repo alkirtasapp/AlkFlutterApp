@@ -31,11 +31,6 @@ class ProductCardStore extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final productName = productData['name'] ?? 'Unknown Product';
-    final productId = productData['id'] ?? 'Unknown ID';
-
-    print("🛍️ Rendering Product Card: $productName (ID: $productId)");
-
     final id = _safeConvertToString(productData['id']);
     final reference = _safeConvertToString(productData['reference']);
     final title = _safeConvertToString(productData['name']);
@@ -68,12 +63,7 @@ class ProductCardStore extends StatelessWidget {
     String? discountText;
     if (discountValue > 0) {
       discountText = '${discountValue.toStringAsFixed(0)}%';
-      print(
-          'Displaying discount for product ${productData['id']}: $discountText');
-    } else {
-      print('No discount to display for product ${productData['id']}');
     }
-    print('Discount for product ${productData['id']}: $discountText');
     final imageUrl =
         ProductControllerStore().constructImageUrl(productData['id_default_image']);
     final dark = Theme.of(context).brightness == Brightness.dark;
@@ -143,7 +133,7 @@ class ProductCardStore extends StatelessWidget {
                       left: 1,
                       child: AlkRoundedContainer(
                         radius: AlkSize.sm,
-                        backgroundColor: Colors.purple.shade300,
+                        backgroundColor: AlkColors.AppSecColor,
                         padding: const EdgeInsets.symmetric(
                           horizontal: AlkSize.sm,
                           vertical: AlkSize.xs,
@@ -208,7 +198,7 @@ class ProductCardStore extends StatelessWidget {
                         ),
                         Container(
                           decoration: BoxDecoration(
-                            color: isInStock ? AlkColors.primaryColor : AlkColors.grey,
+                            color: isInStock ? AlkColors.AppFirstColor : AlkColors.grey,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(AlkSize.cardRadiusMd),
                               bottomRight:
@@ -255,7 +245,7 @@ class ProductCardStore extends StatelessWidget {
                                             isDismissible: true,
                                             dismissDirection: DismissDirection.horizontal,
                                             duration: const Duration(seconds: 2),
-                                            backgroundColor: Colors.purple.shade300,
+                                            backgroundColor: AlkColors.AppSecColor,
                                             colorText: AlkColors.white,
                                             margin: const EdgeInsets.all(10),
                                             borderRadius: 8

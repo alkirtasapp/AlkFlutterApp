@@ -1,5 +1,6 @@
 import 'package:alkirtas/features/authentication/screens/login/forgot_password_webview.dart';
 import 'package:alkirtas/features/authentication/screens/signUp/sign_up.dart';
+import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:alkirtas/utils/constants/size.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -110,7 +111,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.purple.shade100.withOpacity(0.2),
+                        color: AlkColors.AppSecColor.withOpacity(0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -119,7 +120,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                   child: TextFormField(
                     controller: widget.emailController,
                     decoration: InputDecoration(
-                      prefixIcon: Icon(Iconsax.direct, color: Colors.purple.shade400),
+                      prefixIcon: Icon(Iconsax.direct, color: AlkColors.AppSecColor),
                       label: const Text('E-mail'),
                       filled: true,
                       fillColor: Colors.white,
@@ -133,7 +134,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.purple.shade400, width: 2),
+                        borderSide: BorderSide(color: AlkColors.AppSecColor, width: 2),
                       ),
                     ),
                   ),
@@ -145,7 +146,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.purple.shade100.withOpacity(0.2),
+                        color: AlkColors.AppSecColor.withOpacity(0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -154,7 +155,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                   child: Obx(() => TextFormField(
                         controller: widget.passwordController,
                         decoration: InputDecoration(
-                          prefixIcon: Icon(Iconsax.password_check, color: Colors.purple.shade400),
+                          prefixIcon: Icon(Iconsax.password_check, color: AlkColors.AppSecColor),
                           labelText: 'Mot de passe',
                           filled: true,
                           fillColor: Colors.white,
@@ -168,12 +169,12 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.purple.shade400, width: 2),
+                            borderSide: BorderSide(color: AlkColors.AppSecColor, width: 2),
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               isObscured.value ? Iconsax.eye_slash : Iconsax.eye,
-                              color: Colors.purple.shade400,
+                              color: AlkColors.AppSecColor,
                             ),
                             onPressed: () {
                               isObscured.value = !isObscured.value;
@@ -195,7 +196,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                               onChanged: (value) {
                                 isRememberMeChecked.value = value ?? false;
                               },
-                              activeColor: Colors.purple.shade600,
+                              activeColor: AlkColors.AppSecColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -212,7 +213,7 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                           MaterialPageRoute(builder: (context) => const ForgotPasswordWebView()),
                         ),
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.purple.shade600,
+                          foregroundColor: AlkColors.AppSecColor,
                         ),
                         child: const Text(
                           'Mot de passe oublié?',
@@ -234,13 +235,13 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                       colors: [
-                        Colors.purple.shade700,
-                        Colors.purple.shade500,
+                        AlkColors.AppSecColor,
+                        AlkColors.AppFirstColor,
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.purple.shade300.withOpacity(0.4),
+                        color: AlkColors.AppSecColor.withOpacity(0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -279,11 +280,11 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                   child: OutlinedButton(
                     onPressed: () => Get.to(() => const SignUpScreen()),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.purple.shade400, width: 2),
+                      side: BorderSide(color: AlkColors.AppSecColor, width: 2),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      foregroundColor: Colors.purple.shade700,
+                      foregroundColor: AlkColors.AppFirstColor,
                     ),
                     child: const Text(
                       'Créer un compte',

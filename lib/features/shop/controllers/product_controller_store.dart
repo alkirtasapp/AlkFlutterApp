@@ -8,6 +8,7 @@ import 'package:alkirtas/data/controllers/tax_controller.dart';
 import 'package:alkirtas/data/controllers/quantity_controller.dart';
 import 'package:alkirtas/features/shop/controllers/brand_controller.dart';
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class ProductControllerStore {
   final QuantityController quantityController = QuantityController();
@@ -25,8 +26,8 @@ class ProductControllerStore {
 
       // Check Cache First
       if (box.containsKey(cacheKey)) {
-        print(
-            "⚡ Using cached products for Category $categoryId, Offset $offset");
+        AlkLoggerHelper.debug(
+            "Using cached products for Category $categoryId, Offset $offset");
         return List<Map<String, dynamic>>.from(box.get(cacheKey));
       }
 
@@ -34,13 +35,13 @@ class ProductControllerStore {
       final List<int> productIds =
           await productListCategory.fetchProductIdsFromCategory(categoryId);
       if (productIds.isEmpty) {
-        print("⚠️ No product IDs found for Category ID: $categoryId");
+        AlkLoggerHelper.warning("No product IDs found for Category ID: $categoryId");
         return null;
       }
 
       if (offset >= productIds.length) {
-        print(
-            "❌ Offset ($offset) is beyond available products (${productIds.length}) for Category ID: $categoryId");
+        AlkLoggerHelper.warning(
+            "Offset ($offset) is beyond available products (${productIds.length}) for Category ID: $categoryId");
         return [];
       }
 
@@ -91,10 +92,10 @@ class ProductControllerStore {
 
       // Cache the results
       box.put(cacheKey, fetchedProducts);
-      print("✅ Cached products for Category $categoryId, Offset $offset");
+      AlkLoggerHelper.info("Cached products for Category $categoryId, Offset $offset");
       return fetchedProducts;
     } catch (e) {
-      print('❌ Error fetching products: $e');
+      AlkLoggerHelper.error('Error fetching products', e);
       return null;
     }
   }
@@ -104,17 +105,17 @@ class ProductControllerStore {
     final String productApi =
         'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsParam]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
-    print("📡 Fetching products for IDs: $productIdsParam");
+    AlkLoggerHelper.debug("Fetching products for IDs: $productIdsParam");
 
     final response = await http.get(Uri.parse(productApi));
     if (response.statusCode != 200) {
-      print("❌ API Error: ${response.statusCode}");
+      AlkLoggerHelper.error("API Error: ${response.statusCode}");
       return;
     }
 
     final productData = json.decode(utf8.decode(response.bodyBytes));
     if (productData['products'] == null || productData['products'].isEmpty) {
-      print("⚠️ No products found for IDs: $productIdsParam");
+      AlkLoggerHelper.warning("No products found for IDs: $productIdsParam");
       return;
     }
 
@@ -139,12 +140,10 @@ class ProductControllerStore {
     final String apiUrl =
         'https://www.alkirtas.com/api/products?display=full&filter[id]=$productId&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
-    print("🟡 Fetching product features for ID: $productId");
-
     final response = await http.get(Uri.parse(apiUrl));
 
     if (response.statusCode != 200) {
-      print("❌ API Error: ${response.statusCode} for Product ID: $productId");
+      AlkLoggerHelper.error("API Error: ${response.statusCode} for Product ID: $productId");
       return [];
     }
 
@@ -153,37 +152,25 @@ class ProductControllerStore {
     if (productData == null ||
         !productData.containsKey('products') ||
         productData['products'].isEmpty) {
-      print("❌ No product data found for ID: $productId");
       return [];
     }
 
-    final product = productData['products'][0]; // Fix: Extract first product object
+    final product = productData['products'][0];
 
     if (!product.containsKey('associations') ||
         !product['associations'].containsKey('product_features')) {
-      print("⚠️ No features found for Product ID: $productId");
       return [];
     }
 
-    // ✅ Extract product feature IDs
     final List<Map<String, dynamic>> featuresList =
         List<Map<String, dynamic>>.from(product['associations']['product_features']);
 
-    print("🔍 Found ${featuresList.length} features for Product ID: $productId");
-
-    // 🔹 Use DetailsController to fetch feature names & values
     Map<String, String> featureMap =
         await detailsController.fetchProductFeatures(featuresList);
 
-    if (featureMap.isEmpty) {
-      print("⚠️ No mapped features for Product ID: $productId");
-    } else {
-      print("✅ Features Fetched: ${featureMap.entries.map((e) => "${e.key}: ${e.value}").toList()}");
-    }
-
     return featureMap.entries.map((e) => "${e.key}: ${e.value}").toList();
   } catch (e) {
-    print("❌ Exception fetching features for product $productId: $e");
+    AlkLoggerHelper.error("Exception fetching features for product $productId", e);
     return [];
   }
 }
@@ -248,14 +235,14 @@ class ProductControllerStore {
 
 
     } catch (e) {
-      print("❌ Error processing product details for ${product['id']}: $e");
+      AlkLoggerHelper.error("Error processing product details for ${product['id']}", e);
     }
   }
    // Fetch Products by IDs
   Future<List<Map<String, dynamic>>?> fetchProductsByIds(List<int> productIds) async {
     try {
       if (productIds.isEmpty) {
-        print("⚠️ No product IDs provided");
+        AlkLoggerHelper.warning("No product IDs provided");
         return null;
       }
 
@@ -276,7 +263,7 @@ class ProductControllerStore {
 
       return fetchedProducts;
     } catch (e) {
-      print('❌ Error fetching products by IDs: $e');
+      AlkLoggerHelper.error('Error fetching products by IDs', e);
       return null;
     }
   }
@@ -284,7 +271,7 @@ class ProductControllerStore {
   // Search product by barcode (EAN13)
   Future<Map<String, dynamic>?> searchProductByBarcode(String barcode) async {
     try {
-      print("🔍 Searching for product with barcode: $barcode");
+      AlkLoggerHelper.debug("Searching for product with barcode: $barcode");
 
       // Search by EAN13 in PrestaShop API
       final String productApi =
@@ -293,14 +280,14 @@ class ProductControllerStore {
       final response = await http.get(Uri.parse(productApi));
 
       if (response.statusCode != 200) {
-        print("❌ API Error: ${response.statusCode}");
+        AlkLoggerHelper.error("API Error: ${response.statusCode}");
         return null;
       }
 
       final productData = json.decode(utf8.decode(response.bodyBytes));
 
       if (productData['products'] == null || productData['products'].isEmpty) {
-        print("⚠️ No product found with barcode: $barcode");
+        AlkLoggerHelper.warning("No product found with barcode: $barcode");
         return null;
       }
 
@@ -311,7 +298,7 @@ class ProductControllerStore {
       if (productsData is List) {
         // Multiple products or array format
         if (productsData.isEmpty) {
-          print("⚠️ No product found with barcode: $barcode");
+          AlkLoggerHelper.warning("No product found with barcode: $barcode");
           return null;
         }
         product = productsData[0];
@@ -319,12 +306,12 @@ class ProductControllerStore {
         // Single product returned as Map with product ID as key
         final productKeys = productsData.keys.toList();
         if (productKeys.isEmpty) {
-          print("⚠️ No product found with barcode: $barcode");
+          AlkLoggerHelper.warning("No product found with barcode: $barcode");
           return null;
         }
         product = Map<String, dynamic>.from(productsData[productKeys.first]);
       } else {
-        print("❌ Unexpected products data format: ${productsData.runtimeType}");
+        AlkLoggerHelper.error("Unexpected products data format: ${productsData.runtimeType}");
         return null;
       }
 
@@ -333,14 +320,14 @@ class ProductControllerStore {
       await _processProductDetails(product, tempProducts);
 
       if (tempProducts.isEmpty) {
-        print("❌ Error processing product with barcode: $barcode");
+        AlkLoggerHelper.error("Error processing product with barcode: $barcode");
         return null;
       }
 
-      print("✅ Product found with barcode: $barcode - ${tempProducts[0]['name']}");
+      AlkLoggerHelper.info("Product found with barcode: $barcode - ${tempProducts[0]['name']}");
       return tempProducts[0];
     } catch (e) {
-      print('❌ Error searching product by barcode: $e');
+      AlkLoggerHelper.error('Error searching product by barcode', e);
       return null;
     }
   }
@@ -355,7 +342,7 @@ class ProductControllerStore {
   // Search product by reference (default_code)
   Future<Map<String, dynamic>?> searchProductByReference(String reference) async {
     try {
-      print("🔍 Searching for product with reference: $reference");
+      AlkLoggerHelper.debug("Searching for product with reference: $reference");
 
       // Search by reference in PrestaShop API
       final String productApi =
@@ -364,14 +351,14 @@ class ProductControllerStore {
       final response = await http.get(Uri.parse(productApi));
 
       if (response.statusCode != 200) {
-        print("❌ API Error: ${response.statusCode}");
+        AlkLoggerHelper.error("API Error: ${response.statusCode}");
         return null;
       }
 
       final productData = json.decode(utf8.decode(response.bodyBytes));
 
       if (productData['products'] == null || productData['products'].isEmpty) {
-        print("⚠️ No product found with reference: $reference");
+        AlkLoggerHelper.warning("No product found with reference: $reference");
         return null;
       }
 
@@ -381,19 +368,19 @@ class ProductControllerStore {
 
       if (productsData is List) {
         if (productsData.isEmpty) {
-          print("⚠️ No product found with reference: $reference");
+          AlkLoggerHelper.warning("No product found with reference: $reference");
           return null;
         }
         product = productsData[0];
       } else if (productsData is Map) {
         final productKeys = productsData.keys.toList();
         if (productKeys.isEmpty) {
-          print("⚠️ No product found with reference: $reference");
+          AlkLoggerHelper.warning("No product found with reference: $reference");
           return null;
         }
         product = Map<String, dynamic>.from(productsData[productKeys.first]);
       } else {
-        print("❌ Unexpected products data format: ${productsData.runtimeType}");
+        AlkLoggerHelper.error("Unexpected products data format: ${productsData.runtimeType}");
         return null;
       }
 
@@ -402,14 +389,14 @@ class ProductControllerStore {
       await _processProductDetails(product, tempProducts);
 
       if (tempProducts.isEmpty) {
-        print("❌ Error processing product with reference: $reference");
+        AlkLoggerHelper.error("Error processing product with reference: $reference");
         return null;
       }
 
-      print("✅ Product found with reference: $reference - ${tempProducts[0]['name']}");
+      AlkLoggerHelper.info("Product found with reference: $reference - ${tempProducts[0]['name']}");
       return tempProducts[0];
     } catch (e) {
-      print('❌ Error searching product by reference: $e');
+      AlkLoggerHelper.error('Error searching product by reference', e);
       return null;
     }
   }

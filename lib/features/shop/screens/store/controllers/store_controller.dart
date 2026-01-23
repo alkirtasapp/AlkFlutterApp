@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../data/controllers/search_controller.dart';
 import '../../../controllers/categories_store_controller.dart';
 import '../../../controllers/product_controller_store.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 /// Controller to manage store screen state and business logic
 /// Handles product fetching, search, sorting, and category navigation
@@ -57,8 +58,6 @@ class StoreController extends ChangeNotifier {
     selectedSortOption = "None";
     notifyListeners();
 
-    print("📡 Fetching products for Category ID: $categoryId, Offset: $offset");
-
     final List<Map<String, dynamic>> validProducts =
         await productController.fetchProductDataStore(categoryId, offset, limit) ?? [];
 
@@ -71,9 +70,9 @@ class StoreController extends ChangeNotifier {
       }
       offset += validProducts.length;
       _applySorting();
-      print("✅ Fetched ${validProducts.length} products for Category ID: $categoryId");
+      AlkLoggerHelper.debug("Fetched ${validProducts.length} products for category $categoryId");
     } else {
-      print("⚠️ No valid products found for Category ID: $categoryId");
+      AlkLoggerHelper.warning("No products found for category $categoryId");
     }
 
     isLoading = false;
@@ -90,36 +89,36 @@ class StoreController extends ChangeNotifier {
     final List<int> allProductIds =
         await productController.productListCategory.fetchProductIdsFromCategory(selectedCategoryId);
 
-    int remaining = allProductIds.length - offset;
-    print("🔎 Found $remaining products remaining on category ID $selectedCategoryId");
+    int activeProductsAdded = 0;
+    const int batchSize = 10;
 
-    final List<int> nextBatchIds = allProductIds.skip(offset).take(limit * 5).toList();
+    // Loop until we have `limit` active products or run out of IDs
+    while (activeProductsAdded < limit && offset < allProductIds.length) {
+      final List<int> batchIds = allProductIds.skip(offset).take(batchSize).toList();
 
-    if (nextBatchIds.isEmpty) {
-      print("⚠️ No more products to load for Category ID: $selectedCategoryId");
-      isFetchingMore = false;
-      notifyListeners();
-      return;
-    }
+      if (batchIds.isEmpty) break;
 
-    final List<Map<String, dynamic>>? moreProducts =
-        await productController.fetchProductsByIds(nextBatchIds);
+      final List<Map<String, dynamic>>? batchProducts =
+          await productController.fetchProductsByIds(batchIds);
 
-    final activeProducts = moreProducts?.where((p) => p['active'].toString() == '1').toList() ?? [];
-
-    if (activeProducts.isNotEmpty) {
-      for (var product in activeProducts) {
-        if (!fetchedProductIds.contains(product['id'])) {
-          products.add(product);
-          fetchedProductIds.add(product['id']);
+      if (batchProducts != null) {
+        for (var product in batchProducts) {
+          if (product['active'].toString() == '1' &&
+              !fetchedProductIds.contains(product['id'])) {
+            products.add(product);
+            fetchedProductIds.add(product['id']);
+            activeProductsAdded++;
+            if (activeProductsAdded >= limit) break;
+          }
         }
       }
-      offset += nextBatchIds.length;
+
+      offset += batchIds.length;
+    }
+
+    if (activeProductsAdded > 0) {
       _applySorting();
-      print("✅ Displayed ${activeProducts.length} products, ${allProductIds.length - offset} remaining");
-    } else {
-      print("⚠️ No more active products found for Category ID: $selectedCategoryId");
-      offset += nextBatchIds.length;
+      AlkLoggerHelper.debug("Loaded $activeProductsAdded more products for category $selectedCategoryId");
     }
 
     isFetchingMore = false;
@@ -154,12 +153,12 @@ class StoreController extends ChangeNotifier {
         }
         offset += searchedProducts.length;
         _applySorting();
-        print("✅ Displaying first ${searchedProducts.length} search results.");
+        AlkLoggerHelper.debug("Search found ${searchedProducts.length} results for '$query'");
       } else {
-        print("⚠️ No valid product details found.");
+        AlkLoggerHelper.warning("No products found for search '$query'");
       }
     } else {
-      print("⚠️ No product IDs returned from search.");
+      AlkLoggerHelper.warning("Search returned no results for '$query'");
     }
 
     isLoading = false;
@@ -172,8 +171,6 @@ class StoreController extends ChangeNotifier {
 
     isFetchingMore = true;
     notifyListeners();
-
-    print("📡 Loading more search results for query: $currentSearchQuery, Offset: $offset");
 
     final List<int>? productIds =
         await searchController.searchProducts(currentSearchQuery, offset: offset, limit: 100);
@@ -191,12 +188,7 @@ class StoreController extends ChangeNotifier {
         }
         offset += productIds.length;
         _applySorting();
-        print("✅ Loaded ${moreSearchedProducts.length} more products for query: $currentSearchQuery");
-      } else {
-        print("⚠️ No more products found for query: $currentSearchQuery");
       }
-    } else {
-      print("⚠️ No more product IDs found for query: $currentSearchQuery");
     }
 
     isFetchingMore = false;
