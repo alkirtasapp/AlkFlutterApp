@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/logging/logger.dart';
 
 class DetailsController {
   String get apiKey => AppConfig.prestashopApiKey;
@@ -20,7 +21,7 @@ class DetailsController {
         }
       }
     } catch (e) {
-      print('❌ Error fetching feature name: $e');
+      AlkLoggerHelper.error('Error fetching feature name for ID $featureId', e);
     }
     return null;
   }
@@ -39,26 +40,52 @@ class DetailsController {
         }
       }
     } catch (e) {
-      print('❌ Error fetching feature value: $e');
+      AlkLoggerHelper.error('Error fetching feature value for ID $featureValueId', e);
     }
     return null;
   }
 
-  /// Fetch and map product features `{Feature Name: Feature Value}`
+  /// Fetch a single feature (name + value) in parallel
+  Future<MapEntry<String, String>?> _fetchSingleFeature(int featureId, int featureValueId) async {
+    // Fetch name and value in parallel
+    final results = await Future.wait([
+      fetchFeatureName(featureId),
+      fetchFeatureValue(featureValueId),
+    ]);
+
+    final featureName = results[0];
+    final featureValue = results[1];
+
+    if (featureName != null && featureValue != null) {
+      return MapEntry(featureName, featureValue);
+    }
+    return null;
+  }
+
+  /// Fetch and map product features `{Feature Name: Feature Value}` - OPTIMIZED with parallel fetching
   Future<Map<String, String>> fetchProductFeatures(List<Map<String, dynamic>> featuresList) async {
     Map<String, String> productFeatures = {};
+
+    // Create list of parallel fetch tasks
+    List<Future<MapEntry<String, String>?>> fetchTasks = [];
 
     for (var feature in featuresList) {
       if (feature.containsKey('id') && feature.containsKey('id_feature_value')) {
         int featureId = int.parse(feature['id'].toString());
         int featureValueId = int.parse(feature['id_feature_value'].toString());
 
-        String? featureName = await fetchFeatureName(featureId);
-        String? featureValue = await fetchFeatureValue(featureValueId);
+        // Add parallel task for each feature
+        fetchTasks.add(_fetchSingleFeature(featureId, featureValueId));
+      }
+    }
 
-        if (featureName != null && featureValue != null) {
-          productFeatures[featureName] = featureValue;
-        }
+    // Execute all fetch tasks in parallel
+    final results = await Future.wait(fetchTasks);
+
+    // Collect results
+    for (var entry in results) {
+      if (entry != null) {
+        productFeatures[entry.key] = entry.value;
       }
     }
 

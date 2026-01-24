@@ -98,5 +98,5 @@ class DiscountController {
 ///5. Extract the 'from' and 'to' dates
 ///6. Check for permanent discount (always valid)
 ///7. Ensure the discount is within the valid period
-///8. Select the latest valid discount (based on 'to' date) 
+///8. Select the latest valid discount (based on 'to' date)
 ///9. Apply permanent discount if available; otherwise, use the latest valid discount

@@ -39,4 +39,4 @@ class QuantityController {
     }
     return null;
   }
-} 
+}

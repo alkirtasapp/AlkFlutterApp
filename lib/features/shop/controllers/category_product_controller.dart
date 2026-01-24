@@ -150,7 +150,7 @@ class CategoryProductController {
 
       // Step 2: Loop Fetching Details in Batches
       int currentIdIndex = 0;
-      const int batchSize = 10; // Keep batch size reasonable
+      const int batchSize = 20; // Keep batch size reasonable
       while (activeProductsFound.length < limit && currentIdIndex < allProductIds.length) {
         int endIndex = currentIdIndex + batchSize;
         if (endIndex > allProductIds.length) endIndex = allProductIds.length;

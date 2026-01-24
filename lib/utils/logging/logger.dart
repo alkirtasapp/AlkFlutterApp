@@ -7,7 +7,7 @@ class AlkLoggerHelper {
       methodCount:0,  
       errorMethodCount: 5,   // Show stack trace for errors
       noBoxingByDefault: true, // Remove borders
-      
+
     ),
     // In release mode: only show warnings and errors
     // In debug mode: show all logs including debug

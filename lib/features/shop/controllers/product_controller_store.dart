@@ -49,7 +49,7 @@ class ProductControllerStore {
       int currentOffset = offset;
       Set<int> processedProductIds = {};
 
-      const int batchSize = 10; // Adjust as needed
+      const int batchSize = 20; // Adjust as needed
 
       // Keep fetching batches until we have enough active products or reach the end
       while (fetchedProducts.length < limit && currentOffset < productIds.length) {
@@ -128,7 +128,6 @@ class ProductControllerStore {
         processingTasks.add(_processProductDetails(product, fetchedProducts));
       }
     }
-    
 
     await Future.wait(processingTasks);
   }

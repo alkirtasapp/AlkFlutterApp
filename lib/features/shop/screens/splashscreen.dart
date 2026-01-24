@@ -109,9 +109,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     const Color(0xFF0f3460),
                   ]
                 : [
-                    const Color(0xFFF3E5F5),
-                    const Color(0xFFE1BEE7),
-                    const Color(0xFFCE93D8),
+                    const Color.fromARGB(255, 255, 255, 255),
+                    const Color.fromARGB(255, 255, 255, 255),
+                    const Color.fromARGB(255, 255, 255, 255),
                   ],
           ),
         ),
