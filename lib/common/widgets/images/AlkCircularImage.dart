@@ -1,4 +1,5 @@
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../utils/constants/size.dart';
@@ -35,10 +36,29 @@ class AlkCircularImage extends StatelessWidget {
         color: AlkHelperFunctions.isDarkMode(context) ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(180),
       ),
-      child: Image(
-        fit: fit ,
-        image: isNetworkImage ? NetworkImage(image) : AssetImage(image) as ImageProvider,
-        color: overlayColor, ),
-      );
+      child: isNetworkImage
+          ? CachedNetworkImage(
+              imageUrl: image,
+              fit: fit,
+              color: overlayColor,
+              placeholder: (context, url) => const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+              errorWidget: (context, url, error) => const Icon(
+                Icons.image_not_supported,
+                color: Colors.grey,
+                size: 24,
+              ),
+            )
+          : Image(
+              fit: fit,
+              image: AssetImage(image),
+              color: overlayColor,
+            ),
+    );
   }
 }

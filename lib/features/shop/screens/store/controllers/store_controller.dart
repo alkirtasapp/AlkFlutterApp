@@ -86,39 +86,20 @@ class StoreController extends ChangeNotifier {
     isFetchingMore = true;
     notifyListeners();
 
-    final List<int> allProductIds =
-        await productController.productListCategory.fetchProductIdsFromCategory(selectedCategoryId);
+    // Use the same optimized path as initial fetch
+    final List<Map<String, dynamic>> moreProducts =
+        await productController.fetchProductDataStore(selectedCategoryId, offset, limit) ?? [];
 
-    int activeProductsAdded = 0;
-    const int batchSize = 10;
-
-    // Loop until we have `limit` active products or run out of IDs
-    while (activeProductsAdded < limit && offset < allProductIds.length) {
-      final List<int> batchIds = allProductIds.skip(offset).take(batchSize).toList();
-
-      if (batchIds.isEmpty) break;
-
-      final List<Map<String, dynamic>>? batchProducts =
-          await productController.fetchProductsByIds(batchIds);
-
-      if (batchProducts != null) {
-        for (var product in batchProducts) {
-          if (product['active'].toString() == '1' &&
-              !fetchedProductIds.contains(product['id'])) {
-            products.add(product);
-            fetchedProductIds.add(product['id']);
-            activeProductsAdded++;
-            if (activeProductsAdded >= limit) break;
-          }
+    if (moreProducts.isNotEmpty) {
+      for (var product in moreProducts) {
+        if (!fetchedProductIds.contains(product['id'])) {
+          products.add(product);
+          fetchedProductIds.add(product['id']);
         }
       }
-
-      offset += batchIds.length;
-    }
-
-    if (activeProductsAdded > 0) {
+      offset += moreProducts.length;
       _applySorting();
-      AlkLoggerHelper.debug("Loaded $activeProductsAdded more products for category $selectedCategoryId");
+      AlkLoggerHelper.debug("Loaded ${moreProducts.length} more products for category $selectedCategoryId (optimized)");
     }
 
     isFetchingMore = false;

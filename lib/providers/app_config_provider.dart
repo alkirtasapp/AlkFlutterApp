@@ -10,8 +10,8 @@ class AppConfigProvider extends ChangeNotifier {
   static const String _secColorKey = 'app_sec_color';
 
   // Default colors (fallback)
-  static const Color _defaultFirstColor = Color.fromARGB(255, 216, 80, 38);
-  static const Color _defaultSecColor = Color.fromARGB(255, 52, 192, 33);
+  static const Color _defaultFirstColor = Color.fromARGB(255, 169, 26, 212);
+  static const Color _defaultSecColor = Color.fromARGB(255, 165, 64, 185);
 
   Color _appFirstColor = _defaultFirstColor;
   Color _appSecColor = _defaultSecColor;

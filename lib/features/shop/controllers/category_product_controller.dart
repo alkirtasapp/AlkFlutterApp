@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:alkirtas/data/controllers/discount_controller.dart';
 import 'package:alkirtas/data/controllers/tax_controller.dart';
 import 'package:alkirtas/data/controllers/quantity_controller.dart';
+import 'package:alkirtas/data/controllers/product_enriched_service.dart';
 import 'package:alkirtas/config/app_config.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 
@@ -17,14 +18,17 @@ class CategoryProductController {
   static final Map<int, String?> _staticError = {};
   static final Map<int, Completer<void>> _staticFetchCompleters = {};
 
+  // Flag to use enriched API (set to true after module is installed)
+  static bool useEnrichedApi = true;
+
   // --- Instance Variables ---
   final int categoryId;
   final int limit; // Target number of active products
 
-  // --- Instantiate Dedicated Controllers ---
+  // --- Instantiate Dedicated Controllers (fallback when enriched API unavailable) ---
   final DiscountController _discountController = DiscountController();
   final TaxController _taxController = TaxController();
-  final QuantityController _quantityController = QuantityController(); // Add QuantityController
+  final QuantityController _quantityController = QuantityController();
 
   CategoryProductController({required this.categoryId, this.limit = 8});
 
@@ -134,12 +138,78 @@ class CategoryProductController {
     _staticError[categoryId] = null;
 
     List<Map<String, dynamic>> activeProductsFound = [];
-    List<Map<String, dynamic>> productsToProcess = [];
 
     try {
-      final ProductListCategory productListCategory = ProductListCategory();
+      // OPTIMIZED PATH: Use enriched API to get only active product IDs + enrichment data
+      if (useEnrichedApi) {
+        final enrichedProducts = await ProductEnrichedService.fetchEnrichedByCategory(
+          categoryId,
+          limit: limit,
+          offset: 0,
+        );
 
-      // Step 1: Fetch ALL Product IDs
+        if (enrichedProducts.isNotEmpty) {
+          AlkLoggerHelper.debug("Enriched API returned ${enrichedProducts.length} active products for category $categoryId (home)");
+
+          // Extract product IDs from enriched data
+          final List<int> activeProductIds = enrichedProducts
+              .map((p) => int.tryParse(p['id_product'].toString()) ?? 0)
+              .where((id) => id > 0)
+              .toList();
+
+          if (activeProductIds.isNotEmpty) {
+            // Index enriched data by product ID for O(1) lookup
+            final Map<int, Map<String, dynamic>> enrichedIndex = {};
+            for (var enriched in enrichedProducts) {
+              final id = int.tryParse(enriched['id_product'].toString()) ?? 0;
+              if (id > 0) {
+                enrichedIndex[id] = enriched;
+              }
+            }
+
+            // Fetch full product details from PrestaShop API (single batch call)
+            final String productIdsParam = activeProductIds.join('|');
+            final productDetailsApi = 'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsParam]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
+
+            AlkLoggerHelper.debug("Fetching full details for ${activeProductIds.length} products (home)");
+            final response = await http.get(Uri.parse(productDetailsApi));
+
+            if (response.statusCode == 200) {
+              final productData = json.decode(utf8.decode(response.bodyBytes));
+              if (productData != null && productData.containsKey('products') && productData['products'] != null) {
+                List<Future<void>> processingTasks = [];
+                for (var product in productData['products']) {
+                  if (product is Map<String, dynamic>) {
+                    final productId = int.tryParse(product['id'].toString()) ?? 0;
+                    final enriched = enrichedIndex[productId];
+                    processingTasks.add(_processProductDetails(product, enriched: enriched).then((processedProduct) {
+                      if (activeProductsFound.length < limit) {
+                        activeProductsFound.add(processedProduct);
+                      }
+                    }));
+                  }
+                }
+                await Future.wait(processingTasks);
+              }
+            }
+          }
+
+          // Cache and return if we got results
+          if (activeProductsFound.isNotEmpty) {
+            _staticCachedProducts[categoryId] = activeProductsFound;
+            AlkLoggerHelper.debug("Category $categoryId: ${activeProductsFound.length} products cached (optimized)");
+            completer.complete();
+            return;
+          }
+        }
+
+        AlkLoggerHelper.debug("Enriched API returned no products for category $categoryId, falling back to legacy method");
+      }
+
+      // FALLBACK PATH: Legacy method (fetch all IDs, loop through batches)
+      final ProductListCategory productListCategory = ProductListCategory();
+      List<Map<String, dynamic>> productsToProcess = [];
+
       List<int> allProductIds = await productListCategory.fetchProductIdsFromCategory(categoryId);
       if (allProductIds.isEmpty) {
         _staticCachedProducts[categoryId] = [];
@@ -148,10 +218,9 @@ class CategoryProductController {
         return;
       }
 
-      // Step 2: Loop Fetching Details in Batches
       int currentIdIndex = 0;
-      const int batchSize = 20; // Keep batch size reasonable
-      while (activeProductsFound.length < limit && currentIdIndex < allProductIds.length) {
+      const int batchSize = 20;
+      while (productsToProcess.length < limit && currentIdIndex < allProductIds.length) {
         int endIndex = currentIdIndex + batchSize;
         if (endIndex > allProductIds.length) endIndex = allProductIds.length;
         List<int> batchIds = allProductIds.sublist(currentIdIndex, endIndex);
@@ -160,7 +229,7 @@ class CategoryProductController {
         String idFilter = batchIds.join('|');
         final productDetailsApi = 'https://www.alkirtas.com/api/products?display=full&filter[id]=[$idFilter]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
         final response = await http.get(Uri.parse(productDetailsApi));
-        currentIdIndex = endIndex; // Move index
+        currentIdIndex = endIndex;
 
         if (response.statusCode != 200) {
           AlkLoggerHelper.warning("Failed to load product details batch (Status: ${response.statusCode}). Skipping batch.");
@@ -174,56 +243,66 @@ class CategoryProductController {
 
         List<Map<String, dynamic>> rawProductsBatch = List<Map<String, dynamic>>.from(productData['products']);
 
-        // Filter for active and add to list
         for (var product in rawProductsBatch) {
           if (product.containsKey('active') && product['active'].toString() == '1') {
-            if (activeProductsFound.length < limit) {
-              // Add to temporary list for processing, not directly to final list yet
+            if (productsToProcess.length < limit) {
               productsToProcess.add(product);
             } else {
-              break; // Stop checking this batch
+              break;
             }
           }
         }
         if (productsToProcess.length >= limit) {
-           break; // Stop fetching more batches
+          break;
         }
-      } // End while loop
+      }
 
-      // --- Step 3: Process Details for Found Potential Active Products ---
       if (productsToProcess.isNotEmpty) {
+        Map<int, Map<String, dynamic>> enrichedData = {};
+        if (useEnrichedApi) {
+          final productIds = productsToProcess
+              .map((p) => int.tryParse(p['id'].toString()) ?? 0)
+              .where((id) => id > 0)
+              .toList();
+          enrichedData = await ProductEnrichedService.fetchEnrichedByIds(productIds);
+          AlkLoggerHelper.debug("Fetched enriched data for ${enrichedData.length} products (home fallback)");
+        }
+
         List<Future<void>> processingTasks = [];
         for (var product in productsToProcess) {
-           processingTasks.add(_processProductDetails(product).then((processedProduct) {
-             if (activeProductsFound.length < limit) {
-                activeProductsFound.add(processedProduct);
-             }
-           }));
+          final productId = int.tryParse(product['id'].toString()) ?? 0;
+          final enriched = enrichedData[productId];
+          processingTasks.add(_processProductDetails(product, enriched: enriched).then((processedProduct) {
+            if (activeProductsFound.length < limit) {
+              activeProductsFound.add(processedProduct);
+            }
+          }));
         }
         await Future.wait(processingTasks);
       }
 
-      // Step 4: Cache the final list of processed, active products
       _staticCachedProducts[categoryId] = activeProductsFound;
-      AlkLoggerHelper.debug("Category $categoryId: ${activeProductsFound.length} products cached");
+      AlkLoggerHelper.debug("Category $categoryId: ${activeProductsFound.length} products cached (legacy)");
       completer.complete();
 
     } catch (e, stacktrace) {
       AlkLoggerHelper.error('Error during product fetch/process loop for category $categoryId: $e', stacktrace);
       _staticError[categoryId] = 'Failed to load products: $e';
-      _staticCachedProducts.remove(categoryId); // Clear potentially partial cache
-      if (!completer.isCompleted) completer.completeError(e); // Complete with error if not already done
+      _staticCachedProducts.remove(categoryId);
+      if (!completer.isCompleted) completer.completeError(e);
     } finally {
       _staticIsLoading[categoryId] = false;
-       // Ensure completer is removed if fetch failed before completion
       if (!_staticFetchCompleters[categoryId]!.isCompleted) {
-         _staticFetchCompleters.remove(categoryId);
+        _staticFetchCompleters.remove(categoryId);
       }
     }
   }
 
   // --- Helper Method: _processProductDetails (Returns the processed product map) ---
-  Future<Map<String, dynamic>> _processProductDetails(Map<String, dynamic> product) async {
+  Future<Map<String, dynamic>> _processProductDetails(
+    Map<String, dynamic> product, {
+    Map<String, dynamic>? enriched,
+  }) async {
     try {
       int productId = int.tryParse(product['id'].toString()) ?? 0;
       double priceHT = double.tryParse(product['price'].toString()) ?? 0.0;
@@ -231,7 +310,6 @@ class CategoryProductController {
 
       if (productId == 0) {
         AlkLoggerHelper.warning("Skipping detail processing for product with invalid ID: ${product['id']}");
-        // Return product as is, maybe with default error values?
         product['discount'] = 0.0;
         product['ttc_price'] = priceHT;
         product['image_urls'] = <String>[];
@@ -239,45 +317,51 @@ class CategoryProductController {
         return product;
       }
 
-      List<Future<void>> tasks = [];
+      // Use enriched data if available (single API call), otherwise fallback to individual calls
+      if (enriched != null && useEnrichedApi) {
+        // Apply pre-calculated enriched data (no additional API calls!)
+        ProductEnrichedService.applyEnrichedData(product, enriched);
+        // Convert quantity to string to match existing data structure
+        product['quantity'] = product['quantity'].toString();
+      } else {
+        // Fallback: individual API calls (old method)
+        List<Future<void>> tasks = [];
 
-      // Fetch discount
-      tasks.add(_discountController.fetchDiscount(productId).then((discountData) {
-        if (discountData != null && discountData['reduction_type'] == 'percentage') {
-          double reductionValue = double.tryParse(discountData['reduction'].toString()) ?? 0.0;
-          product['discount'] = reductionValue;
-        } else {
-          product['discount'] = 0.0;
-        }
-      }));
+        // Fetch discount
+        tasks.add(_discountController.fetchDiscount(productId).then((discountData) {
+          if (discountData != null && discountData['reduction_type'] == 'percentage') {
+            double reductionValue = double.tryParse(discountData['reduction'].toString()) ?? 0.0;
+            product['discount'] = reductionValue;
+          } else {
+            product['discount'] = 0.0;
+          }
+        }));
 
-      // Fetch TTC price
-      tasks.add(_taxController.fetchTTCPrice(productId, priceHT, taxRulesGroupId)
-          .then((ttcPrice) {
-        product['ttc_price'] = ttcPrice ?? priceHT;
-      }));
+        // Fetch TTC price
+        tasks.add(_taxController.fetchTTCPrice(productId, priceHT, taxRulesGroupId)
+            .then((ttcPrice) {
+          product['ttc_price'] = ttcPrice ?? priceHT;
+        }));
 
-      // Process Image URLs
-      tasks.add(Future(() {
-        if (product.containsKey('associations') &&
-            product['associations'].containsKey('images')) {
-          final images = product['associations']['images'] as List;
-          List<String> imageUrls =
-              images.map((image) => constructImageUrl(image['id'])).toList();
-          product['image_urls'] = imageUrls;
-        } else {
-          product['image_urls'] = <String>[];
-        }
-        product['default_image_url'] = constructImageUrl(product['id_default_image']);
-      }));
+        // Fetch actual quantity
+        tasks.add(_quantityController.fetchQuantity(productId).then((fetchedStock) {
+          product['quantity'] = fetchedStock?.toString() ?? '0';
+        }));
 
-      // Fetch actual quantity
-      tasks.add(_quantityController.fetchQuantity(productId).then((fetchedStock) {
-        // Store as string to match existing data structure expectations
-        product['quantity'] = fetchedStock?.toString() ?? '0';
-      }));
+        await Future.wait(tasks);
+      }
 
-      await Future.wait(tasks);
+      // Process Image URLs (always needed, not in enriched data)
+      if (product.containsKey('associations') &&
+          product['associations'].containsKey('images')) {
+        final images = product['associations']['images'] as List;
+        List<String> imageUrls =
+            images.map((image) => constructImageUrl(image['id'])).toList();
+        product['image_urls'] = imageUrls;
+      } else {
+        product['image_urls'] = <String>[];
+      }
+      product['default_image_url'] = constructImageUrl(product['id_default_image']);
 
     } catch (e) {
       AlkLoggerHelper.error("Error processing product details via external controllers for ${product['id']}", e);
@@ -285,10 +369,9 @@ class CategoryProductController {
       product['discount'] ??= 0.0;
       product['ttc_price'] ??= double.tryParse(product['price'].toString()) ?? 0.0;
       product['image_urls'] ??= <String>[];
-      product['quantity'] ??= '0'; // Ensure quantity has a default if fetch failed
+      product['quantity'] ??= '0';
       product['default_image_url'] ??= constructImageUrl(product['id_default_image']);
     }
-    // Return the modified product map
     return product;
   }
 
