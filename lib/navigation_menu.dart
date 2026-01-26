@@ -8,7 +8,7 @@ import 'package:alkirtas/features/personalization/screens/settings/settings.dart
 import 'package:alkirtas/features/shop/screens/cart/cart.dart';
 import 'package:alkirtas/features/shop/screens/store/storedrawer.dart';
 import 'package:alkirtas/features/shop/screens/store/controllers/store_controller.dart';
-import 'package:alkirtas/features/audiobooks/audiobooks.dart';
+import 'package:alkirtas/features/shop/screens/categories/categories_menu_screen.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 
@@ -26,6 +26,10 @@ class _NavigationMenuState extends State<NavigationMenu>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+
+  // Draggable FAB position
+  Offset? _fabPosition;
+  final double _fabSize = 56.0;
 
   @override
   void initState() {
@@ -101,48 +105,67 @@ class _NavigationMenuState extends State<NavigationMenu>
           },
           // Scaffold with NavigationBar and screens
           child: Scaffold(
-            // Persistent FAB when audiobook is playing
-            floatingActionButton: Consumer<AudioPlayerProvider>(
-              builder: (context, audioProvider, child) {
-                if (!audioProvider.hasAudiobook) return const SizedBox.shrink();
-                return FloatingActionButton(
-                  onPressed: () {
-                    Get.to(() => const AudiobookPlayerScreen());
-                  },
-                  backgroundColor:AlkColors.AppFirstColor,
-                  child: audioProvider.isPlaying
-                      ? const Icon(Iconsax.pause, color: Colors.white)
-                      : const Icon(Iconsax.play, color: Colors.white),
-                );
-              },
-            ),
             bottomNavigationBar: Obx(
               () => NavigationBar(
                 height: 80,
                 elevation: 0,
-                selectedIndex: controller.selectedIndex.value,
-                onDestinationSelected: (index) {
-                  controller.pageController.jumpToPage(index); // Navigate to the selected page
-                  controller.selectedIndex.value = index;
-                },
+                selectedIndex: controller.navIndex.value,
+                onDestinationSelected: controller.onNavDestinationSelected,
                 backgroundColor: darkMode ? AlkColors.black : Colors.white,
                 indicatorColor: darkMode
                     ? AlkColors.white.withOpacity(0.1)
                     : AlkColors.black.withOpacity(0.1),
+                // 4 visible tabs - Home is hidden (accessed via FAB)
                 destinations: const [
-                  NavigationDestination(icon: Icon(Iconsax.home), label: 'Acceuil'),
+                  NavigationDestination(icon: Icon(Iconsax.menu_1), label: 'Menu'),
                   NavigationDestination(icon: Icon(Iconsax.shop), label: 'Boutique'),
                   NavigationDestination(icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
                   NavigationDestination(icon: Icon(Iconsax.user), label: 'Profil'),
                 ],
               ),
             ),
-            body: PageView(
-              controller: controller.pageController,
-              onPageChanged: (index) {
-                controller.selectedIndex.value = index; // Update the selected index
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                // Initialize FAB position if not set (bottom-right)
+                _fabPosition ??= Offset(
+                  constraints.maxWidth - _fabSize - 16,
+                  constraints.maxHeight - _fabSize - 16,
+                );
+
+                return Stack(
+                  children: [
+                    // Main content
+                    PageView(
+                      controller: controller.pageController,
+                      onPageChanged: controller.onPageChanged,
+                      children: controller.screens,
+                    ),
+                    // Draggable Home FAB
+                    Positioned(
+                      left: _fabPosition!.dx,
+                      top: _fabPosition!.dy,
+                      child: GestureDetector(
+                        onPanUpdate: (details) {
+                          setState(() {
+                            double newX = _fabPosition!.dx + details.delta.dx;
+                            double newY = _fabPosition!.dy + details.delta.dy;
+                            // Keep FAB within bounds
+                            newX = newX.clamp(0, constraints.maxWidth - _fabSize);
+                            newY = newY.clamp(0, constraints.maxHeight - _fabSize);
+                            _fabPosition = Offset(newX, newY);
+                          });
+                        },
+                        child: FloatingActionButton(
+                          onPressed: () => controller.navigateToHome(),
+                          backgroundColor: AlkColors.AppFirstColor,
+                          elevation: 4,
+                          child: const Icon(Iconsax.home, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
               },
-              children: controller.screens,
             ),
           ),
         ),
@@ -152,70 +175,123 @@ class _NavigationMenuState extends State<NavigationMenu>
 }
 
 class NavigationController extends GetxController {
-  final Rx<int> selectedIndex;
+  // Nav bar index (0-3): Menu, Boutique, Cart, Profile
+  final Rx<int> navIndex;
+  // Page index (0-4): Home, Menu, Boutique, Cart, Profile
+  final Rx<int> pageIndex;
   final PageController pageController;
+  // Track if we're on Home screen
+  final Rx<bool> isOnHome = false.obs;
 
   // StoreDrawer parameters
   final Rx<int?> initialCategoryId = Rx<int?>(null);
   final Rx<String?> initialCategoryName = Rx<String?>(null);
+  final RxList<String> initialBreadcrumb = <String>[].obs;
 
-  NavigationController(int initialIndex)
-      : selectedIndex = initialIndex.obs,
-        pageController = PageController(initialPage: initialIndex);
+  NavigationController(int initialPageIndex)
+      : pageIndex = initialPageIndex.obs,
+        // If starting on Home (0), nav shows Menu (0). Otherwise nav = page - 1
+        navIndex = (initialPageIndex == 0 ? 0 : initialPageIndex - 1).obs,
+        pageController = PageController(initialPage: initialPageIndex) {
+    isOnHome.value = initialPageIndex == 0;
+  }
 
-  // Using a getter instead of final field to ensure proper initialization
+  // For backward compatibility
+  Rx<int> get selectedIndex => navIndex;
+
+  // Screens: Page 0 = Home, Pages 1-4 = Nav tabs
   List<Widget> get screens => [
-     HomeScreen(),
+    const HomeScreen(),           // Page 0 (hidden from nav, accessed via FAB)
+    const CategoriesMenuScreen(), // Page 1 = Nav 0 (Menu)
     Obx(() => ChangeNotifierProvider(
           create: (_) => StoreController(),
           child: StoreDrawer(
             initialCategoryId: initialCategoryId.value,
             initialCategoryName: initialCategoryName.value,
+            initialBreadcrumb: initialBreadcrumb.toList(),
           ),
-        )),
-    const CartScreen(),
-    const SettingScreen(),
+        )),                        // Page 2 = Nav 1 (Boutique)
+    const CartScreen(),           // Page 3 = Nav 2 (Cart)
+    const SettingScreen(),        // Page 4 = Nav 3 (Profile)
   ];
 
-  void navigateToStoreDrawer({int? categoryId, String? categoryName}) {
-    initialCategoryId.value = categoryId;
-    initialCategoryName.value = categoryName;
-    selectedIndex.value = 1; // Switch to the StoreDrawer tab
-    pageController.jumpToPage(1);
+  /// Called when nav destination is tapped (index 0-3)
+  void onNavDestinationSelected(int navIdx) {
+    navIndex.value = navIdx;
+    pageIndex.value = navIdx + 1; // Nav 0 = Page 1, Nav 1 = Page 2, etc.
+    pageController.jumpToPage(navIdx + 1);
+    isOnHome.value = false;
   }
 
-  /// Navigate to store tab without specific category (for product search)
+  /// Called when page changes via swipe
+  void onPageChanged(int newPageIndex) {
+    pageIndex.value = newPageIndex;
+    if (newPageIndex == 0) {
+      isOnHome.value = true;
+      // Keep last nav selection when on Home
+    } else {
+      isOnHome.value = false;
+      navIndex.value = newPageIndex - 1;
+    }
+  }
+
+  /// Navigate to Home (page 0) via FAB
+  void navigateToHome() {
+    pageIndex.value = 0;
+    pageController.jumpToPage(0);
+    isOnHome.value = true;
+  }
+
+  void navigateToStoreDrawer({int? categoryId, String? categoryName, List<String>? breadcrumb}) {
+    initialCategoryId.value = categoryId;
+    initialCategoryName.value = categoryName;
+    initialBreadcrumb.value = breadcrumb ?? [];
+    navIndex.value = 1; // Boutique in nav
+    pageIndex.value = 2; // Page 2
+    pageController.jumpToPage(2);
+    isOnHome.value = false;
+  }
+
+  /// Navigate to store tab without specific category
   void navigateToStore() {
-    selectedIndex.value = 1; // Switch to the StoreDrawer tab
-    pageController.jumpToPage(1);
-    // Clear any existing category filter
+    navIndex.value = 1;
+    pageIndex.value = 2;
+    pageController.jumpToPage(2);
+    isOnHome.value = false;
     initialCategoryId.value = null;
     initialCategoryName.value = null;
   }
 
-  /// Navigate to home tab
-  void navigateToHome() {
-    selectedIndex.value = 0;
-    pageController.jumpToPage(0);
+  /// Navigate to menu tab (categories)
+  void navigateToMenu() {
+    navIndex.value = 0;
+    pageIndex.value = 1;
+    pageController.jumpToPage(1);
+    isOnHome.value = false;
   }
 
   /// Navigate to cart tab
   void navigateToCart() {
-    selectedIndex.value = 2;
-    pageController.jumpToPage(2);
+    navIndex.value = 2;
+    pageIndex.value = 3;
+    pageController.jumpToPage(3);
+    isOnHome.value = false;
   }
 
   /// Navigate to settings tab
   void navigateToSettings() {
-    selectedIndex.value = 3;
-    pageController.jumpToPage(3);
+    navIndex.value = 3;
+    pageIndex.value = 4;
+    pageController.jumpToPage(4);
+    isOnHome.value = false;
   }
 
   /// Get current tab name in French
   String getCurrentTabName() {
-    switch (selectedIndex.value) {
+    if (isOnHome.value) return 'Accueil';
+    switch (navIndex.value) {
       case 0:
-        return 'Accueil';
+        return 'Menu';
       case 1:
         return 'Boutique';
       case 2:
@@ -227,12 +303,10 @@ class NavigationController extends GetxController {
     }
   }
 
-  /// Check if currently on store tab
-  bool isOnStoreTab() {
-    return selectedIndex.value == 1;
-  }
+  bool isOnMenuTab() => navIndex.value == 0 && !isOnHome.value;
+  bool isOnStoreTab() => navIndex.value == 1 && !isOnHome.value;
+  bool isOnHomeScreen() => isOnHome.value;
 
-  /// Get current category info
   Map<String, dynamic> getCurrentCategoryInfo() {
     return {
       'id': initialCategoryId.value,

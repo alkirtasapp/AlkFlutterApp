@@ -37,7 +37,7 @@ class ProductControllerStore {
 
       List<Map<String, dynamic>> fetchedProducts = [];
 
-      // OPTIMIZED PATH: Use enriched API to get only active product IDs + enrichment data
+      // OPTIMIZED PATH: Use enriched API to get complete product data (single API call!)
       if (useEnrichedApi) {
         final enrichedProducts = await ProductEnrichedService.fetchEnrichedByCategory(
           categoryId,
@@ -48,40 +48,52 @@ class ProductControllerStore {
         if (enrichedProducts.isNotEmpty) {
           AlkLoggerHelper.debug("Enriched API returned ${enrichedProducts.length} active products for category $categoryId");
 
-          // Extract product IDs from enriched data
-          final List<int> activeProductIds = enrichedProducts
-              .map((p) => int.tryParse(p['id_product'].toString()) ?? 0)
-              .where((id) => id > 0)
-              .toList();
+          // Check if enriched data has name field (v1.1.0+ with full data)
+          final hasFullData = enrichedProducts.first.containsKey('name') &&
+                              enrichedProducts.first['name'] != null;
 
-          if (activeProductIds.isNotEmpty) {
-            // Index enriched data by product ID for O(1) lookup
-            final Map<int, Map<String, dynamic>> enrichedIndex = {};
+          if (hasFullData) {
+            // SINGLE API CALL PATH: Build products directly from enriched data
+            AlkLoggerHelper.debug("Using single API call path (enriched has full data)");
+
             for (var enriched in enrichedProducts) {
-              final id = int.tryParse(enriched['id_product'].toString()) ?? 0;
-              if (id > 0) {
-                enrichedIndex[id] = enriched;
-              }
+              final product = ProductEnrichedService.buildProductFromEnriched(enriched);
+              fetchedProducts.add(product);
             }
+          } else {
+            // FALLBACK: 2 API calls (old enriched table without name/description)
+            AlkLoggerHelper.debug("Using 2 API calls path (enriched missing name field)");
 
-            // Fetch full product details from PrestaShop API (single batch call)
-            final String productIdsParam = activeProductIds.join('|');
-            final String productApi =
-                'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsParam]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
+            final List<int> activeProductIds = enrichedProducts
+                .map((p) => int.tryParse(p['id_product'].toString()) ?? 0)
+                .where((id) => id > 0)
+                .toList();
 
-            AlkLoggerHelper.debug("Fetching full details for ${activeProductIds.length} products");
-            final response = await http.get(Uri.parse(productApi));
+            if (activeProductIds.isNotEmpty) {
+              final Map<int, Map<String, dynamic>> enrichedIndex = {};
+              for (var enriched in enrichedProducts) {
+                final id = int.tryParse(enriched['id_product'].toString()) ?? 0;
+                if (id > 0) {
+                  enrichedIndex[id] = enriched;
+                }
+              }
 
-            if (response.statusCode == 200) {
-              final productData = json.decode(utf8.decode(response.bodyBytes));
-              if (productData['products'] != null && productData['products'].isNotEmpty) {
-                for (var product in productData['products']) {
-                  if (product is Map<String, dynamic>) {
-                    final productId = int.tryParse(product['id'].toString()) ?? 0;
-                    final enriched = enrichedIndex[productId];
+              final String productIdsParam = activeProductIds.join('|');
+              final String productApi =
+                  'https://www.alkirtas.com/api/products?display=full&filter[id]=[$productIdsParam]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
-                    // Process product with pre-fetched enriched data
-                    await _processProductDetails(product, fetchedProducts, enriched: enriched);
+              AlkLoggerHelper.debug("Fetching full details for ${activeProductIds.length} products");
+              final response = await http.get(Uri.parse(productApi));
+
+              if (response.statusCode == 200) {
+                final productData = json.decode(utf8.decode(response.bodyBytes));
+                if (productData['products'] != null && productData['products'].isNotEmpty) {
+                  for (var product in productData['products']) {
+                    if (product is Map<String, dynamic>) {
+                      final productId = int.tryParse(product['id'].toString()) ?? 0;
+                      final enriched = enrichedIndex[productId];
+                      await _processProductDetails(product, fetchedProducts, enriched: enriched);
+                    }
                   }
                 }
               }

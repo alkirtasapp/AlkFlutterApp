@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import '../../../../../utils/constants/colors.dart';
 import '../controllers/store_controller.dart';
 
 /// Custom AppBar for store screen with search, filter, and QR scanner
@@ -17,7 +18,7 @@ class StoreAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 4);
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +26,7 @@ class StoreAppBar extends StatelessWidget implements PreferredSizeWidget {
       builder: (context, controller, child) {
         return AppBar(
           leading: _buildLeading(context, controller),
-          title: Text(
-            controller.isSearching
-                ? controller.currentSearchQuery
-                : controller.selectedCategory.isNotEmpty
-                    ? controller.selectedCategory
-                    : "Chargement...",
-          ),
+          title: _buildTitle(controller),
           actions: [
             _buildSearchAction(context, controller),
             IconButton(
@@ -46,22 +41,70 @@ class StoreAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _buildLeading(BuildContext context, StoreController controller) {
+  Widget _buildTitle(StoreController controller) {
+    if (controller.isSearching) {
+      return Text(
+        controller.currentSearchQuery,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      );
+    }
+
+    final hasNavigation = controller.navigationStack.isNotEmpty;
+    final categoryName = controller.selectedCategory.isNotEmpty
+        ? controller.selectedCategory
+        : "Chargement...";
+
+    if (!hasNavigation) {
+      return Text(
+        categoryName,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      );
+    }
+
+    // Build breadcrumb: Parent > ... > Current
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          categoryName,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        _buildBreadcrumb(controller),
+      ],
+    );
+  }
+
+  Widget _buildBreadcrumb(StoreController controller) {
+    // Build path: "Parent › Child › ..."
+    final pathParts = controller.navigationStack.join(' › ');
+
+    return Text(
+      pathParts,
+      style: TextStyle(
+        fontSize: 10,
+        color: AlkColors.AppSecColor.withOpacity(0.7),
+        fontWeight: FontWeight.w400,
+      ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    );
+  }
+
+  Widget? _buildLeading(BuildContext context, StoreController controller) {
+    // Only show back button when there's navigation history
     if (controller.navigationStack.isNotEmpty) {
       return IconButton(
         icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
         onPressed: () => controller.navigateBack(),
       );
     }
-
-    return Builder(
-      builder: (context) {
-        return IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => Scaffold.of(context).openDrawer(),
-        );
-      },
-    );
+    // No leading button at root level (drawer removed, categories in Menu tab)
+    return null;
   }
 
   Widget _buildSearchAction(BuildContext context, StoreController controller) {

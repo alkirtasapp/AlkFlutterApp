@@ -63,6 +63,14 @@ class ProductEnrichedManager
             }
         }
 
+        // Get product name and description (use default language)
+        $idLang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $productName = self::getProductLangField($productId, 'name', $idLang, $idShop);
+        $descriptionShort = self::getProductLangField($productId, 'description_short', $idLang, $idShop);
+
+        // Get default image ID
+        $idDefaultImage = self::getDefaultImageId($productId, $idShop);
+
         // Prepare data for insert/update
         $data = array(
             'id_product' => (int)$productId,
@@ -84,6 +92,9 @@ class ProductEnrichedManager
             'ean13' => pSQL($product->ean13),
             'id_manufacturer' => (int)$product->id_manufacturer,
             'manufacturer_name' => pSQL($manufacturerName),
+            'name' => pSQL($productName),
+            'description_short' => pSQL($descriptionShort),
+            'id_default_image' => $idDefaultImage,
             'updated_at' => date('Y-m-d H:i:s'),
             'synced_at' => date('Y-m-d H:i:s'),
         );
@@ -785,5 +796,72 @@ class ProductEnrichedManager
         $sql = 'SELECT c.id_category, cl.name, COUNT(DISTINCT cp.id_product) as product_count FROM `' . _DB_PREFIX_ . 'category` c INNER JOIN `' . _DB_PREFIX_ . 'category_lang` cl ON c.id_category = cl.id_category AND cl.id_lang = ' . (int)$idLang . ' INNER JOIN `' . _DB_PREFIX_ . 'category_shop` cs ON c.id_category = cs.id_category AND cs.id_shop = ' . (int)$idShop . ' LEFT JOIN `' . _DB_PREFIX_ . 'category_product` cp ON c.id_category = cp.id_category LEFT JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON cp.id_product = ps.id_product AND ps.id_shop = ' . (int)$idShop . ' AND ps.active = 1 WHERE c.active = 1 GROUP BY c.id_category HAVING product_count > 0 ORDER BY cl.name ASC';
 
         return Db::getInstance()->executeS($sql);
+    }
+
+    /**
+     * Get product language field (name, description, etc.)
+     *
+     * @param int $productId
+     * @param string $field
+     * @param int $idLang
+     * @param int $idShop
+     * @return string|null
+     */
+    private static function getProductLangField($productId, $field, $idLang, $idShop)
+    {
+        try {
+            $allowedFields = array('name', 'description', 'description_short', 'link_rewrite', 'meta_title', 'meta_description');
+            if (!in_array($field, $allowedFields)) {
+                return null;
+            }
+
+            // Try with shop filter first
+            $sql = 'SELECT `' . bqSQL($field) . '` FROM `' . _DB_PREFIX_ . 'product_lang` pl WHERE pl.`id_product` = ' . (int)$productId . ' AND pl.`id_lang` = ' . (int)$idLang . ' AND pl.`id_shop` = ' . (int)$idShop;
+            $result = Db::getInstance()->getValue($sql);
+
+            // Fallback: try without shop filter
+            if ($result === false || $result === null) {
+                $sql = 'SELECT `' . bqSQL($field) . '` FROM `' . _DB_PREFIX_ . 'product_lang` pl WHERE pl.`id_product` = ' . (int)$productId . ' AND pl.`id_lang` = ' . (int)$idLang;
+                $rows = Db::getInstance()->executeS($sql);
+                if (!empty($rows) && isset($rows[0][$field])) {
+                    $result = $rows[0][$field];
+                }
+            }
+
+            return ($result !== false && $result !== null) ? $result : null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get default image ID for a product
+     *
+     * @param int $productId
+     * @param int $idShop
+     * @return int|null
+     */
+    private static function getDefaultImageId($productId, $idShop)
+    {
+        try {
+            // Try to get the cover image first
+            $sql = 'SELECT `id_image` FROM `' . _DB_PREFIX_ . 'image_shop` ish WHERE ish.`id_product` = ' . (int)$productId . ' AND ish.`id_shop` = ' . (int)$idShop . ' AND ish.`cover` = 1';
+            $result = Db::getInstance()->getValue($sql);
+
+            if ($result) {
+                return (int)$result;
+            }
+
+            // Fallback: get the first image from image table
+            $sql = 'SELECT `id_image` FROM `' . _DB_PREFIX_ . 'image` i WHERE i.`id_product` = ' . (int)$productId . ' ORDER BY i.`position` ASC';
+            $rows = Db::getInstance()->executeS($sql);
+            if (!empty($rows) && isset($rows[0]['id_image'])) {
+                return (int)$rows[0]['id_image'];
+            }
+
+            return null;
+        } catch (Exception $e) {
+            return null;
+        }
     }
 }

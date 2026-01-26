@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../../../data/controllers/search_controller.dart';
+import '../../../../../navigation_menu.dart';
 import '../../../controllers/categories_store_controller.dart';
 import '../../../controllers/product_controller_store.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
@@ -38,11 +40,21 @@ class StoreController extends ChangeNotifier {
   bool get isLoadingSuggestions => _isLoadingSuggestions;
 
   /// Initialize categories and load first category
-  Future<void> initializeCategories({int? initialCategoryId, String? initialCategoryName}) async {
+  Future<void> initializeCategories({
+    int? initialCategoryId,
+    String? initialCategoryName,
+    List<String>? initialBreadcrumb,
+  }) async {
     await categoriesController.fetchAllCategories();
     if (categoriesController.mainCategories.isNotEmpty) {
       selectedCategory = initialCategoryName ?? categoriesController.mainCategories.keys.first;
       selectedCategoryId = initialCategoryId ?? categoriesController.mainCategories.values.first;
+      // Set breadcrumb navigation stack if provided
+      if (initialBreadcrumb != null && initialBreadcrumb.isNotEmpty) {
+        navigationStack = List.from(initialBreadcrumb);
+      } else {
+        navigationStack.clear();
+      }
       notifyListeners();
       await fetchProductsForCategory(selectedCategoryId);
     }
@@ -290,8 +302,17 @@ class StoreController extends ChangeNotifier {
   }
 
   /// Navigate back in category hierarchy
+  /// If categoryIdStack is empty (came from Menu tab), navigate back to Menu
   void navigateBack() {
     if (navigationStack.isEmpty) return;
+
+    // If we don't have category IDs (came from Menu tab with breadcrumb only),
+    // we should navigate back to the Menu tab
+    if (categoryIdStack.isEmpty) {
+      // Import GetX to navigate back to Menu tab
+      _navigateToMenuTab();
+      return;
+    }
 
     String parentCategory = navigationStack.last;
     int parentCategoryId = categoryIdStack.last;
@@ -301,6 +322,16 @@ class StoreController extends ChangeNotifier {
     selectedCategoryId = parentCategoryId;
     notifyListeners();
     fetchProductsForCategory(selectedCategoryId);
+  }
+
+  /// Navigate back to the Menu tab (categories)
+  void _navigateToMenuTab() {
+    try {
+      final navController = Get.find<NavigationController>();
+      navController.navigateToMenu();
+    } catch (e) {
+      AlkLoggerHelper.warning('Could not navigate to Menu tab: $e');
+    }
   }
 
   /// Get localized sort option label

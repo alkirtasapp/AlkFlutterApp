@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS `PREFIX_product_enriched` (
     `ean13` VARCHAR(13) DEFAULT NULL,
     `id_manufacturer` INT(10) UNSIGNED NOT NULL DEFAULT 0,
     `manufacturer_name` VARCHAR(128) DEFAULT NULL,
+    `name` VARCHAR(255) DEFAULT NULL,
+    `description_short` TEXT DEFAULT NULL,
+    `id_default_image` INT(10) UNSIGNED DEFAULT NULL,
     `updated_at` DATETIME NOT NULL,
     `synced_at` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id_product`, `id_product_attribute`, `id_shop`),
@@ -26,5 +29,6 @@ CREATE TABLE IF NOT EXISTS `PREFIX_product_enriched` (
     INDEX `idx_reference` (`reference`),
     INDEX `idx_ean13` (`ean13`),
     INDEX `idx_manufacturer` (`id_manufacturer`),
-    INDEX `idx_quantity` (`quantity`)
+    INDEX `idx_quantity` (`quantity`),
+    INDEX `idx_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

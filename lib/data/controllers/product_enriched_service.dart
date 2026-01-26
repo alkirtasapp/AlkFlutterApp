@@ -178,6 +178,59 @@ class ProductEnrichedService {
     }
   }
 
+  /// Build a complete product map from enriched data only (no 2nd API call needed)
+  /// Returns a product map ready for display
+  /// IMPORTANT: Field names must match what ProductCardStore expects!
+  static Map<String, dynamic> buildProductFromEnriched(Map<String, dynamic> enriched) {
+    final productId = int.tryParse(enriched['id_product'].toString()) ?? 0;
+
+    // Get the raw image ID - UI will construct the URL itself
+    final idDefaultImage = enriched['id_default_image'];
+
+    // Build image URLs list for product detail page (uses image_urls)
+    List<String> imageUrls = [];
+    if (idDefaultImage != null) {
+      final imageId = idDefaultImage.toString();
+      if (imageId.isNotEmpty && imageId != 'null' && imageId != '0') {
+        final path = imageId.split('').join('/');
+        final imageUrl = 'https://www.alkirtas.com/img/p/$path/$imageId.jpg';
+        imageUrls.add(imageUrl);
+      }
+    }
+
+    // Get brand name - keep as manufacturer_name for UI compatibility
+    final manufacturerName = (enriched['manufacturer_name'] != null && enriched['manufacturer_name'].toString().isNotEmpty)
+        ? enriched['manufacturer_name'].toString()
+        : 'Unknown';
+
+    final manufacturerId = int.tryParse(enriched['id_manufacturer'].toString()) ?? 0;
+
+    //AlkLoggerHelper.debug('Building product $productId: manufacturer=$manufacturerName, id_default_image=$idDefaultImage');
+
+    return {
+      'id': productId,
+      'name': enriched['name'] ?? 'Unknown',
+      'description_short': enriched['description_short'] ?? '',
+      'price': double.tryParse(enriched['price_ht'].toString()) ?? 0.0,
+      'ttc_price': double.tryParse(enriched['final_price_ttc'].toString()) ??
+                   double.tryParse(enriched['price_ttc'].toString()) ?? 0.0,
+      'quantity': int.tryParse(enriched['quantity'].toString()) ?? 0,
+      'discount': (enriched['has_discount'] == 1 || enriched['has_discount'] == '1')
+          ? double.tryParse(enriched['discount_value'].toString()) ?? 0.0
+          : 0.0,
+      // UI expects 'manufacturer_name' not 'brand'
+      'manufacturer_name': manufacturerName,
+      'brand': manufacturerName, // Keep for backwards compatibility
+      'reference': enriched['reference'] ?? '',
+      'ean13': enriched['ean13'] ?? '',
+      'active': enriched['is_active']?.toString() ?? '1',
+      // UI expects 'id_default_image' to construct URL itself
+      'id_default_image': idDefaultImage,
+      'image_urls': imageUrls, // For product detail page
+      'id_manufacturer': manufacturerId,
+    };
+  }
+
   /// Check if the enriched module is available
   static Future<bool> isModuleAvailable() async {
     try {

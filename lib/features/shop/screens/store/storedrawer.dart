@@ -11,14 +11,19 @@ import '../../../../navigation_menu.dart';
 import '../../../../utils/constants/size.dart';
 import 'controllers/store_controller.dart';
 import 'widgets/store_app_bar.dart';
-import 'widgets/store_category_drawer.dart';
 import 'widgets/store_search_bar.dart';
 
 class StoreDrawer extends StatefulWidget {
   final int? initialCategoryId;
   final String? initialCategoryName;
+  final List<String>? initialBreadcrumb;
 
-  const StoreDrawer({super.key, this.initialCategoryId, this.initialCategoryName});
+  const StoreDrawer({
+    super.key,
+    this.initialCategoryId,
+    this.initialCategoryName,
+    this.initialBreadcrumb,
+  });
 
   @override
   State<StoreDrawer> createState() => _StorePageState();
@@ -36,6 +41,7 @@ class _StorePageState extends State<StoreDrawer> {
       context.read<StoreController>().initializeCategories(
             initialCategoryId: widget.initialCategoryId,
             initialCategoryName: widget.initialCategoryName,
+            initialBreadcrumb: widget.initialBreadcrumb,
           );
     });
   }
@@ -107,9 +113,6 @@ class _StorePageState extends State<StoreDrawer> {
         onSearchToggle: _toggleSearch,
         onQrScannerPressed: () => _showQrScanner(context),
         isSearchVisible: isSearchVisible,
-      ),
-      drawer: const Drawer(
-        child: StoreCategoryDrawer(),
       ),
       body: Padding(
         padding: const EdgeInsets.only(top: 1),

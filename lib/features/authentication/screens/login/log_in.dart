@@ -4,6 +4,7 @@ import 'package:alkirtas/features/authentication/screens/login/log_in_divider.da
 import 'package:alkirtas/features/authentication/screens/login/log_in_footer.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in_form.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in_header.dart';
+import 'package:alkirtas/features/authentication/screens/home/home.dart';
 import 'package:bcrypt/bcrypt.dart';
 //import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -114,20 +115,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 if (pending == 'Promos') {
                   Get.offAll(
-                    () => const NavigationMenu(selectedMenu: 1),
+                    () => const NavigationMenu(selectedMenu: 2), // Boutique page
                     transition: Transition.fadeIn,
                     duration: const Duration(milliseconds: 400),
                   );
                 } else {
+                  // Navigate to NavigationMenu with Home screen (page 0)
                   Get.offAll(
-                    () => const NavigationMenu(),
+                    () => const NavigationMenu(selectedMenu: 0),
                     transition: Transition.fadeIn,
                     duration: const Duration(milliseconds: 400),
                   );
                 }
               } else {
+                // Navigate to NavigationMenu with Home screen (page 0)
                 Get.offAll(
-                  () => const NavigationMenu(),
+                  () => const NavigationMenu(selectedMenu: 0),
                   transition: Transition.fadeIn,
                   duration: const Duration(milliseconds: 400),
                 );
