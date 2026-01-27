@@ -13,7 +13,7 @@ class AlkTOUCHeckbox extends StatelessWidget {
         TextSpan(
         children: [
           TextSpan(
-            text:'J\'accepte  les conditions générales  et   la politique de confidentialité',style: Theme.of(context).textTheme.bodySmall,
+            text:'En cliquant sur ce buton, vous acceptez nos conditions générales de vente.',style: Theme.of(context).textTheme.bodySmall,
           ),
           
         ]

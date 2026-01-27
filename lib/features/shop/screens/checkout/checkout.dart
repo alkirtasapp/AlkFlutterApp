@@ -42,7 +42,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final cityController = TextEditingController();
   final gouverneratController = TextEditingController();
 
-  bool isTermsAccepted = false; // Checkbox state
+  bool isTermsAccepted = true; // Checkbox state
 
   // Dynamic carriers
   List<Carrier> carriers = [];
@@ -412,14 +412,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                  // Terms & Conditions Checkbox (Always Visible)
                   Row(
                     children: [
-                      Checkbox(
+                      /*(
                         value: isTermsAccepted,
                         onChanged: (value) {
                           setState(() {
                             isTermsAccepted = value!;
                           });
                         },
-                      ),
+                      ),*/
                       AlkTOUCHeckbox(), // Reintroduced the AlkTOUCHeckbox
                     ],
                   ),

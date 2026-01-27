@@ -212,8 +212,7 @@ class ProductEnrichedService {
       'name': enriched['name'] ?? 'Unknown',
       'description_short': enriched['description_short'] ?? '',
       'price': double.tryParse(enriched['price_ht'].toString()) ?? 0.0,
-      'ttc_price': double.tryParse(enriched['final_price_ttc'].toString()) ??
-                   double.tryParse(enriched['price_ttc'].toString()) ?? 0.0,
+      'ttc_price': double.tryParse(enriched['price_ttc'].toString()) ?? 0.0,
       'quantity': int.tryParse(enriched['quantity'].toString()) ?? 0,
       'discount': (enriched['has_discount'] == 1 || enriched['has_discount'] == '1')
           ? double.tryParse(enriched['discount_value'].toString()) ?? 0.0
@@ -223,6 +222,7 @@ class ProductEnrichedService {
       'brand': manufacturerName, // Keep for backwards compatibility
       'reference': enriched['reference'] ?? '',
       'ean13': enriched['ean13'] ?? '',
+      'id_tax_rules_group': int.tryParse(enriched['id_tax_rules_group'].toString()) ?? 0,
       'active': enriched['is_active']?.toString() ?? '1',
       // UI expects 'id_default_image' to construct URL itself
       'id_default_image': idDefaultImage,

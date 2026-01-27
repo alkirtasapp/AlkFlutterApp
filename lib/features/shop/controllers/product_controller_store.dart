@@ -265,7 +265,7 @@ class ProductControllerStore {
   }) async {
     try {
       product['id'] = int.tryParse(product['id'].toString()) ?? 0;
-      product['price'] = double.tryParse(product['price'].toString()) ?? 0.0;
+      product['ttc_price'] = double.tryParse(product['ttc_price'].toString()) ?? 0.0;
 
       // Use enriched data if available (single API call), otherwise fallback to individual calls
       if (enriched != null && useEnrichedApi) {
