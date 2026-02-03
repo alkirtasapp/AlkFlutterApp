@@ -692,7 +692,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
       appBar: AlkAppBar(
         showBackArrow: true,
         title: Text(
-          'Historique des Paniers',
+          'Historique des Commandes',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         actions: [

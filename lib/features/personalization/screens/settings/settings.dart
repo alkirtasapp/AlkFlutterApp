@@ -165,7 +165,7 @@ class _SettingScreenState extends State<SettingScreen> {
 
                   AlkSettingMenuTile(
                     icon: Iconsax.safe_home,
-                    title: 'Mes Adresses',
+                    title: 'Mon Adresse',
                     subtitle: 'Definir l\'adresse de livraison',
                     onPressed: () {
                       Get.to(() => const AddressScreen());
@@ -300,14 +300,6 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
           return const SizedBox.shrink();
         }
 
-        // Don't show if no data at all
-        final hasData = loyaltyProvider.hasPoints ||
-            loyaltyProvider.hasBalance ||
-            loyaltyProvider.hasBarcode;
-        if (!hasData) {
-          return const SizedBox.shrink();
-        }
-
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: AlkSize.defaultSpace),
           child: GestureDetector(
@@ -374,29 +366,25 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  if (loyaltyProvider.hasPoints) ...[
-                                    Icon(Iconsax.gift, color: Colors.white70, size: 14),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${loyaltyProvider.totalPoints.toStringAsFixed(0)} pts',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
+                                  Icon(Iconsax.gift, color: Colors.white70, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${loyaltyProvider.totalPoints.toStringAsFixed(0)} pts',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
                                     ),
-                                    const SizedBox(width: 12),
-                                  ],
-                                  if (loyaltyProvider.hasBalance) ...[
-                                    Icon(Iconsax.wallet, color: Colors.white70, size: 14),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${loyaltyProvider.walletBalance.toStringAsFixed(2)} TND',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Icon(Iconsax.wallet, color: Colors.white70, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${loyaltyProvider.walletBalance.toStringAsFixed(2)} TND',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
                                     ),
-                                  ],
+                                  ),
                                 ],
                               ),
                             ],
@@ -494,75 +482,72 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
           Row(
             children: [
               // Loyalty Points
-              if (loyaltyProvider.hasPoints)
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.yellowAccent.withOpacity(0.75),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(Iconsax.gift, color: Colors.white70, size: 20),
-                        const SizedBox(height: 6),
-                        Text(
-                          loyaltyProvider.totalPoints.toStringAsFixed(0),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.yellowAccent.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Iconsax.gift, color: Colors.white70, size: 20),
+                      const SizedBox(height: 6),
+                      Text(
+                        loyaltyProvider.totalPoints.toStringAsFixed(0),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
-                        Text(
-                          loyaltyProvider.programs.isNotEmpty
-                              ? loyaltyProvider.programs.first.pointName
-                              : 'point(s)',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 11,
-                          ),
+                      ),
+                      Text(
+                        loyaltyProvider.programs.isNotEmpty
+                            ? loyaltyProvider.programs.first.pointName
+                            : 'point(s)',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
 
-              if (loyaltyProvider.hasPoints && loyaltyProvider.hasBalance)
-                const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
               // Wallet Balance
-              if (loyaltyProvider.hasBalance)
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.75),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(Iconsax.wallet, color: Colors.white70, size: 20),
-                        const SizedBox(height: 6),
-                        Text(
-                          loyaltyProvider.walletBalance.toStringAsFixed(2),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Iconsax.wallet, color: Colors.white70, size: 20),
+                      const SizedBox(height: 6),
+                      Text(
+                        loyaltyProvider.walletBalance.toStringAsFixed(2),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const Text(
-                          'TND',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 11,
-                          ),
+                      ),
+                      const Text(
+                        'TND',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
             ],
           ),
 

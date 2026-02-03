@@ -150,9 +150,9 @@ class ProductEnrichedService {
     // Quantity
     product['quantity'] = int.tryParse(enriched['quantity'].toString()) ?? 0;
 
-    // Price with tax (TTC)
-    product['ttc_price'] = double.tryParse(enriched['final_price_ttc'].toString()) ??
-                           double.tryParse(enriched['price_ttc'].toString()) ??
+    // Price with tax (TTC) - use price_ttc (before discount), NOT final_price_ttc
+    // The UI applies discount itself, so we need the original TTC price
+    product['ttc_price'] = double.tryParse(enriched['price_ttc'].toString()) ??
                            product['price'] ?? 0.0;
 
     // Discount percentage

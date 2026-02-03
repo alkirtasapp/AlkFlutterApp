@@ -445,20 +445,30 @@ class ProductControllerStore {
   // Fetch full product data by ID (for name, description, images, etc.)
   Future<Map<String, dynamic>?> _fetchFullProductById(int productId) async {
     try {
+      // Use filter[id] pattern (returns "products" array) — works reliably with PrestaShop
       final String productApi =
-          'https://www.alkirtas.com/api/products/$productId?display=full&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
+          'https://www.alkirtas.com/api/products?display=full&filter[id]=$productId&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
 
       final response = await http.get(Uri.parse(productApi));
 
       if (response.statusCode != 200) {
+        AlkLoggerHelper.error('_fetchFullProductById: API returned ${response.statusCode} for product $productId');
         return null;
       }
 
       final productData = json.decode(utf8.decode(response.bodyBytes));
 
+      if (productData['products'] != null) {
+        final products = productData['products'];
+        if (products is List && products.isNotEmpty) {
+          return Map<String, dynamic>.from(products.first);
+        }
+      }
+      // Fallback: direct access returns singular "product"
       if (productData['product'] != null) {
         return Map<String, dynamic>.from(productData['product']);
       }
+      AlkLoggerHelper.error('_fetchFullProductById: no product data in response for $productId');
       return null;
     } catch (e) {
       AlkLoggerHelper.error('Error fetching product by ID: $productId', e);
@@ -475,6 +485,38 @@ class ProductControllerStore {
           images.map((image) => constructImageUrl(image['id'])).toList();
     } else {
       product['image_urls'] = [];
+    }
+  }
+
+  /// Fetches the complete gallery (associations.images) for a single product.
+  /// Uses the regular PrestaShop endpoint so we keep using the enriched API
+  /// elsewhere without toggling [useEnrichedApi].
+  Future<List<String>> fetchProductImages(String productId) async {
+    try {
+      final intId = int.tryParse(productId);
+      if (intId == null) {
+        AlkLoggerHelper.error('fetchProductImages: invalid productId=$productId');
+        return [];
+      }
+
+      final product = await _fetchFullProductById(intId);
+      if (product == null) {
+        AlkLoggerHelper.error('fetchProductImages: _fetchFullProductById returned null for $productId');
+        return [];
+      }
+
+   
+
+      _buildImageUrls(product);
+      final images = product['image_urls'];
+      if (images is List) {
+      //  AlkLoggerHelper.debug('fetchProductImages: built ${images.length} image URLs');
+        return images.map((image) => image.toString()).where((url) => url.isNotEmpty).toList();
+      }
+      return [];
+    } catch (e) {
+      AlkLoggerHelper.error('Error fetching gallery for product $productId', e);
+      return [];
     }
   }
 

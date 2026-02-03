@@ -54,11 +54,14 @@ class ProductDetails extends StatefulWidget {
 class _ProductDetailsState extends State<ProductDetails> {
   List<String> productFeatures = [];
   bool isLoadingFeatures = true;
+  List<String> productImages = [];
 
   @override
   void initState() {
     super.initState();
+    productImages = widget.productImageList;
     _fetchProductFeatures();
+    _fetchProductImages();
   }
 
   Future<void> _fetchProductFeatures() async {
@@ -77,6 +80,27 @@ class _ProductDetailsState extends State<ProductDetails> {
     }
   }
 
+  Future<void> _fetchProductImages() async {
+    try {
+      final ProductControllerStore productController = ProductControllerStore();
+      AlkLoggerHelper.debug('Fetching full image gallery for product ${widget.productId}');
+      final fetchedImages =
+          await productController.fetchProductImages(widget.productId);
+
+     // AlkLoggerHelper.debug('Fetched ${fetchedImages.length} images for product ${widget.productId}');
+
+      if (!mounted) return;
+
+      if (fetchedImages.isNotEmpty) {
+        setState(() {
+          productImages = fetchedImages;
+        });
+      }
+    } catch (e) {
+      AlkLoggerHelper.error('Error fetching images for product ${widget.productId}', e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final productPrice = widget.productDiscount.isNotEmpty
@@ -90,6 +114,9 @@ class _ProductDetailsState extends State<ProductDetails> {
     final productDescription = widget.productDescription.isNotEmpty
         ? widget.productDescription
         : 'Description non disponible'; // Fallback description
+
+    final effectiveImageList =
+        productImages.isNotEmpty ? productImages : widget.productImageList;
 
     final discountInfo = widget.productDiscount.isNotEmpty ? " | Discount: ${widget.productDiscount}" : "";
     AlkLoggerHelper.info("Product: ${widget.productName} | Ref: ${widget.productReference} | Brand: ${widget.productBrand} | Price: $productPrice$discountInfo");
@@ -108,14 +135,14 @@ class _ProductDetailsState extends State<ProductDetails> {
         productStock: widget.productStock,
         productDescription: widget.productDescription,
         productReference: widget.productReference,
-        productImageList: widget.productImageList,
+        productImageList: effectiveImageList,
         productFeatures: productFeatures,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             AlkProductImageSlider(
-              productImages: widget.productImageList,
+              productImages: effectiveImageList,
               productName: widget.productName,
             ),
 

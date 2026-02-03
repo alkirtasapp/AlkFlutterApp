@@ -31,6 +31,7 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
   bool _isProcessing = false;
   DateTime? _lastScanTime;
   String? _lastScannedCode;
+  bool _isTorchOn = false;
 
   // Stabilization: require code to be held in frame for a duration
   static const int _stabilizationMs = 500; // 1 second hold required
@@ -336,10 +337,15 @@ class _AlkQrScannerWidgetState extends State<AlkQrScannerWidget>
                   ),
                 ),
                 IconButton(
-                  onPressed: () => _scannerController.toggleTorch(),
+                  onPressed: () {
+                    _scannerController.toggleTorch();
+                    setState(() {
+                      _isTorchOn = !_isTorchOn;
+                    });
+                  },
                   icon: Icon(
                     Icons.flashlight_on,
-                    color: _scannerController.torchState.value == TorchState.on
+                    color: _isTorchOn
                         ? AlkColors.primaryColor
                         : Colors.white,
                     size: 24,

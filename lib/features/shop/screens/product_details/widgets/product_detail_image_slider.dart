@@ -144,7 +144,7 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
                               backgroundColor: AlkColors.white,
                               border: Border.all(
                                 color: selectedIndex == index
-                                    ? AlkColors.primaryColor
+                                    ? AlkColors.AppSecColor
                                     : Colors.grey,
                                 width: selectedIndex == index ? 2 : 1,
                               ),

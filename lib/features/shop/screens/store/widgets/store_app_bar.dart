@@ -133,7 +133,7 @@ class StoreAppBar extends StatelessWidget implements PreferredSizeWidget {
       itemBuilder: (BuildContext context) => [
         _buildFilterMenuItem(
           "None",
-          "Aucun filtre",
+          "Par défaut",
           controller.selectedSortOption,
           showDivider: true,
         ),

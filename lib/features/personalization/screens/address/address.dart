@@ -74,7 +74,7 @@ class _AddressScreenState extends State<AddressScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mes Adresses'),
+        title: const Text('Mon Adresse'),
       ),
       body: SingleChildScrollView(
         child: Padding(
