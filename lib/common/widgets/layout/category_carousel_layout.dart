@@ -223,7 +223,11 @@ class _AlkCategoryCarouselLayoutState extends State<AlkCategoryCarouselLayout> {
           child: SizedBox(
             width: itemWidth,
             height: itemHeight,
-            child: CategoryProductCard(productData: productData),
+            child: CategoryProductCard(
+              productData: productData,
+              allProducts: _products,
+              productIndex: index,
+            ),
           ),
         );
       },

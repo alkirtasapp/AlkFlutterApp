@@ -8,6 +8,7 @@ class AlkStoreGridDrawer extends StatelessWidget {
   final int categoryId;
   final double? mainAxisExtent;
   final List<Map<dynamic, dynamic>> preloadedProducts; //  Accepts all key-value types
+  final Future<void> Function()? onLoadMoreProducts; // Pagination callback
 
   const AlkStoreGridDrawer({
     super.key,
@@ -15,6 +16,7 @@ class AlkStoreGridDrawer extends StatelessWidget {
     required this.itemCount,
     required this.categoryId,
     required this.preloadedProducts, //  Receive paginated products
+    this.onLoadMoreProducts,
   });
 
   @override
@@ -37,7 +39,11 @@ class AlkStoreGridDrawer extends StatelessWidget {
           categoryId: categoryId,
           productIndex: index,
           // Pass product data to the card
-          productData: productData, 
+          productData: productData,
+          // Pass all products for swiping
+          allProducts: preloadedProducts,
+          // Pass pagination callback
+          onLoadMoreProducts: onLoadMoreProducts,
         );
       },
     );

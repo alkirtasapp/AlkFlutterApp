@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
+import 'package:alkirtas/features/shop/screens/product_details/product_details_swipeable.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import 'package:provider/provider.dart';
 import '../../../../features/shop/controllers/category_product_controller.dart';
@@ -15,10 +16,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 class CategoryProductCard extends StatelessWidget {
   final Map<String, dynamic> productData;
+  final List<Map<String, dynamic>>? allProducts; // All products for swiping
+  final int? productIndex; // Index in the product list for swiping
 
   const CategoryProductCard({
     super.key,
     required this.productData,
+    this.allProducts,
+    this.productIndex,
   });
 
   // Helper methods (Unchanged)
@@ -88,8 +93,16 @@ class CategoryProductCard extends StatelessWidget {
 
     // Widget Structure (GestureDetector, Container, Column are unchanged)
     return GestureDetector(
-      onTap: () => Get.to(() => ProductDetails(
-            // ... (unchanged parameters)
+      onTap: () {
+        // Use ProductDetailsSwipeable if allProducts is available
+        if (allProducts != null && allProducts!.isNotEmpty && productIndex != null) {
+          Get.to(() => ProductDetailsSwipeable(
+            products: allProducts!.cast<Map<dynamic, dynamic>>(),
+            initialIndex: productIndex!,
+          ));
+        } else {
+          // Fallback to original ProductDetails
+          Get.to(() => ProductDetails(
             productId: id,
             productName: title,
             productReference: reference,
@@ -102,7 +115,9 @@ class CategoryProductCard extends StatelessWidget {
             productDescription: descriptionShort,
             productOldPrice: discountText != null ? displayPrice : '',
             productNewPrice: finalPrice,
-          )),
+          ));
+        }
+      },
       child: Container(
         padding: const EdgeInsets.all(1),
         decoration: BoxDecoration(

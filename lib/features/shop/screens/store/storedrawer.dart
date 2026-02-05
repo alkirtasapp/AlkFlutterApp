@@ -235,6 +235,13 @@ class _StorePageState extends State<StoreDrawer> {
                           itemCount: controller.products.length,
                           categoryId: controller.isSearching ? -1 : controller.selectedCategoryId,
                           preloadedProducts: controller.products,
+                          onLoadMoreProducts: () async {
+                            if (controller.isSearching) {
+                              await controller.loadMoreSearchResults();
+                            } else {
+                              await controller.loadMoreProducts();
+                            }
+                          },
                         ),
                         if (controller.isFetchingMore)
                           Positioned(

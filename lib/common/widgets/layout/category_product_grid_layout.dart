@@ -114,7 +114,11 @@ class _CategoryProductGridLayoutState extends State<CategoryProductGridLayout> {
         // Get the specific product data for this index
         final productData = _products![index];
         // Use CategoryProductCard (the stateless one)
-        return CategoryProductCard(productData: productData);
+        return CategoryProductCard(
+          productData: productData,
+          allProducts: _products,
+          productIndex: index,
+        );
       },
     );
   }

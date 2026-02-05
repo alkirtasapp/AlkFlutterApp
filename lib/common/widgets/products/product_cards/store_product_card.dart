@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
+import 'package:alkirtas/features/shop/screens/product_details/product_details_swipeable.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 import 'package:provider/provider.dart';
@@ -15,12 +16,16 @@ class ProductCardStore extends StatelessWidget {
   final int categoryId;
   final int productIndex;
   final Map<dynamic, dynamic> productData; // Accepts all key-value types
+  final List<Map<dynamic, dynamic>>? allProducts; // All products for swiping
+  final Future<void> Function()? onLoadMoreProducts; // Pagination callback
 
   const ProductCardStore({
     super.key,
     required this.categoryId,
     required this.productIndex,
     required this.productData,
+    this.allProducts,
+    this.onLoadMoreProducts,
   });
 
   String _safeConvertToString(dynamic value, [String fallback = 'Unknown']) {
@@ -74,7 +79,17 @@ class ProductCardStore extends StatelessWidget {
 
 
     return GestureDetector(
-      onTap: () => Get.to(() => ProductDetails(
+      onTap: () {
+        // Use ProductDetailsSwipeable if allProducts is available and has items
+        if (allProducts != null && allProducts!.isNotEmpty) {
+          Get.to(() => ProductDetailsSwipeable(
+            products: allProducts!,
+            initialIndex: productIndex,
+            onLoadMoreProducts: onLoadMoreProducts,
+          ));
+        } else {
+          // Fallback to original ProductDetails if no product list
+          Get.to(() => ProductDetails(
             productId: id,
             productName: title,
             productReference: reference,
@@ -84,14 +99,15 @@ class ProductCardStore extends StatelessWidget {
             productImage: imageUrl,
             productImageList: imageList,
             productStock: productStock,
-           
             productDescription: description,
             productOldPrice: discountText != null ? displayPrice : '',
             productNewPrice: discountValue > 0
                 ? (double.parse(displayPrice) * (1 - discountValue / 100))
                     .toStringAsFixed(2)
                 : displayPrice,
-          )),
+          ));
+        }
+      },
       child: Container(
         width: 180,
         padding: const EdgeInsets.all(1),
