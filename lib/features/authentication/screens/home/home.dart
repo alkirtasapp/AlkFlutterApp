@@ -17,6 +17,7 @@ import '../../../../models/home_section.dart';
 import 'widgets/homeAppBar.dart';
 import 'widgets/homeCategories.dart';
 import 'widgets/bannerSlider.dart';
+import 'widgets/home_authors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -108,11 +109,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: EdgeInsets.symmetric(horizontal: AlkSize.sm),
                     child: AlkBannerSlider(),
                   ),
-                  // Further reduced space after banner
                   const SizedBox(height: AlkSize.spaceBtwItems),
 
-                  
-                  const SizedBox(height: AlkSize.spaceBtwItems),
+
 
                   // --- Product Sections (with conditional special section) ---
                   // Show loading indicator while sections are loading
@@ -139,7 +138,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Return a Column containing the standard carousel AND the special grid
                       return Column(
                         children: [
+
                           standardCarousel,
+                                             // --- Authors Section ---
+                  const HomeAuthorsSection(),
                           BestSellersSection(
                             itemCount: 10,
                             
@@ -152,6 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             productsPerPage: 2, 
                           ),
                            // Add the special section below
+                           
                         ],
                       );
                     } else if (section.title == espaceBureauSectionTitle) {

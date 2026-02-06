@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:alkirtas/features/shop/screens/author/author_products_screen.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:iconsax/iconsax.dart';
 
@@ -9,6 +11,14 @@ class AlkProductFeatures extends StatelessWidget {
   });
 
   final List<String>? productFeatures;
+
+  /// Check if feature is an author feature (Auteur, Author, or المؤلف)
+  bool _isAuthorFeature(String featureName) {
+    final lower = featureName.toLowerCase();
+    return lower.contains('auteur') ||
+           lower.contains('author') ||
+           featureName.contains('المؤلف');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,8 +56,9 @@ class AlkProductFeatures extends StatelessWidget {
             final parts = feature.split(':'); // Split "Feature: Value"
             final featureName = parts[0].trim();
             final featureValue = parts.length > 1 ? parts[1].trim() : "N/A";
+            final isAuthor = _isAuthorFeature(featureName);
 
-            return Container(
+            final rowContent = Container(
               margin: EdgeInsets.only(
                 bottom: index < productFeatures!.length - 1 ? 12 : 0,
               ),
@@ -76,8 +87,8 @@ class AlkProductFeatures extends StatelessWidget {
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
-                      Iconsax.info_circle5,
+                    child: Icon(
+                      isAuthor ? Iconsax.user : Iconsax.info_circle5,
                       color: Colors.white,
                       size: 18,
                     ),
@@ -109,9 +120,25 @@ class AlkProductFeatures extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (isAuthor)
+                    Icon(
+                      Iconsax.arrow_right_3,
+                      size: 18,
+                      color: Colors.grey.shade400,
+                    ),
                 ],
               ),
             );
+
+            // Wrap author rows in GestureDetector for navigation
+            if (isAuthor) {
+              return GestureDetector(
+                onTap: () => Get.to(() => AuthorProductsScreen(authorName: featureValue)),
+                child: rowContent,
+              );
+            }
+
+            return rowContent;
           }).toList(),
         ),
       ),
