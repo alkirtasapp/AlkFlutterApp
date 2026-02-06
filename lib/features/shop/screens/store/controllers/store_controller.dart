@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../data/controllers/search_controller.dart';
+import '../../../../../data/controllers/product_enriched_service.dart';
 import '../../../../../navigation_menu.dart';
 import '../../../controllers/categories_store_controller.dart';
 import '../../../controllers/product_controller_store.dart';
@@ -22,6 +23,7 @@ class StoreController extends ChangeNotifier {
   bool isFetchingMore = false;
   bool isSearching = false;
   List<Map<String, dynamic>> products = [];
+  List<Map<String, dynamic>> matchedBrands = [];
   Set<int> fetchedProductIds = {};
   int offset = 0;
   final int limit = 10;
@@ -123,12 +125,19 @@ class StoreController extends ChangeNotifier {
     isLoading = true;
     products.clear();
     fetchedProductIds.clear();
+    matchedBrands.clear();
     isSearching = true;
     offset = 0;
     currentSearchQuery = query;
     selectedSortOption = "None";
     _searchSuggestions = [];
     notifyListeners();
+
+    // Search for matching brands in parallel
+    ProductEnrichedService.searchBrands(query).then((brands) {
+      matchedBrands = brands;
+      notifyListeners();
+    });
 
     final List<int>? productIds =
         await searchController.searchProducts(query, offset: offset, limit: 100);
@@ -222,6 +231,7 @@ class StoreController extends ChangeNotifier {
     currentSearchQuery = "";
     products.clear();
     fetchedProductIds.clear();
+    matchedBrands.clear();
     offset = 0;
     _searchSuggestions = [];
     notifyListeners();

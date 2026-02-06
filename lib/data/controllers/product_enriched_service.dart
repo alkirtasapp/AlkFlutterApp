@@ -86,6 +86,56 @@ class ProductEnrichedService {
     }
   }
 
+  /// Fetch enriched data for products by manufacturer (brand)
+  static Future<List<Map<String, dynamic>>> fetchEnrichedByManufacturer(
+    int manufacturerId, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    try {
+      final url = '$_moduleBaseUrl?action=getByManufacturer&manufacturer=$manufacturerId&limit=$limit&offset=$offset&ws_key=${AppConfig.prestashopApiKey}';
+
+      AlkLoggerHelper.debug('Fetching enriched products for manufacturer $manufacturerId (offset: $offset, limit: $limit)');
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode != 200) {
+        AlkLoggerHelper.error('Enriched API error: ${response.statusCode}');
+        return [];
+      }
+
+      final data = json.decode(utf8.decode(response.bodyBytes));
+
+      if (data['success'] != true || data['data'] == null) {
+        AlkLoggerHelper.warning('Enriched API returned no data for manufacturer $manufacturerId');
+        return [];
+      }
+
+      final products = data['data']['products'] as List<dynamic>? ?? [];
+      return products.map((p) => Map<String, dynamic>.from(p)).toList();
+    } catch (e) {
+      AlkLoggerHelper.error('Error fetching enriched data by manufacturer', e);
+      return [];
+    }
+  }
+
+  /// Search brands by name (returns matching manufacturers with product counts)
+  static Future<List<Map<String, dynamic>>> searchBrands(String query) async {
+    if (query.length < 2) return [];
+    try {
+      final url = '$_moduleBaseUrl?action=searchBrands&query=$query&ws_key=${AppConfig.prestashopApiKey}';
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode != 200) return [];
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      if (data['success'] != true || data['data'] == null) return [];
+      final brands = data['data']['brands'] as List<dynamic>? ?? [];
+      return brands.map((b) => Map<String, dynamic>.from(b)).toList();
+    } catch (e) {
+      AlkLoggerHelper.error('Error searching brands', e);
+      return [];
+    }
+  }
+
   /// Fetch enriched data for a product by reference
   static Future<Map<String, dynamic>?> fetchEnrichedByReference(String reference) async {
     try {

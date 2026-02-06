@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:get/get.dart';
 import 'package:alkirtas/common/widgets/images/AlkCircularImage.dart';
 import 'package:alkirtas/common/widgets/roundedContainer.dart';
 import 'package:alkirtas/common/widgets/texts/brand__title_text_verif_icon.dart';
 import 'package:alkirtas/common/widgets/texts/product_title_text.dart';
 import 'package:alkirtas/data/controllers/quantity_controller.dart';
+import 'package:alkirtas/features/shop/screens/brand/brand_products_screen.dart';
 import 'package:alkirtas/utils/constants/enums.dart';
 import 'package:alkirtas/utils/constants/images_strings.dart';
 import 'package:alkirtas/utils/constants/size.dart';
@@ -158,32 +160,49 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
 
         SizedBox(height: AlkSize.spaceBtwItems / 2),
 
-        // Brand
-        Row(
-          children: [
-            widget.productBrandId != '0'
-                ? AlkCircularImage(
-                    image:
-                        'https://www.alkirtas.com/img/m/${widget.productBrandId}.jpg',
-                    backgroundColor: Colors.transparent,
-                    isNetworkImage: true,
-                    fit: BoxFit.contain,
-                  )
-                : AlkCircularImage(
-                    isNetworkImage: false,
-                    image: AlkImages.darkAppLogo,
-                    width: 52,
-                    height: 52,
-                    overlayColor: AlkColors.AppSecColor,
-                  ),
-            AlkBrandTitleTextVerifIcon(
-              title: (widget.productBrand == 'False' || widget.productBrand == 'false' || widget.productBrand.isEmpty)
-                  ? 'A L K I R T A S'
-                  : widget.productBrand,
-              brandTextSize: TextSizes.medium,
-            ),
-            SizedBox(height: AlkSize.spaceBtwSections),
-          ],
+        // Brand (tappable — navigates to brand products screen)
+        GestureDetector(
+          onTap: () {
+            final brandId = int.tryParse(widget.productBrandId) ?? 0;
+            if (brandId > 0) {
+              Get.to(() => BrandProductsScreen(
+                brandId: brandId,
+                brandName: (widget.productBrand == 'False' || widget.productBrand == 'false' || widget.productBrand.isEmpty)
+                    ? 'A L K I R T A S'
+                    : widget.productBrand,
+              ));
+            }
+          },
+          child: Row(
+            children: [
+              widget.productBrandId != '0'
+                  ? AlkCircularImage(
+                      image:
+                          'https://www.alkirtas.com/img/m/${widget.productBrandId}.jpg',
+                      backgroundColor: Colors.transparent,
+                      isNetworkImage: true,
+                      fit: BoxFit.contain,
+                    )
+                  : AlkCircularImage(
+                      isNetworkImage: false,
+                      image: AlkImages.darkAppLogo,
+                      width: 52,
+                      height: 52,
+                      overlayColor: AlkColors.AppSecColor,
+                    ),
+              Expanded(
+                child: AlkBrandTitleTextVerifIcon(
+                  title: (widget.productBrand == 'False' || widget.productBrand == 'false' || widget.productBrand.isEmpty)
+                      ? 'A L K I R T A S'
+                      : widget.productBrand,
+                  brandTextSize: TextSizes.medium,
+                ),
+              ),
+              if ((int.tryParse(widget.productBrandId) ?? 0) > 0)
+                Icon(Iconsax.arrow_right_3, size: 18, color: AlkColors.darkerGrey),
+              SizedBox(height: AlkSize.spaceBtwSections),
+            ],
+          ),
         ),
       ],
     );
