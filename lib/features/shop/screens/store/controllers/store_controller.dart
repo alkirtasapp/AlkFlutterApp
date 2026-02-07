@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../data/controllers/search_controller.dart';
 import '../../../../../data/controllers/product_enriched_service.dart';
+import '../../../../../data/controllers/author_service.dart';
 import '../../../../../navigation_menu.dart';
 import '../../../controllers/categories_store_controller.dart';
 import '../../../controllers/product_controller_store.dart';
@@ -24,6 +25,7 @@ class StoreController extends ChangeNotifier {
   bool isSearching = false;
   List<Map<String, dynamic>> products = [];
   List<Map<String, dynamic>> matchedBrands = [];
+  List<Map<String, dynamic>> matchedAuthors = [];
   Set<int> fetchedProductIds = {};
   int offset = 0;
   final int limit = 10;
@@ -126,6 +128,7 @@ class StoreController extends ChangeNotifier {
     products.clear();
     fetchedProductIds.clear();
     matchedBrands.clear();
+    matchedAuthors.clear();
     isSearching = true;
     offset = 0;
     currentSearchQuery = query;
@@ -136,6 +139,12 @@ class StoreController extends ChangeNotifier {
     // Search for matching brands in parallel
     ProductEnrichedService.searchBrands(query).then((brands) {
       matchedBrands = brands;
+      notifyListeners();
+    });
+
+    // Search for matching authors in parallel
+    AuthorService.searchAuthors(query).then((authors) {
+      matchedAuthors = authors;
       notifyListeners();
     });
 
@@ -232,6 +241,7 @@ class StoreController extends ChangeNotifier {
     products.clear();
     fetchedProductIds.clear();
     matchedBrands.clear();
+    matchedAuthors.clear();
     offset = 0;
     _searchSuggestions = [];
     notifyListeners();

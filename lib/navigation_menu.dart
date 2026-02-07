@@ -11,6 +11,7 @@ import 'package:alkirtas/features/shop/screens/store/controllers/store_controlle
 import 'package:alkirtas/features/shop/screens/categories/categories_menu_screen.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
+import 'package:alkirtas/services/app_update_service.dart';
 
 class NavigationMenu extends StatefulWidget {
   /// the index of the selected tab
@@ -57,6 +58,9 @@ class _NavigationMenuState extends State<NavigationMenu>
     );
 
     _animationController.forward();
+
+    // Check for app updates from Google Play
+    AppUpdateService.checkForUpdate();
   }
 
   @override
@@ -138,6 +142,7 @@ class _NavigationMenuState extends State<NavigationMenu>
                     PageView(
                       controller: controller.pageController,
                       onPageChanged: controller.onPageChanged,
+                      physics: const NeverScrollableScrollPhysics(),
                       children: controller.screens,
                     ),
                     // Draggable Home FAB

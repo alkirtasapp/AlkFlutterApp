@@ -180,12 +180,12 @@ class _CartQRDialogState extends State<CartQRDialog> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AlkColors.AppSecColor!,
+                        color: AlkColors.AppSecColor,
                         width: 3,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AlkColors.AppSecColor!,
+                          color: AlkColors.AppSecColor,
                           blurRadius: 12,
                           spreadRadius: 3,
                         ),

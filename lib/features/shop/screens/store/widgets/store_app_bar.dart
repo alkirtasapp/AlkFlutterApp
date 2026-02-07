@@ -43,11 +43,7 @@ class StoreAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   Widget _buildTitle(StoreController controller) {
     if (controller.isSearching) {
-      return Text(
-        controller.currentSearchQuery,
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-      );
+      return const Text('Recherche');
     }
 
     final hasNavigation = controller.navigationStack.isNotEmpty;

@@ -28,6 +28,7 @@ class _AuthorCatalogScreenState extends State<AuthorCatalogScreen> with SingleTi
 
   late TabController _tabController;
   bool _showArabic = false;
+  // ignore: prefer_final_fields
   Map<String, List<Map<String, dynamic>>> _cachedAuthors = {};
   String _currentLetter = '';
   bool _isLoading = false;
