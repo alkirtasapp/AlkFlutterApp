@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:alkirtas/common/widgets/global_floating_home_button.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
 import 'package:alkirtas/features/shop/controllers/product_controller_store.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
@@ -135,71 +136,73 @@ class _ProductDetailsSwipeableState extends State<ProductDetailsSwipeable> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        PageView.builder(
-          controller: _pageController,
-          itemCount: widget.products.length,
-          onPageChanged: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-            // Check if we need to load more products
-            _handlePaginationIfNeeded(index);
-          },
-          itemBuilder: (context, index) {
-            return buildProductDetails(widget.products[index]);
-          },
-        ),
-        // Page indicator overlay
-        if (widget.products.length > 1)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${_currentIndex + 1}/${widget.products.length}',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ) ?? const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+    return ResponsiveGlobalFab(
+      child: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.products.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+              // Check if we need to load more products
+              _handlePaginationIfNeeded(index);
+            },
+            itemBuilder: (context, index) {
+              return buildProductDetails(widget.products[index]);
+            },
           ),
-        // Loading indicator when fetching more products
-        if (_isLoadingMore)
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Center(
+          // Page indicator overlay
+          if (widget.products.length > 1)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              right: 16,
               child: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.black54,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const SizedBox(
-                  width: 30,
-                  height: 30,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                child: Text(
+                  '${_currentIndex + 1}/${widget.products.length}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ) ?? const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
             ),
-          ),
-      ],
+          // Loading indicator when fetching more products
+          if (_isLoadingMore)
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

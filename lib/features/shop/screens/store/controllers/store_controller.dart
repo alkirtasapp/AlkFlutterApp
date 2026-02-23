@@ -5,6 +5,7 @@ import '../../../../../data/controllers/search_controller.dart';
 import '../../../../../data/controllers/product_enriched_service.dart';
 import '../../../../../data/controllers/author_service.dart';
 import '../../../../../navigation_menu.dart';
+import '../../../../../utils/backendData/userData.dart';
 import '../../../controllers/categories_store_controller.dart';
 import '../../../controllers/product_controller_store.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
@@ -163,32 +164,34 @@ class StoreController extends ChangeNotifier {
           }
         }
         offset += searchedProducts.length;
-        _applySorting();
-        AlkLoggerHelper.debug("Search found ${searchedProducts.length} results for '$query'");
-      } else {
-        AlkLoggerHelper.warning("No products found for search '$query'");
-      }
     } else {
-      AlkLoggerHelper.warning("Search returned no results for '$query'");
+      AlkLoggerHelper.warning("No products found for search '$query'");
     }
+  } else {
+    AlkLoggerHelper.warning("Search returned no results for '$query'");
+  }
+
+  // Log search query for insights
+  final userType = UserData.id.isNotEmpty ? 'logged_in' : 'anonymous';
+  await ProductEnrichedService.logSearchQuery(query, products.length, userType);
 
     isLoading = false;
     notifyListeners();
   }
 
-  /// Load more search results
+  /// Load more search results for pagination
   Future<void> loadMoreSearchResults() async {
     if (isFetchingMore) return;
 
     isFetchingMore = true;
     notifyListeners();
 
-    final List<int>? productIds =
+    final List<int>? moreProductIds =
         await searchController.searchProducts(currentSearchQuery, offset: offset, limit: 100);
 
-    if (productIds != null && productIds.isNotEmpty) {
+    if (moreProductIds != null && moreProductIds.isNotEmpty) {
       final List<Map<String, dynamic>>? moreSearchedProducts =
-          await productController.fetchProductsByIds(productIds);
+          await productController.fetchProductsByIds(moreProductIds);
 
       if (moreSearchedProducts != null && moreSearchedProducts.isNotEmpty) {
         for (var product in moreSearchedProducts) {
@@ -197,7 +200,7 @@ class StoreController extends ChangeNotifier {
             fetchedProductIds.add(product['id']);
           }
         }
-        offset += productIds.length;
+        offset += moreProductIds.length;
         _applySorting();
       }
     }
@@ -211,10 +214,20 @@ class StoreController extends ChangeNotifier {
     if (query.trim().isEmpty) return;
 
     _isLoadingSuggestions = true;
+    matchedBrands.clear();
+    matchedAuthors.clear();
     notifyListeners();
 
-    final List<int>? productIds =
-        await searchController.searchProducts(query, offset: 0, limit: 10);
+    // Fetch products, brands, and authors in parallel
+    final results = await Future.wait([
+      searchController.searchProducts(query, offset: 0, limit: 10),
+      ProductEnrichedService.searchBrands(query),
+      AuthorService.searchAuthors(query),
+    ]);
+
+    final List<int>? productIds = results[0] as List<int>?;
+    matchedBrands = results[1] as List<Map<String, dynamic>>;
+    matchedAuthors = results[2] as List<Map<String, dynamic>>;
 
     if (productIds != null && productIds.isNotEmpty) {
       final List<Map<String, dynamic>>? suggestedProducts =
@@ -251,6 +264,8 @@ class StoreController extends ChangeNotifier {
   /// Clear search suggestions
   void clearSearchSuggestions() {
     _searchSuggestions = [];
+    matchedBrands.clear();
+    matchedAuthors.clear();
     notifyListeners();
   }
 

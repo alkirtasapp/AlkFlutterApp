@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:readmore/readmore.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
+import 'package:alkirtas/common/widgets/global_floating_home_button.dart';
 import 'package:alkirtas/features/shop/screens/product_details/widgets/bottom_add_to_cart.dart';
 import 'package:alkirtas/features/shop/screens/product_details/widgets/product_features.dart';
 import 'package:alkirtas/features/audiobooks/widgets/audio_sample_player.dart';

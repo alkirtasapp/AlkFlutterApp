@@ -290,6 +290,9 @@ class ProductCardControllerTax {
     // Remove extra spaces and newlines
     cleanText = cleanText.replaceAll(RegExp(r'\s+'), ' ').trim();
 
+    // Unescape PHP/MySQL escaped apostrophes
+    cleanText = cleanText.replaceAll("\\'", "'");
+
     return cleanText;
   }
 

@@ -21,12 +21,14 @@ class StoreDrawer extends StatefulWidget {
   final int? initialCategoryId;
   final String? initialCategoryName;
   final List<String>? initialBreadcrumb;
+  final String? initialSearchQuery;
 
   const StoreDrawer({
     super.key,
     this.initialCategoryId,
     this.initialCategoryName,
     this.initialBreadcrumb,
+    this.initialSearchQuery,
   });
 
   @override
@@ -42,12 +44,16 @@ class _StorePageState extends State<StoreDrawer> {
   void initState() {
     super.initState();
     // Initialize the controller with initial category if provided
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<StoreController>().initializeCategories(
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final controller = context.read<StoreController>();
+      await controller.initializeCategories(
             initialCategoryId: widget.initialCategoryId,
             initialCategoryName: widget.initialCategoryName,
             initialBreadcrumb: widget.initialBreadcrumb,
           );
+      if (widget.initialSearchQuery != null && widget.initialSearchQuery!.isNotEmpty) {
+        controller.searchProducts(widget.initialSearchQuery!);
+      }
     });
   }
 
@@ -530,7 +536,7 @@ class _StorePageState extends State<StoreDrawer> {
     );
   }
 
-  Widget _buildBrandSuggestionCard(Map<String, dynamic> brand) {
+  /*Widget _buildBrandSuggestionCard(Map<String, dynamic> brand) {
     final brandId = int.tryParse(brand['id_manufacturer'].toString()) ?? 0;
     final brandName = brand['manufacturer_name']?.toString() ?? '';
     final productCount = int.tryParse(brand['product_count'].toString()) ?? 0;
@@ -572,9 +578,9 @@ class _StorePageState extends State<StoreDrawer> {
         ),
       ),
     );
-  }
+  }*/
 
-  Widget _buildAuthorSuggestionCard(Map<String, dynamic> author) {
+  /*Widget _buildAuthorSuggestionCard(Map<String, dynamic> author) {
     final authorName = author['name']?.toString() ?? '';
     final imageUrl = author['image_url']?.toString() ?? '';
 
@@ -633,5 +639,5 @@ class _StorePageState extends State<StoreDrawer> {
         ),
       ),
     );
-  }
+  }*/
 }

@@ -1,87 +1,110 @@
 import 'dart:async';
-import 'package:alkirtas/common/widgets/images/AlkCircularImage.dart';
-import 'package:alkirtas/features/shop/screens/brand/brand_products_screen.dart';
-import 'package:alkirtas/features/shop/screens/author/author_products_screen.dart';
-import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:provider/provider.dart';
-import '../controllers/store_controller.dart';
+import 'package:alkirtas/utils/constants/colors.dart';
+import 'package:alkirtas/common/widgets/images/AlkCircularImage.dart';
+import 'package:alkirtas/data/controllers/search_controller.dart';
+import 'package:alkirtas/data/controllers/product_enriched_service.dart';
+import 'package:alkirtas/data/controllers/author_service.dart';
+import 'package:alkirtas/features/shop/controllers/product_controller_store.dart';
+import 'package:alkirtas/features/shop/screens/brand/brand_products_screen.dart';
+import 'package:alkirtas/features/shop/screens/author/author_products_screen.dart';
+import 'package:alkirtas/navigation_menu.dart';
 
-/// Search bar widget with autocomplete suggestions
-/// Displays debounced search suggestions in an overlay
-class StoreSearchBar extends StatefulWidget {
-  final VoidCallback onSearchSubmitted;
+/// Inline search bar for the home screen with overlay suggestions.
+/// Works like the store search bar — text field + dropdown overlay.
+class HomeSearchBar extends StatefulWidget {
   final VoidCallback onClose;
 
-  const StoreSearchBar({
-    super.key,
-    required this.onSearchSubmitted,
-    required this.onClose,
-  });
+  const HomeSearchBar({super.key, required this.onClose});
 
   @override
-  State<StoreSearchBar> createState() => _StoreSearchBarState();
+  State<HomeSearchBar> createState() => _HomeSearchBarState();
 }
 
-class _StoreSearchBarState extends State<StoreSearchBar> {
+class _HomeSearchBarState extends State<HomeSearchBar> {
   final TextEditingController _textController = TextEditingController();
+  final AlkSearchController _searchController = AlkSearchController();
+  final ProductControllerStore _productController = ProductControllerStore();
   Timer? _debounceTimer;
   OverlayEntry? _overlayEntry;
-  StoreController? _controller;
+
+  List<String> _productSuggestions = [];
+  List<Map<String, dynamic>> _matchedBrands = [];
+  List<Map<String, dynamic>> _matchedAuthors = [];
 
   @override
   void initState() {
     super.initState();
-    _textController.addListener(_onSearchTextChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller = context.read<StoreController>();
-      _controller!.addListener(_onSuggestionsUpdated);
-    });
+    _textController.addListener(_onTextChanged);
   }
 
   @override
   void dispose() {
     _debounceTimer?.cancel();
-    _textController.removeListener(_onSearchTextChanged);
+    _textController.removeListener(_onTextChanged);
     _textController.dispose();
-    _controller?.removeListener(_onSuggestionsUpdated);
     _removeOverlay();
     super.dispose();
   }
 
-  void _onSuggestionsUpdated() {
-    final controller = _controller;
-    if (controller == null || _textController.text.isEmpty) return;
+  void _onTextChanged() {
+    _debounceTimer?.cancel();
 
-    final hasSuggestions = controller.searchSuggestions.isNotEmpty ||
-        controller.matchedBrands.isNotEmpty ||
-        controller.matchedAuthors.isNotEmpty;
-
-    if (_overlayEntry != null) {
-      if (hasSuggestions) {
-        _overlayEntry!.markNeedsBuild();
-      } else {
-        _removeOverlay();
-      }
-    } else if (hasSuggestions) {
-      _showSuggestionsOverlay();
-    }
-  }
-
-  void _onSearchTextChanged() {
-    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
-
-    if (_textController.text.isEmpty) {
+    if (_textController.text.trim().isEmpty) {
       _removeOverlay();
-      context.read<StoreController>().clearSearchSuggestions();
+      _productSuggestions = [];
+      _matchedBrands = [];
+      _matchedAuthors = [];
       return;
     }
 
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      context.read<StoreController>().fetchSearchSuggestions(_textController.text);
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      _fetchSuggestions(_textController.text.trim());
     });
+  }
+
+  Future<void> _fetchSuggestions(String query) async {
+    if (query.isEmpty) return;
+
+    final results = await Future.wait([
+      _searchController.searchProducts(query, offset: 0, limit: 8),
+      ProductEnrichedService.searchBrands(query),
+      AuthorService.searchAuthors(query),
+    ]);
+
+    if (!mounted || _textController.text.trim() != query) return;
+
+    final List<int>? productIds = results[0] as List<int>?;
+    _matchedBrands = results[1] as List<Map<String, dynamic>>;
+    _matchedAuthors = results[2] as List<Map<String, dynamic>>;
+
+    if (productIds != null && productIds.isNotEmpty) {
+      final products = await _productController.fetchProductsByIds(productIds);
+      if (mounted && _textController.text.trim() == query) {
+        _productSuggestions = products
+                ?.map((p) => p['name']?.toString() ?? '')
+                .where((name) => name.isNotEmpty)
+                .toSet()
+                .toList() ??
+            [];
+      }
+    } else {
+      _productSuggestions = [];
+    }
+
+    if (!mounted) return;
+
+    final hasSuggestions = _matchedBrands.isNotEmpty ||
+        _matchedAuthors.isNotEmpty ||
+        _productSuggestions.isNotEmpty;
+
+    if (hasSuggestions) {
+      _showSuggestionsOverlay();
+    } else {
+      _removeOverlay();
+    }
   }
 
   void _removeOverlay() {
@@ -92,14 +115,11 @@ class _StoreSearchBarState extends State<StoreSearchBar> {
   void _showSuggestionsOverlay() {
     _removeOverlay();
 
-    final controller = _controller;
-    if (controller == null) return;
-
     _overlayEntry = OverlayEntry(
       builder: (overlayContext) {
-        final brands = controller.matchedBrands;
-        final authors = controller.matchedAuthors;
-        final products = controller.searchSuggestions;
+        final brands = _matchedBrands;
+        final authors = _matchedAuthors;
+        final products = _productSuggestions;
 
         if (brands.isEmpty && authors.isEmpty && products.isEmpty) {
           return const SizedBox.shrink();
@@ -149,6 +169,13 @@ class _StoreSearchBarState extends State<StoreSearchBar> {
     );
 
     Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _performSearch(String query) {
+    if (query.trim().isEmpty) return;
+    _removeOverlay();
+    final navController = Get.find<NavigationController>();
+    navController.navigateToStoreDrawer(searchQuery: query.trim());
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {
@@ -265,50 +292,40 @@ class _StoreSearchBarState extends State<StoreSearchBar> {
         style: const TextStyle(fontSize: 14),
       ),
       onTap: () {
-        _textController.removeListener(_onSearchTextChanged);
+        _textController.removeListener(_onTextChanged);
         _textController.text = productName;
-        _textController.addListener(_onSearchTextChanged);
+        _textController.addListener(_onTextChanged);
         _removeOverlay();
         _performSearch(productName);
       },
     );
   }
 
-  void _performSearch(String query) {
-    if (query.trim().isEmpty) return;
-    context.read<StoreController>().searchProducts(query);
-    _removeOverlay();
-    widget.onSearchSubmitted();
-  }
-
   void _handleClear() {
-    final controller = context.read<StoreController>();
-    if (controller.isSearching) {
-      controller.clearSearch();
-      widget.onClose();
-    } else {
+    if (_textController.text.isNotEmpty) {
       _textController.clear();
       _removeOverlay();
+    } else {
+      _removeOverlay();
+      widget.onClose();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: TextField(
         controller: _textController,
         autofocus: true,
         decoration: InputDecoration(
-          hintText: 'Recherche',
+          hintText: 'Rechercher un produit, marque, auteur...',
           prefixIcon: const Icon(Iconsax.search_normal),
-          suffixIcon: _textController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: 20),
-                  onPressed: _handleClear,
-                  tooltip: 'Effacer',
-                )
-              : null,
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.clear, size: 20),
+            onPressed: _handleClear,
+            tooltip: 'Fermer',
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8.0),
           ),
@@ -317,7 +334,7 @@ class _StoreSearchBarState extends State<StoreSearchBar> {
         ),
         onSubmitted: _performSearch,
         onChanged: (value) {
-          setState(() {}); // Trigger rebuild to show/hide clear button
+          setState(() {}); // Rebuild for clear button visibility
         },
       ),
     );

@@ -4,42 +4,49 @@ import 'package:alkirtas/config/app_config.dart';
 
 class AlkSearchController {
   String get apiKey => AppConfig.prestashopApiKey;
-  final String baseUrl = 'https://www.alkirtas.com/api/products';
+  static const String _enrichedBaseUrl =
+      'https://www.alkirtas.com/module/productenriched/api';
 
+  /// Search products using the enriched API with word splitting.
+  /// Each word in the query is matched independently against product name AND reference.
+  /// Returns a list of matching product IDs.
   Future<List<int>?> searchProducts(String query, {int offset = 0, int limit = 100}) async {
     try {
       final String cleanedQuery = query.trim();
+      if (cleanedQuery.isEmpty) return [];
 
-     
-      final String formattedQuery = "%[$cleanedQuery]%";
+      final String encodedQuery = Uri.encodeComponent(cleanedQuery);
+      final String searchApi =
+          '$_enrichedBaseUrl?action=searchProducts&query=$encodedQuery'
+          '&limit=$limit&offset=$offset&ws_key=$apiKey';
 
-      final String searchApi = '$baseUrl?filter[name]=$formattedQuery&language=1'
-          '&sort=[id_DESC]&filter[active]=1&display=full&output_format=JSON'
-          '&ws_key=$apiKey&limit=$limit';
-
-      print("📡 Searching products with query: $cleanedQuery, Offset: $offset, Limit: $limit");
-      print("🔗 API Request URL: $searchApi");
+      print("📡 Searching products (enriched): $cleanedQuery, Offset: $offset, Limit: $limit");
 
       final response = await http.get(Uri.parse(searchApi));
       if (response.statusCode != 200) {
-        print("❌ API Error: ${response.statusCode}");
+        print("❌ Enriched search API Error: ${response.statusCode}");
         return null;
       }
 
-      final searchData = json.decode(utf8.decode(response.bodyBytes));
+      final data = json.decode(utf8.decode(response.bodyBytes));
 
-      if (searchData == null || searchData is! Map<String, dynamic> || !searchData.containsKey('products')) {
-        print("⚠️ No products found for query: $cleanedQuery or invalid response.");
+      if (data == null ||
+          data is! Map<String, dynamic> ||
+          data['success'] != true ||
+          data['data'] == null) {
+        print("⚠️ No results for query: $cleanedQuery");
         return [];
       }
 
-      final List<int> productIds = (searchData['products'] as List)
-          .where((product) => product is Map<String, dynamic> && product.containsKey('id'))
-          .map((product) => int.tryParse(product['id'].toString()) ?? -1)
-          .where((id) => id != -1)
+      final products = data['data']['products'] as List<dynamic>? ?? [];
+
+      final List<int> productIds = products
+          .map((p) => int.tryParse(p['id_product'].toString()) ?? -1)
+          .where((id) => id > 0)
           .toList();
 
-      print("✅ Found ${productIds.length} active products for query: $cleanedQuery");
+      print("✅ Found ${productIds.length} products for query: $cleanedQuery "
+          "(total: ${data['data']['total'] ?? '?'})");
       return productIds;
     } catch (e) {
       print('❌ Error searching products: $e');

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
+import 'package:alkirtas/common/widgets/global_floating_home_button.dart';
 import 'package:alkirtas/features/authentication/screens/home/home.dart';
 import 'package:alkirtas/features/personalization/screens/settings/settings.dart';
 import 'package:alkirtas/features/shop/screens/cart/cart.dart';
@@ -27,10 +28,6 @@ class _NavigationMenuState extends State<NavigationMenu>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-
-  // Draggable FAB position
-  Offset? _fabPosition;
-  final double _fabSize = 56.0;
 
   @override
   void initState() {
@@ -61,6 +58,9 @@ class _NavigationMenuState extends State<NavigationMenu>
 
     // Check for app updates from Google Play
     AppUpdateService.checkForUpdate();
+    
+    // Initialize GlobalFabService
+    Get.put(GlobalFabService());
   }
 
   @override
@@ -108,69 +108,34 @@ class _NavigationMenuState extends State<NavigationMenu>
             return shouldPop ?? false;
           },
           // Scaffold with NavigationBar and screens
-          child: Scaffold(
-            bottomNavigationBar: Obx(
-              () => NavigationBar(
-                height: 80,
-                elevation: 0,
-                selectedIndex: controller.navIndex.value,
-                onDestinationSelected: controller.onNavDestinationSelected,
-                backgroundColor: darkMode ? AlkColors.black : Colors.white,
-                indicatorColor: darkMode
-                    ? AlkColors.white.withOpacity(0.1)
-                    : AlkColors.black.withOpacity(0.1),
-                // 4 visible tabs - Home is hidden (accessed via FAB)
-                destinations: const [
-                  NavigationDestination(icon: Icon(Iconsax.menu_1), label: 'Menu'),
-                  NavigationDestination(icon: Icon(Iconsax.shop), label: 'Boutique'),
-                  NavigationDestination(icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
-                  NavigationDestination(icon: Icon(Iconsax.user), label: 'Profil'),
-                ],
-              ),
-            ),
-            body: LayoutBuilder(
-              builder: (context, constraints) {
-                // Initialize FAB position if not set (bottom-right)
-                _fabPosition ??= Offset(
-                  constraints.maxWidth - _fabSize - 16,
-                  constraints.maxHeight - _fabSize - 16,
-                );
-
-                return Stack(
-                  children: [
-                    // Main content
-                    PageView(
-                      controller: controller.pageController,
-                      onPageChanged: controller.onPageChanged,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: controller.screens,
-                    ),
-                    // Draggable Home FAB
-                    Positioned(
-                      left: _fabPosition!.dx,
-                      top: _fabPosition!.dy,
-                      child: GestureDetector(
-                        onPanUpdate: (details) {
-                          setState(() {
-                            double newX = _fabPosition!.dx + details.delta.dx;
-                            double newY = _fabPosition!.dy + details.delta.dy;
-                            // Keep FAB within bounds
-                            newX = newX.clamp(0, constraints.maxWidth - _fabSize);
-                            newY = newY.clamp(0, constraints.maxHeight - _fabSize);
-                            _fabPosition = Offset(newX, newY);
-                          });
-                        },
-                        child: FloatingActionButton(
-                          onPressed: () => controller.navigateToHome(),
-                          backgroundColor: AlkColors.AppFirstColor,
-                          elevation: 4,
-                          child: const Icon(Iconsax.home, color: Colors.white),
-                        ),
-                      ),
-                    ),
+          child: ResponsiveGlobalFab(
+            forceShow: true, // Show on main navigation screens
+            child: Scaffold(
+              bottomNavigationBar: Obx(
+                () => NavigationBar(
+                  height: 80,
+                  elevation: 0,
+                  selectedIndex: controller.navIndex.value,
+                  onDestinationSelected: controller.onNavDestinationSelected,
+                  backgroundColor: darkMode ? AlkColors.black : Colors.white,
+                  indicatorColor: darkMode
+                      ? AlkColors.white.withOpacity(0.1)
+                      : AlkColors.black.withOpacity(0.1),
+                  // 4 visible tabs - Home is hidden (accessed via FAB)
+                  destinations: const [
+                    NavigationDestination(icon: Icon(Iconsax.menu_1), label: 'Menu'),
+                    NavigationDestination(icon: Icon(Iconsax.shop), label: 'Boutique'),
+                    NavigationDestination(icon: Icon(Iconsax.shopping_cart), label: 'Panier'),
+                    NavigationDestination(icon: Icon(Iconsax.user), label: 'Profil'),
                   ],
-                );
-              },
+                ),
+              ),
+              body: PageView(
+                controller: controller.pageController,
+                onPageChanged: controller.onPageChanged,
+                physics: const NeverScrollableScrollPhysics(),
+                children: controller.screens,
+              ),
             ),
           ),
         ),
@@ -192,6 +157,7 @@ class NavigationController extends GetxController {
   final Rx<int?> initialCategoryId = Rx<int?>(null);
   final Rx<String?> initialCategoryName = Rx<String?>(null);
   final RxList<String> initialBreadcrumb = <String>[].obs;
+  final Rx<String?> initialSearchQuery = Rx<String?>(null);
 
   NavigationController(int initialPageIndex)
       : pageIndex = initialPageIndex.obs,
@@ -214,6 +180,7 @@ class NavigationController extends GetxController {
             initialCategoryId: initialCategoryId.value,
             initialCategoryName: initialCategoryName.value,
             initialBreadcrumb: initialBreadcrumb.toList(),
+            initialSearchQuery: initialSearchQuery.value,
           ),
         )),                        // Page 2 = Nav 1 (Boutique)
     const CartScreen(),           // Page 3 = Nav 2 (Cart)
@@ -247,10 +214,11 @@ class NavigationController extends GetxController {
     isOnHome.value = true;
   }
 
-  void navigateToStoreDrawer({int? categoryId, String? categoryName, List<String>? breadcrumb}) {
+  void navigateToStoreDrawer({int? categoryId, String? categoryName, List<String>? breadcrumb, String? searchQuery}) {
     initialCategoryId.value = categoryId;
     initialCategoryName.value = categoryName;
     initialBreadcrumb.value = breadcrumb ?? [];
+    initialSearchQuery.value = searchQuery;
     navIndex.value = 1; // Boutique in nav
     pageIndex.value = 2; // Page 2
     pageController.jumpToPage(2);

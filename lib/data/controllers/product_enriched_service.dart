@@ -123,7 +123,8 @@ class ProductEnrichedService {
   static Future<List<Map<String, dynamic>>> searchBrands(String query) async {
     if (query.length < 2) return [];
     try {
-      final url = '$_moduleBaseUrl?action=searchBrands&query=$query&ws_key=${AppConfig.prestashopApiKey}';
+      final encodedQuery = Uri.encodeComponent(query);
+      final url = '$_moduleBaseUrl?action=searchBrands&query=$encodedQuery&ws_key=${AppConfig.prestashopApiKey}';
       final response = await http.get(Uri.parse(url));
       if (response.statusCode != 200) return [];
       final data = json.decode(utf8.decode(response.bodyBytes));
@@ -194,6 +195,67 @@ class ProductEnrichedService {
     }
   }
 
+  /// Log search query for insights
+  static Future<void> logSearchQuery(String query, int resultCount, String userType) async {
+    try {
+      final encodedQuery = Uri.encodeComponent(query);
+      final url = '$_moduleBaseUrl?action=logSearch&query=$encodedQuery&result_count=$resultCount&user_type=$userType&ws_key=${AppConfig.prestashopApiKey}';
+      
+      final response = await http.get(Uri.parse(url));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        if (data['success']) {
+          AlkLoggerHelper.info('Search logged: $query ($resultCount results)');
+        }
+      }
+    } catch (e) {
+      AlkLoggerHelper.error('Failed to log search: $e');
+    }
+  }
+
+  /// Get trending searches
+  static Future<List<Map<String, dynamic>>> getTrendingSearches({int limit = 10, int days = 7}) async {
+    try {
+      final url = '$_moduleBaseUrl?action=getTrendingSearches&limit=$limit&days=$days&ws_key=${AppConfig.prestashopApiKey}';
+      
+      print('Fetching trending searches from: $url');
+      
+      final response = await http.get(Uri.parse(url));
+      
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        if (data['success']) {
+          // Handle both array and object responses
+          final trendingData = data['data']['trending'];
+          List<Map<String, dynamic>> trending;
+          
+          if (trendingData is List) {
+            trending = List<Map<String, dynamic>>.from(trendingData);
+          } else if (trendingData is Map) {
+            // Convert object values to array
+            trending = (trendingData as Map<String, dynamic>)
+                .values
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+          } else {
+            trending = [];
+          }
+          
+          print('Trending searches loaded: ${trending.length}');
+          return trending;
+        }
+      }
+      return [];
+    } catch (e) {
+      print('Failed to fetch trending searches: $e');
+      return [];
+    }
+  }
+
   /// Apply enriched data to a product map
   /// This merges the enriched fields into the existing product data
   static void applyEnrichedData(Map<String, dynamic> product, Map<String, dynamic> enriched) {
@@ -259,8 +321,8 @@ class ProductEnrichedService {
 
     return {
       'id': productId,
-      'name': enriched['name'] ?? 'Unknown',
-      'description_short': enriched['description_short'] ?? '',
+      'name': (enriched['name'] ?? 'Unknown').toString().replaceAll("\\'", "'"),
+      'description_short': (enriched['description_short'] ?? '').toString().replaceAll("\\'", "'"),
       'price': double.tryParse(enriched['price_ht'].toString()) ?? 0.0,
       'ttc_price': double.tryParse(enriched['price_ttc'].toString()) ?? 0.0,
       'quantity': int.tryParse(enriched['quantity'].toString()) ?? 0,

@@ -18,6 +18,8 @@ import 'widgets/homeAppBar.dart';
 import 'widgets/homeCategories.dart';
 import 'widgets/bannerSlider.dart';
 import 'widgets/home_authors.dart';
+import 'widgets/trending_searches_widget.dart';
+import 'widgets/home_search_overlay.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<HomeSection> sections = [];
   bool isLoadingSections = true;
+  bool _isSearchActive = false;
 
   @override
   void initState() {
@@ -70,13 +73,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const AlkHomeAppBar(showCartIcon: true),
                   const SizedBox(height: AlkSize.spaceBtwSections),
-                  AlkSearchContainer(
-                    text: 'Découvrir ma boutique',
-                    icon: Icons.search,
-                    showQrButton: true,
-                    onPressed: () =>
-                        Get.offAll(() => const NavigationMenu(selectedMenu: 1)),
-                  ),
+                  if (_isSearchActive)
+                    HomeSearchBar(
+                      onClose: () => setState(() => _isSearchActive = false),
+                    )
+                  else
+                    AlkSearchContainer(
+                      text: 'Rechercher un produit...',
+                      icon: Icons.search,
+                      showQrButton: true,
+                      onPressed: () => setState(() => _isSearchActive = true),
+                    ),
                   const SizedBox(height: AlkSize.spaceBtwSections),
                   const Padding(
                     padding: EdgeInsets.only(left: AlkSize.defaultSpace),
@@ -111,6 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: AlkSize.spaceBtwItems),
 
+                  // --- Trending Searches Section ---
+                  const TrendingSearchesWidget(),
+
 
 
                   // --- Product Sections (with conditional special section) ---
@@ -144,9 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const HomeAuthorsSection(),
                           BestSellersSection(
                             itemCount: 10,
-                            
-                            categoryId:
-                                901,
+                            categoryId: 901,
                             context: context,
                             title: '   Best Sellers ',
                             icon: Icon(Iconsax.ranking_1,
