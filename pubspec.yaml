@@ -1,6 +1,7 @@
 name: alkirtas
 description: "A new Flutter project."
-version: 1.0.3+7
+version: 1.0.4+8
+
 environment:
   sdk: ^3.6.0
 

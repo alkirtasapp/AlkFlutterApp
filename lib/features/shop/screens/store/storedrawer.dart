@@ -57,6 +57,37 @@ class _StorePageState extends State<StoreDrawer> {
     });
   }
 
+  @override
+  void didUpdateWidget(StoreDrawer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final categoryChanged = widget.initialCategoryId != oldWidget.initialCategoryId ||
+        widget.initialCategoryName != oldWidget.initialCategoryName;
+    if (categoryChanged) {
+      // Reset search UI state immediately
+      setState(() {
+        isSearchVisible = false;
+        _suggestionsCollapsed = false;
+        productListKey = UniqueKey();
+      });
+      // Reinitialize controller with the new category
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final controller = context.read<StoreController>();
+        if (controller.isSearching) {
+          controller.clearSearch();
+        }
+        await controller.initializeCategories(
+          initialCategoryId: widget.initialCategoryId,
+          initialCategoryName: widget.initialCategoryName,
+          initialBreadcrumb: widget.initialBreadcrumb,
+        );
+        if (widget.initialSearchQuery != null && widget.initialSearchQuery!.isNotEmpty) {
+          controller.searchProducts(widget.initialSearchQuery!);
+        }
+      });
+    }
+  }
+
   void _toggleSearch() {
     setState(() {
       isSearchVisible = !isSearchVisible;
