@@ -52,5 +52,10 @@
 			<key>NSAllowsArbitraryLoads</key>
 			<true/>
 		</dict>
+		<key>NSCameraUsageDescription</key>
+		<string>Alkirtas utilise la camera pour scanner les codes-barres et QR codes des produits.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Alkirtas accede au microphone pour les fonctionnalites audio.</string>
 	</dict>
 </plist>
+
