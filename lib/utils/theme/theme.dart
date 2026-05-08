@@ -16,7 +16,8 @@ class AlkAppTheme {
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-    fontFamily: 'Poppins',
+    fontFamily: 'TitilliumWeb',
+    fontFamilyFallback: const ['Cairo'],
     brightness: Brightness.light,
     primaryColor: Colors.deepPurpleAccent,
     scaffoldBackgroundColor: Colors.white,
@@ -32,7 +33,8 @@ class AlkAppTheme {
 
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
-    fontFamily: 'Poppins',
+    fontFamily: 'TitilliumWeb',
+    fontFamilyFallback: const ['Cairo'],
     brightness: Brightness.dark,
     primaryColor: Colors.deepPurpleAccent,
     scaffoldBackgroundColor: Colors.grey[900],

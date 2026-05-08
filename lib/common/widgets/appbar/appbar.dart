@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:alkirtas/navigation_menu.dart';
 import 'package:alkirtas/utils/constants/size.dart';
 import 'package:alkirtas/utils/device/device_utility.dart';
 
@@ -31,7 +29,7 @@ class AlkAppBar extends StatelessWidget implements PreferredSizeWidget {
         automaticallyImplyLeading: false,
         leading: showBackArrow
             ? IconButton(
-                onPressed: ()=>  Get.back(),
+                onPressed: () => Navigator.of(context).maybePop(),
                 icon: Icon(
                   Iconsax.arrow_left,
                   color: Colors.black,

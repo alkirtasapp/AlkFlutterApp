@@ -92,29 +92,54 @@ flutter:
 
 
 
-  # Font configurations for the Poppins font family
+  # Font configurations
+  # TitilliumWeb is used for Latin scripts (French/English).
+  # Cairo is registered as the fallback so Arabic glyphs (not present
+  # in TitilliumWeb) render in Cairo automatically.
   fonts:
-    - family: Poppins
+    - family: TitilliumWeb
       fonts:
-        - asset: lib/assets/fonts/Poppins-Bold.ttf
-          weight: 800
-        - asset: lib/assets/fonts/Poppins-Italic.ttf
+        - asset: lib/assets/fonts/TitilliumWeb-Light.ttf
           weight: 300
-        - asset: lib/assets/fonts/Poppins-Light.ttf
+        - asset: lib/assets/fonts/TitilliumWeb-LightItalic.ttf
           weight: 300
-        - asset: lib/assets/fonts/Poppins-Medium.ttf
-          weight: 500
-        - asset: lib/assets/fonts/Poppins-MediumItalic.ttf
-          weight: 500
-        - asset: lib/assets/fonts/Poppins-Regular.ttf
+          style: italic
+        - asset: lib/assets/fonts/TitilliumWeb-Regular.ttf
           weight: 400
-        - asset: lib/assets/fonts/Poppins-SemiBold.ttf
+        - asset: lib/assets/fonts/TitilliumWeb-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: lib/assets/fonts/TitilliumWeb-SemiBold.ttf
           weight: 600
-    
+        - asset: lib/assets/fonts/TitilliumWeb-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: lib/assets/fonts/TitilliumWeb-Bold.ttf
+          weight: 700
+        - asset: lib/assets/fonts/TitilliumWeb-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: lib/assets/fonts/TitilliumWeb-Black.ttf
+          weight: 900
+
     - family: Cairo
       fonts:
+        - asset: lib/assets/fonts/Cairo-ExtraLight.ttf
+          weight: 200
+        - asset: lib/assets/fonts/Cairo-Light.ttf
+          weight: 300
         - asset: lib/assets/fonts/Cairo-Regular.ttf
+          weight: 400
+        - asset: lib/assets/fonts/Cairo-Medium.ttf
+          weight: 500
+        - asset: lib/assets/fonts/Cairo-SemiBold.ttf
+          weight: 600
         - asset: lib/assets/fonts/Cairo-Bold.ttf
+          weight: 700
+        - asset: lib/assets/fonts/Cairo-ExtraBold.ttf
+          weight: 800
+        - asset: lib/assets/fonts/Cairo-Black.ttf
+          weight: 900
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: "AppIcon"

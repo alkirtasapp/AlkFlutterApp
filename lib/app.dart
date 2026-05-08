@@ -16,33 +16,28 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _hasSeenOnboarding(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          // Show a proper loading screen with MaterialApp wrapper
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: AlkAppTheme.lightTheme,
-            darkTheme: AlkAppTheme.darkTheme,
-            home: const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          );
-        } else {
+    // GetMaterialApp must be the single, stable root so GetX's overlay/navigator
+    // keys stay valid for the lifetime of the app. The onboarding-flag check
+    // runs inside `home` instead of swapping the app shell.
+    return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.light,
+      theme: AlkAppTheme.lightTheme,
+      darkTheme: AlkAppTheme.darkTheme,
+      home: FutureBuilder<bool>(
+        future: _hasSeenOnboarding(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
           final hasSeenOnboarding = snapshot.data ?? false;
-          return GetMaterialApp(
-            debugShowCheckedModeBanner: false,
-            themeMode: ThemeMode.light,
-            theme: AlkAppTheme.lightTheme,
-            darkTheme: AlkAppTheme.darkTheme,
-            // redirect to login Screen
-            home: hasSeenOnboarding ? const NavigationMenu(selectedMenu: 0) : const AnimatedOnboardingScreen(),
-          );
-        }
-      },
+          return hasSeenOnboarding
+              ? const NavigationMenu(selectedMenu: 0)
+              : const AnimatedOnboardingScreen();
+        },
+      ),
     );
   }
 }
