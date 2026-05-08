@@ -1,4 +1,4 @@
-import 'package:alkirtas/api/firebase_api.dart';
+// import 'package:alkirtas/api/firebase_api.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/features/authentication/screens/splash_wrapper.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
@@ -12,9 +12,9 @@ import 'package:alkirtas/app.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
+// import 'package:firebase_core/firebase_core.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:alkirtas/providers/coupon_provider.dart';
 import 'package:alkirtas/providers/loyalty_provider.dart';
@@ -31,21 +31,18 @@ Future<void> main() async {
     // Load environment variables
     await dotenv.load(fileName: ".env");
 
-    // Initialize Firebase with configuration from env
-    await Firebase.initializeApp(
-      options: FirebaseOptions(
-        apiKey: AppConfig.firebaseApiKey,
-        appId: AppConfig.firebaseAppId,
-        projectId: AppConfig.firebaseProjectId,
-        messagingSenderId: AppConfig.firebaseMessagingSenderId,
-        storageBucket: AppConfig.firebaseStorageBucket,
-      ),
-    );
-
-    await FirebaseApi().initNotifications();
-
-    // Initialize Firebase Analytics
-    final analytics = FirebaseAnalytics.instance;
+    // Firebase disabled for iOS build compatibility
+    // await Firebase.initializeApp(
+    //   options: FirebaseOptions(
+    //     apiKey: AppConfig.firebaseApiKey,
+    //     appId: AppConfig.firebaseAppId,
+    //     projectId: AppConfig.firebaseProjectId,
+    //     messagingSenderId: AppConfig.firebaseMessagingSenderId,
+    //     storageBucket: AppConfig.firebaseStorageBucket,
+    //   ),
+    // );
+    // await FirebaseApi().initNotifications();
+    // final analytics = FirebaseAnalytics.instance;
 
     // Initialize Hive
     await Hive.initFlutter();
@@ -75,7 +72,7 @@ Future<void> main() async {
     final priceAlertProvider = PriceAlertProvider();
     await priceAlertProvider.init();
 
-    AlkLoggerHelper.info("App initialized: env, firebase, hive, cart, appConfig | caches cleared");
+    AlkLoggerHelper.info("App initialized: env, hive, cart, appConfig | caches cleared (firebase disabled)");
 
     runApp(
       MultiProvider(
