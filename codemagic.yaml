@@ -1,36 +1,61 @@
 workflows:
-  ios-workflow:
-    name: iOS Workflow
+  ios-testflight:
+    name: iOS TestFlight
     max_build_duration: 60
+    instance_type: mac_mini_m2
     environment:
       flutter: stable
       xcode: latest
+      groups:
+        - ios_signing
     scripts:
+      - name: Set up code signing
+        script: |
+          echo $CM_CERTIFICATE | base64 --decode > /tmp/certificate.p12
+          echo $CM_PROVISIONING_PROFILE | base64 --decode > /tmp/profile.mobileprovision
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import /tmp/certificate.p12 -k build.keychain -P $CM_CERTIFICATE_PASSWORD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/de540f8a-6cf8-4f9c-a906-d63f0b6b4720.mobileprovision
       - name: Get Flutter dependencies
         script: flutter pub get
       - name: Install CocoaPods
         script: cd ios && pod install --repo-update
-      - name: Fix Xcode 15+ debug format issue
+      - name: Build Flutter
         script: |
-          cd ios
-          # Patch all xcconfig files in Pods
-          find Pods -name "*.xcconfig" -exec sed -i '' 's/DEBUG_INFORMATION_FORMAT = dwarf-with-dsym/DEBUG_INFORMATION_FORMAT = dwarf/g' {} \;
-          # Patch Pods project file
-          sed -i '' 's/DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"/DEBUG_INFORMATION_FORMAT = "dwarf"/g' Pods/Pods.xcodeproj/project.pbxproj
-          sed -i '' 's/DEBUG_INFORMATION_FORMAT = dwarf-with-dsym/DEBUG_INFORMATION_FORMAT = dwarf/g' Pods/Pods.xcodeproj/project.pbxproj
-          echo "Patched debug format settings"
-      - name: Build iOS
+          flutter build ios --release --no-codesign --build-number=18 --build-name=1.0.9
+      - name: Archive and Export IPA
         script: |
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Debug \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO \
-            DEBUG_INFORMATION_FORMAT=dwarf \
-            GCC_GENERATE_DEBUGGING_SYMBOLS=NO \
-            build
+          cat > /tmp/ExportOptions.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>86HC6YDXYL</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>signingCertificate</key>
+            <string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.alkirtas.alkirtas</key>
+              <string>AlkirtasAppStore</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath /tmp/Runner.xcarchive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="AlkirtasAppStore" DEVELOPMENT_TEAM=86HC6YDXYL OTHER_CODE_SIGN_FLAGS="--keychain build.keychain" -allowProvisioningUpdates PODS_CODE_SIGN_STYLE=Automatic
+          xcodebuild -exportArchive -archivePath /tmp/Runner.xcarchive -exportOptionsPlist /tmp/ExportOptions.plist -exportPath build/ios/ipa -allowProvisioningUpdates
+      - name: Upload to TestFlight
+        script: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo $APP_STORE_CONNECT_PRIVATE_KEY | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_PRRR468QZB.p8
+          xcrun altool --upload-app --type ios -f build/ios/ipa/*.ipa --apiKey PRRR468QZB --apiIssuer 00e4e96f-1999-46c8-9344-4c7ee3518aa0
     artifacts:
-      - build/ios/iphoneos/*.app
-      - ios/build/Build/Products/Debug-iphoneos/*.app
+      - build/ios/ipa/*.ipa
