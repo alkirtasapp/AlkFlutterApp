@@ -27,7 +27,7 @@ workflows:
       - name: Build and Archive IPA
         script: |
           flutter build ios --release \
-            --build-number=18 \
+            --build-number=19 \
             --build-name=1.1.0
           cat > /tmp/ExportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
