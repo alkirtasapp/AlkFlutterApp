@@ -41,10 +41,10 @@ dependencies:
   cached_network_image: ^3.3.1 
 
   # Add these Firebase dependencies
-  firebase_core: ^2.27.1
-  cloud_firestore: ^4.15.9
-  firebase_analytics: ^10.8.10
-  firebase_messaging: ^14.7.10
+ # firebase_core: ^2.27.1
+ # cloud_firestore: ^4.15.9
+ # firebase_analytics: ^10.8.10
+ # firebase_messaging: ^14.7.10
   flutter_local_notifications: ^18.0.1
   mobile_scanner: ^6.0.2
   permission_handler: ^11.3.1
