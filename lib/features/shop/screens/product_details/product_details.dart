@@ -173,7 +173,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                     productBrandId: widget.productBrandId,
                     productOldPrice: widget.productOldPrice,
                     productNewPrice: widget.productNewPrice,
-                    //productStock: widget.productStock,
+                    productImage: productImage,
                   ),
                   SizedBox(height: AlkSize.spaceBtwItems),
                   AlkRef(
@@ -222,6 +222,7 @@ class _ProductDetailsState extends State<ProductDetails> {
     );
   }
 }
+
 
 /*
   This file defines the ProductDetails widget, which is a screen for displaying 

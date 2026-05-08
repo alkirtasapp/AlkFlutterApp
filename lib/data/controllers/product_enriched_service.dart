@@ -343,6 +343,54 @@ class ProductEnrichedService {
     };
   }
 
+  /// Check whether a device UUID has already claimed a scratch card.
+  /// Returns true if claimed, false if not (or on error — defaults to unclaimed so user can claim).
+  static Future<bool> checkScratchClaim(String uuid) async {
+    try {
+      final url = '$_moduleBaseUrl?action=checkScratchClaim'
+          '&uuid=${Uri.encodeComponent(uuid)}'
+          '&ws_key=${AppConfig.prestashopApiKey}';
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
+      if (response.statusCode != 200) return false;
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      if (data['success'] != true) return false;
+      return data['data']['claimed'] == true;
+    } catch (e) {
+      AlkLoggerHelper.error('Error checking scratch claim', e);
+      return false;
+    }
+  }
+
+  /// Record a scratch card claim for the given UUID.
+  /// Returns null on success, or an error message string on failure.
+  static Future<String?> claimScratch({
+    required String uuid,
+    required String reward,
+    String email = '',
+  }) async {
+    try {
+      final url = '$_moduleBaseUrl?action=claimScratch'
+          '&uuid=${Uri.encodeComponent(uuid)}'
+          '&reward=${Uri.encodeComponent(reward)}'
+          '&email=${Uri.encodeComponent(email)}'
+          '&ws_key=${AppConfig.prestashopApiKey}';
+      AlkLoggerHelper.debug('claimScratch URL: $url');
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      final body = utf8.decode(response.bodyBytes);
+      AlkLoggerHelper.debug('claimScratch response (${response.statusCode}): $body');
+
+      if (response.statusCode != 200) {
+        return 'HTTP ${response.statusCode}: ${body.length > 200 ? body.substring(0, 200) : body}';
+      }
+      final data = json.decode(body);
+      if (data['success'] == true) return null;
+      return (data['error'] ?? 'Unknown server error').toString();
+    } catch (e) {
+      AlkLoggerHelper.error('Error claiming scratch card', e);
+      return e.toString();
+    }
+  }
+
   /// Check if the enriched module is available
   static Future<bool> isModuleAvailable() async {
     try {

@@ -1,4 +1,6 @@
+import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -142,6 +144,34 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
           ElevatedButton(
             onPressed: isInStock
                 ? () async {
+                    if (UserData.id.isEmpty) {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Connexion requise'),
+                          content: const Text('Vous devez être connecté pour ajouter des articles au panier.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(),
+                              child: const Text('Annuler'),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: AlkColors.AppFirstColor, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)),
+                              onPressed: () {
+                                Navigator.of(ctx).pop();
+                                Get.to(() => LoginScreen());
+                              },
+                              child: const Text('Se connecter', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                      return;
+                    }
+
+                    final scaffoldMessenger = ScaffoldMessenger.of(context);
+                    final productName = widget.productName;
+                    final qty = quantity;
                     final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
                     await cartProvider.addToCart(
@@ -162,15 +192,18 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
                       quantity: quantity,
                     );
 
-                    Get.snackbar(
-                      "Ajouté au Panier",
-                      "${widget.productName} a été ajouté au panier en quantité: $quantity",
-                      snackPosition: SnackPosition.TOP,
-                      duration: Duration(seconds: 2),
-                      backgroundColor: AlkColors.AppSecColor,
-                      colorText: Colors.white,
-                      onTap: (snack) => Get.to(() => CartScreen()),
-                      isDismissible: true,
+                    if (!mounted) return;
+                    scaffoldMessenger.showSnackBar(
+                      SnackBar(
+                        content: Text('$productName ajouté au panier (x$qty)', style: const TextStyle(color: Colors.white)),
+                        backgroundColor: AlkColors.AppSecColor,
+                        duration: const Duration(seconds: 3),
+                        action: SnackBarAction(
+                          label: 'Voir le panier',
+                          textColor: Colors.white,
+                          onPressed: () => Get.to(() => CartScreen()),
+                        ),
+                      ),
                     );
                   }
                 : null, // Disable button when out of stock

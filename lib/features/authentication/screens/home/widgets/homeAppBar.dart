@@ -43,8 +43,8 @@ class AlkHomeAppBar extends StatelessWidget {
          if (showCartIcon)
         AlkCartCounterIcon(
           onPressed: () {
-            // Navigate to NavigationMenu and show the cart screen
-             Get.offAll(() => const NavigationMenu(selectedMenu: 3));
+            if (UserData.id.isEmpty) return;
+            Get.find<NavigationController>().navigateToCart();
           },
         ),
       ],

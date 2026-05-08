@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
+import 'package:alkirtas/providers/price_alert_provider.dart';
 import 'package:alkirtas/common/widgets/images/AlkCircularImage.dart';
 import 'package:alkirtas/common/widgets/roundedContainer.dart';
 import 'package:alkirtas/common/widgets/texts/brand__title_text_verif_icon.dart';
@@ -21,6 +23,7 @@ class AlkProductMetadata extends StatefulWidget {
   final String productOldPrice;
   final String productNewPrice;
   final String productBrandId;
+  final String productImage;
 
   const AlkProductMetadata({
     super.key,
@@ -31,6 +34,7 @@ class AlkProductMetadata extends StatefulWidget {
     required this.productOldPrice,
     required this.productNewPrice,
     required this.productBrandId,
+    required this.productImage,
   });
 
   @override
@@ -129,34 +133,101 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
 
         SizedBox(height: AlkSize.spaceBtwItems),
 
-        // Stock (Dynamically fetched)
-        isLoadingStock
-            ? const CircularProgressIndicator() // ✅ Show loading indicator
-            : (productStock != null && productStock! > 0
-                ? AlkRoundedContainer(
-                    radius: AlkSize.sm,
-                    backgroundColor: Colors.green.withOpacity(0.8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AlkSize.sm,
-                      vertical: AlkSize.xs,
-                    ),
-                    child: const Text(
-                      'En Stock',
-                      style: TextStyle(color: Colors.white),
-                    ),
+        // Stock + Price Alert bell — same row
+        Row(
+          children: [
+            // Stock badge
+            isLoadingStock
+                ? const SizedBox(
+                    width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : AlkRoundedContainer(
-                    radius: AlkSize.sm,
-                    backgroundColor: Colors.redAccent.withOpacity(0.8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AlkSize.sm,
-                      vertical: AlkSize.xs,
+                : (productStock != null && productStock! > 0
+                    ? AlkRoundedContainer(
+                        radius: AlkSize.sm,
+                        backgroundColor: Colors.green.withOpacity(0.8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AlkSize.sm,
+                          vertical: AlkSize.xs,
+                        ),
+                        child: const Text(
+                          'En Stock',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      )
+                    : AlkRoundedContainer(
+                        radius: AlkSize.sm,
+                        backgroundColor: Colors.redAccent.withOpacity(0.8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AlkSize.sm,
+                          vertical: AlkSize.xs,
+                        ),
+                        child: const Text(
+                          'Hors Stock',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      )),
+
+            const Spacer(),
+
+            // Bell icon — price drop alert toggle
+            Consumer<PriceAlertProvider>(
+              builder: (context, provider, _) {
+                final watched = provider.isWatched(widget.productId);
+                final effectivePrice = (widget.productDiscount != null &&
+                        widget.productDiscount!.isNotEmpty &&
+                        widget.productDiscount != '0')
+                    ? double.tryParse(widget.productNewPrice) ?? 0.0
+                    : double.tryParse(widget.productOldPrice.isNotEmpty
+                            ? widget.productOldPrice
+                            : widget.productNewPrice) ??
+                        0.0;
+
+                return GestureDetector(
+                  onTap: () async {
+                    if (watched) {
+                      await provider.removeAlert(widget.productId);
+                      Get.snackbar(
+                        'Alerte supprimée',
+                        'Vous ne serez plus notifié pour ${widget.productName}',
+                        snackPosition: SnackPosition.TOP,
+                        duration: const Duration(seconds: 2),
+                      );
+                    } else {
+                      if (effectivePrice <= 0) return;
+                      await provider.addAlert(
+                        productId: widget.productId,
+                        productName: widget.productName,
+                        imageUrl: widget.productImage,
+                        effectivePrice: effectivePrice,
+                        taxRulesGroupId: 0,
+                      );
+                      Get.snackbar(
+                        'Alerte activée',
+                        'Vous serez notifié si le prix baisse',
+                        snackPosition: SnackPosition.TOP,
+                        duration: const Duration(seconds: 2),
+                        backgroundColor: Colors.green,
+                        colorText: Colors.white,
+                      );
+                    }
+                  },
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: Icon(
+                      watched
+                          ? Iconsax.notification_bing5
+                          : Iconsax.notification_bing,
+                      key: ValueKey(watched),
+                      color: watched ? Colors.amber.shade600 : AlkColors.darkerGrey,
+                      size: 26,
                     ),
-                    child: const Text(
-                      'Hors Stock',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
 
         SizedBox(height: AlkSize.spaceBtwItems / 2),
 

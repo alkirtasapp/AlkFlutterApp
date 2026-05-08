@@ -1,6 +1,8 @@
 import 'dart:ffi';
 
+import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
@@ -256,6 +258,30 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
                                 child: IconButton(
                                     color: AlkColors.white,
                                     onPressed: () {
+                                      if (UserData.id.isEmpty) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: const Text('Connexion requise'),
+                                            content: const Text('Vous devez être connecté pour ajouter des articles au panier.'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.of(ctx).pop(),
+                                                child: const Text('Annuler'),
+                                              ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(backgroundColor: AlkColors.AppFirstColor, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)),
+                                                onPressed: () {
+                                                  Navigator.of(ctx).pop();
+                                                  Get.to(() => LoginScreen());
+                                                },
+                                                child: const Text('Se connecter', style: TextStyle(color: Colors.white)),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        return;
+                                      }
                                       final cartProvider = Provider.of<CartProvider>(context, listen: false);
                                       cartProvider.addToCart(
                                         productId: id,

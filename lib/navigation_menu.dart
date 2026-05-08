@@ -10,9 +10,18 @@ import 'package:alkirtas/features/shop/screens/cart/cart.dart';
 import 'package:alkirtas/features/shop/screens/store/storedrawer.dart';
 import 'package:alkirtas/features/shop/screens/store/controllers/store_controller.dart';
 import 'package:alkirtas/features/shop/screens/categories/categories_menu_screen.dart';
+import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:alkirtas/services/app_update_service.dart';
+import 'package:alkirtas/providers/price_alert_provider.dart';
+import 'package:alkirtas/data/controllers/product_enriched_service.dart';
+import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
+import 'package:alkirtas/features/scratch_card/scratch_card_screen.dart';
+import 'package:alkirtas/services/device_uuid_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NavigationMenu extends StatefulWidget {
   /// the index of the selected tab
@@ -58,15 +67,144 @@ class _NavigationMenuState extends State<NavigationMenu>
 
     // Check for app updates from Google Play
     AppUpdateService.checkForUpdate();
-    
+
     // Initialize GlobalFabService
     Get.put(GlobalFabService());
+
+    // Set up notification tap → navigate to product
+    PriceAlertProvider.onNotificationTap = (productId) => _navigateToProduct(productId);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Check price drops silently on every app open
+      Provider.of<PriceAlertProvider>(context, listen: false).checkPriceDrops();
+
+      // Handle tap when app was fully terminated
+      final launchDetails = await FlutterLocalNotificationsPlugin()
+          .getNotificationAppLaunchDetails();
+      if (launchDetails?.didNotificationLaunchApp == true) {
+        final payload = launchDetails?.notificationResponse?.payload;
+        if (payload != null && payload.isNotEmpty) {
+          _navigateToProduct(payload);
+        }
+      }
+
+      // Show scratch card dialog on first install (once per device)
+      _checkAndShowScratchCard();
+    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _navigateToProduct(String productId) async {
+    final id = int.tryParse(productId) ?? 0;
+    if (id <= 0) return;
+
+    final enrichedMap = await ProductEnrichedService.fetchEnrichedByIds([id]);
+    final enriched = enrichedMap[id];
+    if (enriched == null) return;
+
+    final product = ProductEnrichedService.buildProductFromEnriched(enriched);
+
+    final taxGroup = (product['id_tax_rules_group'] as int?) ?? 0;
+    final basePrice = taxGroup == 0
+        ? (product['price'] as double? ?? 0.0)
+        : (product['ttc_price'] as double? ?? 0.0);
+    final discount = (product['discount'] as double? ?? 0.0);
+    final discountText = discount > 0 ? '${discount.toStringAsFixed(0)}%' : '';
+    final newPrice = discount > 0
+        ? (basePrice * (1 - discount / 100)).toStringAsFixed(2)
+        : basePrice.toStringAsFixed(2);
+    final oldPrice = discount > 0 ? basePrice.toStringAsFixed(2) : '';
+
+    final imageUrls = (product['image_urls'] as List<String>?) ?? [];
+    final imageUrl = imageUrls.isNotEmpty ? imageUrls.first : '';
+
+    Get.to(() => ProductDetails(
+          productId: productId,
+          productName: (product['name'] as String?) ?? '',
+          productReference: (product['reference'] as String?) ?? '',
+          productDiscount: discountText,
+          productBrand: (product['manufacturer_name'] as String?) ?? '',
+          productBrandId: ((product['id_manufacturer'] as int?) ?? 0).toString(),
+          productOldPrice: oldPrice,
+          productNewPrice: newPrice,
+          productDescription: (product['description_short'] as String?) ?? '',
+          productImage: imageUrl,
+          productImageList: imageUrls,
+          productStock: ((product['quantity'] as int?) ?? 0).toString(),
+        ));
+  }
+
+  Future<void> _checkAndShowScratchCard() async {
+    try {
+      // Guests can't claim — wait until they log in (the login flow Get.offAll's
+      // back to NavigationMenu, which re-runs initState and re-triggers this).
+      if (UserData.id.isEmpty) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool('scratch_card_claimed') == true) return;
+
+      final uuid = await DeviceUuidService.getOrCreate();
+      final alreadyClaimed = await ProductEnrichedService.checkScratchClaim(uuid);
+      if (alreadyClaimed) {
+        await prefs.setBool('scratch_card_claimed', true);
+        return;
+      }
+
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      await showScratchCardDialog(
+        context,
+        uuid: uuid,
+        onClaim: (rewardLabel) async {
+          final error = await ProductEnrichedService.claimScratch(
+            uuid: uuid,
+            reward: rewardLabel,
+            email: UserData.email,
+          );
+          if (error == null) await prefs.setBool('scratch_card_claimed', true);
+          return error;
+        },
+      );
+    } catch (_) {
+      // Non-critical — never crash the app over a scratch card
+    }
+  }
+
+  void _onNavDestinationSelected(int navIdx) {
+    if (navIdx == 2 || navIdx == 3) {
+      if (UserData.id.isEmpty) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Connexion requise'),
+            content: const Text('Vous devez être connecté pour accéder à cette fonctionnalité.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                
+                style: ElevatedButton.styleFrom(backgroundColor: AlkColors.AppFirstColor , padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  Get.to(() => LoginScreen());
+                },
+                child: const Text('Se connecter', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+    }
+    Get.find<NavigationController>().onNavDestinationSelected(navIdx);
   }
 
   @override
@@ -116,7 +254,7 @@ class _NavigationMenuState extends State<NavigationMenu>
                   height: 80,
                   elevation: 0,
                   selectedIndex: controller.navIndex.value,
-                  onDestinationSelected: controller.onNavDestinationSelected,
+                  onDestinationSelected: _onNavDestinationSelected,
                   backgroundColor: darkMode ? AlkColors.black : Colors.white,
                   indicatorColor: darkMode
                       ? AlkColors.white.withOpacity(0.1)

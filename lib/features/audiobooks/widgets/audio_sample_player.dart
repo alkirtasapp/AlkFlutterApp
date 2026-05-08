@@ -1,5 +1,8 @@
+import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 import '../models/audio_sample.dart';
@@ -76,7 +79,31 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
     }
   }
 
-  void _togglePlayPause() async {
+  void _togglePlayPause(BuildContext context) async {
+    if (!_isPlaying && UserData.id.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Connexion requise'),
+          content: const Text('Vous devez être connecté pour écouter les extraits audio.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AlkColors.AppFirstColor, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                Get.to(() => LoginScreen());
+              },
+              child: const Text('Se connecter', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     if (_isPlaying) {
       await _player.pause();
     } else {
@@ -133,7 +160,7 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
         children: [
           // Play/Pause button
           GestureDetector(
-            onTap: _togglePlayPause,
+            onTap: () => _togglePlayPause(context),
             child: Container(
               width: 48,
               height: 48,

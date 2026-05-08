@@ -1,6 +1,6 @@
 name: alkirtas
 description: "A new Flutter project."
-version: 1.0.4+8
+version: 1.0.7+10
 
 environment:
   sdk: ^3.6.0
@@ -61,6 +61,9 @@ dependencies:
   # In-app updates from Google Play
   in_app_update: ^4.2.3
 
+  # Secure storage for device UUID (persists across iOS reinstalls via Keychain)
+  flutter_secure_storage: ^9.2.2
+
 # Development-only dependencies
 dev_dependencies:
   flutter_test:
@@ -84,6 +87,7 @@ flutter:
     - lib/assets/logos/logo_light.png
     - lib/assets/images/banners/
     - lib/assets/audio/
+    - shorebird.yaml
 
 
 

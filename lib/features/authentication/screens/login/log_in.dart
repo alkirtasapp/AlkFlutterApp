@@ -24,6 +24,7 @@ import 'package:alkirtas/config/app_config.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 
 import '../../../../utils/backendData/userData.dart';
+import '../../../../providers/odoo_account_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -100,6 +101,13 @@ class _LoginScreenState extends State<LoginScreen> {
               UserData.firstname = customer['firstname'].toString();
               UserData.lastname = customer['lastname'].toString();
               UserData.id = customer['id'].toString();
+              UserData.password = password;
+              OdooAccountProvider.savePassword(password);
+
+              // Restore phone from SharedPreferences (saved at signup, keyed by email)
+              final phonePrefs = await SharedPreferences.getInstance();
+              UserData.phone =
+                  phonePrefs.getString('customer_phone_${email.toLowerCase()}') ?? '';
 
               // Pass the ID as integer to Firebase
      //         await registerAppUser(customer['id'] as int);
@@ -252,6 +260,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     /// Footer with social login buttons
                     //AlkLoginFooter()   *will be used once FireBase is implemented*
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: () => Get.offAll(
+                          () => const NavigationMenu(selectedMenu: 0),
+                          transition: Transition.fadeIn,
+                          duration: const Duration(milliseconds: 400),
+                        ),
+                        child: Text(
+                          'Continuer sans compte',
+                          style: TextStyle(
+                            decoration: TextDecoration.underline,
+                            fontSize: 14,
+                            color: AlkColors.AppSecColor,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -1,4 +1,6 @@
 import 'package:alkirtas/features/personalization/screens/address/address.dart';
+import 'package:alkirtas/features/personalization/screens/settings/price_alerts_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:alkirtas/navigation_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -25,6 +27,7 @@ import '../../../../utils/backendData/userData.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/coupon_provider.dart';
 import '../../../../providers/loyalty_provider.dart';
+import '../../../../providers/odoo_account_provider.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -40,6 +43,7 @@ class _SettingScreenState extends State<SettingScreen> {
     // Fetch loyalty points when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<LoyaltyProvider>(context, listen: false).fetchLoyaltyPoints();
+      Provider.of<OdooAccountProvider>(context, listen: false).loadStatus();
     });
   }
 
@@ -51,6 +55,7 @@ class _SettingScreenState extends State<SettingScreen> {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
     final audioPlayerProvider = Provider.of<AudioPlayerProvider>(context, listen: false);
+    final odooAccountProvider = Provider.of<OdooAccountProvider>(context, listen: false);
 
     // Show loading indicator
     showDialog(
@@ -70,12 +75,16 @@ class _SettingScreenState extends State<SettingScreen> {
       productProvider.clearCart();
       audioPlayerProvider.clearAudiobook();
 
+      odooAccountProvider.clear();
+
       // 2. Clear static UserData
       UserData.id = '';
       UserData.email = '';
       UserData.firstname = '';
       UserData.lastname = '';
       UserData.secure_key = '';
+      UserData.password = '';
+      UserData.phone = '';
 
       // 3. Clear SharedPreferences
       final prefs = await SharedPreferences.getInstance();
@@ -84,6 +93,7 @@ class _SettingScreenState extends State<SettingScreen> {
       await prefs.remove('saved_email');
       await prefs.remove('saved_password');
       await prefs.remove('remember_me');
+      await prefs.remove('current_user_password');
 
       // 4. Clear Hive caches (untyped boxes only)
       // Note: couponsBox and savedCartsBox are already cleared by the providers above
@@ -109,6 +119,39 @@ class _SettingScreenState extends State<SettingScreen> {
         snackPosition: SnackPosition.BOTTOM,
       );
     }
+  }
+
+  Future<void> _handleDeleteAccount(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer mon compte'),
+        content: const Text(
+          'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final uri = Uri.parse('https://www.alkirtas.com/supprimer-compte.html');
+              if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                Get.snackbar(
+                  'Erreur',
+                  'Impossible d\'ouvrir le lien. Veuillez réessayer.',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              }
+            },
+            child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -177,7 +220,7 @@ class _SettingScreenState extends State<SettingScreen> {
                       title: 'Panier Actuel',
                       subtitle:
                           'Ajouter, supprimer des produits et passer a la caisse',
-                          onPressed:  (){Get.offAll(() => const NavigationMenu(selectedMenu: 2));}
+                          onPressed: () => Get.find<NavigationController>().navigateToCart()
                           ),
                   AlkSettingMenuTile(
                       icon: Iconsax.bag_tick,
@@ -196,6 +239,12 @@ class _SettingScreenState extends State<SettingScreen> {
                         builder: (context) => CouponPopup(),
                       );
                     },
+                  ),
+                  AlkSettingMenuTile(
+                    icon: Iconsax.notification_bing,
+                    title: 'Alertes Prix',
+                    subtitle: 'Suivre les baisses de prix de vos produits',
+                    onPressed: () => Get.to(() => const PriceAlertsScreen()),
                   ),
                   AlkSettingMenuTile(
                     icon: Iconsax.notification,
@@ -235,6 +284,20 @@ class _SettingScreenState extends State<SettingScreen> {
                         style: TextStyle(
                           color: Colors.white,
                         ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AlkSize.spaceBtwItems),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.red),
+                      ),
+                      onPressed: () => _handleDeleteAccount(context),
+                      child: const Text(
+                        'Supprimer mon compte',
+                        style: TextStyle(color: Colors.red),
                       ),
                     ),
                   ),
@@ -369,7 +432,7 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
                                   Icon(Iconsax.gift, color: Colors.white70, size: 14),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${loyaltyProvider.totalPoints.toStringAsFixed(0)} pts',
+                                    '${_formatPoints(loyaltyProvider.totalPoints)} pts',
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 12,
@@ -420,6 +483,15 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
         );
       },
     );
+  }
+
+  /// Format points: integer if whole, otherwise up to 2 decimals (trimmed), with French comma.
+  /// e.g. 100.0 → "100", 100.5 → "100,5", 100.55 → "100,55", 100.50 → "100,5"
+  String _formatPoints(double points) {
+    var s = points.toStringAsFixed(2);
+    s = s.replaceAll(RegExp(r'0+$'), '');
+    s = s.replaceAll(RegExp(r'\.$'), '');
+    return s.replaceAll('.', ',');
   }
 
   Widget _buildExpandedContent(LoyaltyProvider loyaltyProvider) {
@@ -494,18 +566,16 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
                       Icon(Iconsax.gift, color: Colors.white70, size: 20),
                       const SizedBox(height: 6),
                       Text(
-                        loyaltyProvider.totalPoints.toStringAsFixed(0),
+                        _formatPoints(loyaltyProvider.totalPoints),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        loyaltyProvider.programs.isNotEmpty
-                            ? loyaltyProvider.programs.first.pointName
-                            : 'point(s)',
-                        style: const TextStyle(
+                      const Text(
+                        'Points',
+                        style: TextStyle(
                           color: Colors.white70,
                           fontSize: 11,
                         ),
@@ -564,6 +634,183 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
               foregroundColor: Colors.white70,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
+          ),
+
+          // Odoo account creation button — hidden once created
+          Consumer<OdooAccountProvider>(
+            builder: (context, odooProvider, _) {
+              if (odooProvider.isCreated) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  const Divider(color: Colors.white24, height: 1),
+                  const SizedBox(height: 8),
+                  odooProvider.isLoading
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        )
+                      : TextButton.icon(
+                          onPressed: () =>
+                              _showOdooAccountFlow(context, odooProvider),
+                          icon: const Icon(Iconsax.card, size: 16),
+                          label: const Text('Réclamer votre carte de fidélité'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                          ),
+                        ),
+                  if (odooProvider.error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        odooProvider.error!,
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 11,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Normalize a Tunisian phone number to always start with +216.
+  /// Strips spaces/dashes, keeps a leading +, and prepends +216 if missing.
+  String _normalizePhone(String raw) {
+    var p = raw.trim().replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    if (p.isEmpty) return '';
+    if (p.startsWith('+216')) return p;
+    if (p.startsWith('216')) return '+$p';
+    if (p.startsWith('00216')) return '+${p.substring(2)}';
+    if (p.startsWith('+')) return p; // some other country prefix — leave as-is
+    return '+216$p';
+  }
+
+  /// Shows password dialog (if needed), uses stored phone (or asks if missing),
+  /// then calls the API with a normalized +216 phone.
+  Future<void> _showOdooAccountFlow(
+      BuildContext context, OdooAccountProvider odooProvider) async {
+    // Step 1: get password (from memory or ask the user)
+    String password = UserData.password;
+    if (password.isEmpty) {
+      password = await _showPasswordDialog(context) ?? '';
+      if (password.isEmpty) return;
+      UserData.password = password;
+      OdooAccountProvider.savePassword(password);
+    }
+
+    // Step 2: phone — use stored, otherwise ask
+    String phone = UserData.phone;
+    if (phone.isEmpty) {
+      if (!context.mounted) return;
+      final entered = await _showPhoneDialog(context);
+      if (entered == null || entered.isEmpty) return;
+      phone = entered;
+      // Persist for next time, keyed by email like at signup
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('customer_phone_${UserData.email.toLowerCase()}', phone);
+      UserData.phone = phone;
+    }
+    phone = _normalizePhone(phone);
+    if (phone.isEmpty) return;
+
+    // Step 3: call the API
+    if (!context.mounted) return;
+    final success = await odooProvider.createOdooAccount(phone: phone);
+
+    if (!context.mounted) return;
+    if (success) {
+      // Refresh loyalty data — for existing customers, this now returns
+      // their points/wallet/barcode because the partner is linked via presta_id.
+      Provider.of<LoyaltyProvider>(context, listen: false).fetchLoyaltyPoints();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Carte de fidélité réclamée avec succès !'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  /// Dialog asking the user to re-enter their password.
+  Future<String?> _showPasswordDialog(BuildContext context) {
+    final ctrl = TextEditingController();
+    bool obscure = true;
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Confirmer votre mot de passe'),
+          content: TextField(
+            controller: ctrl,
+            obscureText: obscure,
+            decoration: InputDecoration(
+              labelText: 'Mot de passe',
+              suffixIcon: IconButton(
+                icon: Icon(
+                    obscure ? Iconsax.eye_slash : Iconsax.eye),
+                onPressed: () => setState(() => obscure = !obscure),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () {
+                final val = ctrl.text.trim();
+                if (val.isNotEmpty) Navigator.of(ctx).pop(val);
+              },
+              child: const Text('Suivant'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Dialog asking the user for their phone number.
+  Future<String?> _showPhoneDialog(BuildContext context) {
+    final ctrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Numéro de téléphone'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: 'Téléphone (ex: +216 XX XXX XXX)',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () {
+              final val = ctrl.text.trim();
+              if (val.isNotEmpty) Navigator.of(ctx).pop(val);
+            },
+            child: const Text('Créer le compte'),
           ),
         ],
       ),

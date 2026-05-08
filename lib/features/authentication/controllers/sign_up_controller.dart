@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xml/xml.dart';
 import 'package:alkirtas/config/app_config.dart';
 
@@ -139,6 +140,12 @@ class SignUpController {
 
       if (response.statusCode == 201) {
         log("Signup successful: Customer created");
+        // Persist phone locally — keyed by email (PrestaShop's ps_customer table has no phone column)
+        final phone = phoneController.text.trim();
+        if (phone.isNotEmpty) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('customer_phone_${email.toLowerCase()}', phone);
+        }
         _showSuccessDialog();
         return true; // Success
       } else {

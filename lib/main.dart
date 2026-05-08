@@ -18,7 +18,9 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:alkirtas/providers/coupon_provider.dart';
 import 'package:alkirtas/providers/loyalty_provider.dart';
+import 'package:alkirtas/providers/odoo_account_provider.dart';
 import 'package:alkirtas/providers/app_config_provider.dart';
+import 'package:alkirtas/providers/price_alert_provider.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 
 Future<void> main() async {
@@ -51,6 +53,7 @@ Future<void> main() async {
     Hive.registerAdapter(SavedCartAdapter());
     await Hive.openBox<Coupon>('couponsBox');
     await Hive.openBox<SavedCart>('savedCartsBox');
+    await Hive.openBox('priceAlertsBox');
 
     // Clear caches on app restart (will be re-cached when screens load)
     var productBox = await Hive.openBox('productCache');
@@ -68,6 +71,10 @@ Future<void> main() async {
     final appConfigProvider = AppConfigProvider();
     await appConfigProvider.loadConfig();
 
+    // Initialize PriceAlertProvider (loads Hive + inits local notifications)
+    final priceAlertProvider = PriceAlertProvider();
+    await priceAlertProvider.init();
+
     AlkLoggerHelper.info("App initialized: env, firebase, hive, cart, appConfig | caches cleared");
 
     runApp(
@@ -79,6 +86,8 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => CouponProvider()),
           ChangeNotifierProvider(create: (_) => AudioPlayerProvider()),
           ChangeNotifierProvider(create: (_) => LoyaltyProvider()),
+          ChangeNotifierProvider(create: (_) => OdooAccountProvider()),
+          ChangeNotifierProvider.value(value: priceAlertProvider),
         ],
         child: const SplashWrapper(),
       ),

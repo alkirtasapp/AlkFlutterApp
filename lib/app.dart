@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
 import 'package:alkirtas/features/authentication/screens/onBoarding/onboarding.dart';
 import 'package:alkirtas/features/authentication/screens/onBoarding/animated_onboarding.dart';
+import 'package:alkirtas/navigation_menu.dart';
 import 'utils/theme/theme.dart';
 
 class App extends StatelessWidget {
@@ -39,7 +39,7 @@ class App extends StatelessWidget {
             theme: AlkAppTheme.lightTheme,
             darkTheme: AlkAppTheme.darkTheme,
             // redirect to login Screen
-            home: hasSeenOnboarding ? LoginScreen() : const AnimatedOnboardingScreen(),
+            home: hasSeenOnboarding ? const NavigationMenu(selectedMenu: 0) : const AnimatedOnboardingScreen(),
           );
         }
       },

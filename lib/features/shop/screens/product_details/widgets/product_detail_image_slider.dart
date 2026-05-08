@@ -9,11 +9,13 @@ import '../../../../../utils/constants/size.dart';
 class AlkProductImageSlider extends StatefulWidget {
   final List<String> productImages;
   final String productName;
+  final List<Widget>? actions;
 
   const AlkProductImageSlider({
     super.key,
     required this.productImages,
     required this.productName,
+    this.actions,
   });
 
   @override
@@ -79,7 +81,11 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
         child: Column(
           children: [
             // App Bar
-            AlkAppBar(showBackArrow: true, title: Text(widget.productName)),
+            AlkAppBar(
+              showBackArrow: true,
+              title: Text(widget.productName),
+              actions: widget.actions,
+            ),
             
             // Main Content
             SizedBox(

@@ -3,5 +3,7 @@
   static String email = '';
   static String firstname = '';
   static String lastname = '';
-  static String secure_key='';
+  static String secure_key = '';
+  static String password = '';
+  static String phone = '';
 }
