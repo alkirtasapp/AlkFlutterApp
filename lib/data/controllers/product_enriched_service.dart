@@ -343,12 +343,15 @@ class ProductEnrichedService {
     };
   }
 
-  /// Check whether a device UUID has already claimed a scratch card.
-  /// Returns true if claimed, false if not (or on error — defaults to unclaimed so user can claim).
-  static Future<bool> checkScratchClaim(String uuid) async {
+  /// Check whether a device UUID OR a customer email has already claimed.
+  /// Email is checked alongside UUID so Android reinstalls (which rotate the UUID)
+  /// don't let the same account claim again.
+  /// Returns true if claimed, false otherwise (errors default to unclaimed).
+  static Future<bool> checkScratchClaim(String uuid, {String email = ''}) async {
     try {
       final url = '$_moduleBaseUrl?action=checkScratchClaim'
           '&uuid=${Uri.encodeComponent(uuid)}'
+          '&email=${Uri.encodeComponent(email)}'
           '&ws_key=${AppConfig.prestashopApiKey}';
       final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) return false;
@@ -399,6 +402,86 @@ class ProductEnrichedService {
       return response.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Fetch the available filter options (price range, manufacturers, features) for a category.
+  /// Pass `filterParams` (from StoreFilterState.toQueryParams()) so counts reflect
+  /// the in-progress selection — each section's count pool excludes that section's own filter.
+  static Future<Map<String, dynamic>?> fetchFacets(
+    int categoryId, {
+    Map<String, String> filterParams = const {},
+  }) async {
+    try {
+      final buf = StringBuffer('$_moduleBaseUrl?action=getFacets&category=$categoryId');
+      filterParams.forEach((k, v) {
+        buf.write('&$k=${Uri.encodeQueryComponent(v)}');
+      });
+      buf.write('&ws_key=${AppConfig.prestashopApiKey}');
+      final url = buf.toString();
+
+      AlkLoggerHelper.debug('Fetching facets for category $categoryId (filters=${filterParams.length})');
+
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode != 200) {
+        AlkLoggerHelper.error('Facets API error: ${response.statusCode}');
+        return null;
+      }
+
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      if (data['success'] != true || data['data'] == null) {
+        AlkLoggerHelper.warning('Facets API returned no data for category $categoryId');
+        return null;
+      }
+
+      return Map<String, dynamic>.from(data['data']);
+    } catch (e) {
+      AlkLoggerHelper.error('Error fetching facets', e);
+      return null;
+    }
+  }
+
+  /// Fetch products in a category matching the given filter params.
+  /// `filterParams` should come from StoreFilterState.toQueryParams().
+  /// Returns the same shape as fetchEnrichedByCategory so buildProductFromEnriched works on each row.
+  static Future<List<Map<String, dynamic>>> fetchFilteredProducts(
+    int categoryId, {
+    required Map<String, String> filterParams,
+    String sort = 'default',
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    try {
+      final buf = StringBuffer('$_moduleBaseUrl?action=getProductsFiltered'
+          '&category=$categoryId'
+          '&sort=$sort'
+          '&limit=$limit'
+          '&offset=$offset');
+      filterParams.forEach((k, v) {
+        buf.write('&$k=${Uri.encodeQueryComponent(v)}');
+      });
+      buf.write('&ws_key=${AppConfig.prestashopApiKey}');
+      final url = buf.toString();
+
+      AlkLoggerHelper.debug('Fetching filtered products for category $categoryId (offset $offset, sort $sort)');
+
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode != 200) {
+        AlkLoggerHelper.error('Filtered API error: ${response.statusCode}');
+        return [];
+      }
+
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      if (data['success'] != true || data['data'] == null) {
+        AlkLoggerHelper.warning('Filtered API returned no data');
+        return [];
+      }
+
+      final products = data['data']['products'] as List<dynamic>? ?? [];
+      return products.map((p) => Map<String, dynamic>.from(p)).toList();
+    } catch (e) {
+      AlkLoggerHelper.error('Error fetching filtered products', e);
+      return [];
     }
   }
 }

@@ -597,6 +597,44 @@ class ProductControllerStore {
       return null;
     }
   }
+
+  /// Fetch filtered products for a category using the enriched module's getProductsFiltered action.
+  /// Bypasses the Hive cache because filter combinations have a long tail.
+  Future<List<Map<String, dynamic>>?> fetchFilteredProductsForCategory(
+    int categoryId, {
+    required Map<String, String> filterParams,
+    required String sort,
+    required int offset,
+    required int limit,
+  }) async {
+    try {
+      final enrichedRows = await ProductEnrichedService.fetchFilteredProducts(
+        categoryId,
+        filterParams: filterParams,
+        sort: sort,
+        limit: limit,
+        offset: offset,
+      );
+
+      if (enrichedRows.isEmpty) {
+        AlkLoggerHelper.debug('Filtered API returned no products for category $categoryId');
+        return [];
+      }
+
+      // Same fast path as fetchProductDataStore: build products directly from enriched rows
+      final List<Map<String, dynamic>> products = [];
+      for (final enriched in enrichedRows) {
+        products.add(ProductEnrichedService.buildProductFromEnriched(enriched));
+      }
+
+      AlkLoggerHelper.debug(
+          'Filtered: ${products.length} products for category $categoryId (offset $offset)');
+      return products;
+    } catch (e) {
+      AlkLoggerHelper.error('Error fetching filtered products', e);
+      return null;
+    }
+  }
 }
 
 

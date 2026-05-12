@@ -46,6 +46,18 @@ class OdooAccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Mark the Odoo account as already existing (no API call).
+  /// Called when the loyalty fetch confirms the customer already has a
+  /// partner in Odoo — so we hide the "create account" button without
+  /// the user having to tap it just to discover the account exists.
+  Future<void> markAsExisting() async {
+    if (_isCreated || UserData.id.isEmpty) return;
+    _isCreated = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKey, true);
+    notifyListeners();
+  }
+
   /// Create the Odoo portal account.
   /// [phone] is collected from the user via dialog.
   /// Uses [UserData.password] which must be set before calling.
@@ -60,13 +72,19 @@ class OdooAccountProvider extends ChangeNotifier {
     AlkLoggerHelper.info('[OdooAccount] customer_id=${UserData.id}, phone=$phone, password_set=${UserData.password.isNotEmpty}');
 
     try {
-      final uri = Uri.parse(baseUrl).replace(queryParameters: {
+      // Google-signed-in users have no password the app knows about. The server
+      // accepts an empty `auth` for them (ws_key already authenticates the request)
+      // and generates a throwaway password for the Odoo portal user internally.
+      final params = <String, String>{
         'action': 'odooregister',
         'ws_key': AppConfig.prestashopApiKey,
         'customer_id': UserData.id,
         'phone': phone,
-        'auth': UserData.password,
-      });
+      };
+      if (UserData.password.isNotEmpty) {
+        params['auth'] = UserData.password;
+      }
+      final uri = Uri.parse(baseUrl).replace(queryParameters: params);
 
       AlkLoggerHelper.info('[OdooAccount] Sending request...');
 

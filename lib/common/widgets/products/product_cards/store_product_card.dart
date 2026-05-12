@@ -185,7 +185,7 @@ class ProductCardStore extends StatelessWidget {
                       brandName == 'False' ? 'A L K I R T A S' : brandName,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
-                      style: Theme.of(context).textTheme.labelMedium,
+                      style: Theme.of(context).textTheme.labelSmall,
                     ),
                     Text(
                       discountText != null ? '$displayPrice TND' : '',

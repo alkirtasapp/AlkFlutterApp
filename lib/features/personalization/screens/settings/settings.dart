@@ -1,5 +1,5 @@
 import 'package:alkirtas/features/personalization/screens/address/address.dart';
-import 'package:alkirtas/features/personalization/screens/settings/price_alerts_screen.dart';
+import 'package:alkirtas/features/personalization/screens/settings/wishlist_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:alkirtas/navigation_menu.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +28,7 @@ import 'package:provider/provider.dart';
 import '../../../../providers/coupon_provider.dart';
 import '../../../../providers/loyalty_provider.dart';
 import '../../../../providers/odoo_account_provider.dart';
+import '../../../../features/authentication/services/google_sign_in_service.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -40,10 +41,25 @@ class _SettingScreenState extends State<SettingScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch loyalty points when screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<LoyaltyProvider>(context, listen: false).fetchLoyaltyPoints();
-      Provider.of<OdooAccountProvider>(context, listen: false).loadStatus();
+    // Fetch loyalty points when screen loads, then auto-link to Odoo if data exists.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final loyaltyProvider =
+          Provider.of<LoyaltyProvider>(context, listen: false);
+      final odooProvider =
+          Provider.of<OdooAccountProvider>(context, listen: false);
+
+      await odooProvider.loadStatus();
+      await loyaltyProvider.fetchLoyaltyPoints();
+
+      // If the loyalty endpoint returned any meaningful data, the customer
+      // already has an Odoo partner — no need to show "create account".
+      final hasOdooData = loyaltyProvider.hasBarcode ||
+          loyaltyProvider.hasPoints ||
+          loyaltyProvider.programs.isNotEmpty;
+      if (hasOdooData) {
+        await odooProvider.markAsExisting();
+      }
     });
   }
 
@@ -76,6 +92,9 @@ class _SettingScreenState extends State<SettingScreen> {
       audioPlayerProvider.clearAudiobook();
 
       odooAccountProvider.clear();
+
+      // Sign out from Google (no-op if user logged in classically)
+      await GoogleSignInService.signOut();
 
       // 2. Clear static UserData
       UserData.id = '';
@@ -242,9 +261,9 @@ class _SettingScreenState extends State<SettingScreen> {
                   ),
                   AlkSettingMenuTile(
                     icon: Iconsax.notification_bing,
-                    title: 'Alertes Prix',
-                    subtitle: 'Suivre les baisses de prix de vos produits',
-                    onPressed: () => Get.to(() => const PriceAlertsScreen()),
+                    title: 'Ma liste de souhaits',
+                    subtitle: 'Baisse de prix et retour en stock de vos produits',
+                    onPressed: () => Get.to(() => const WishlistScreen()),
                   ),
                   AlkSettingMenuTile(
                     icon: Iconsax.notification,
@@ -704,11 +723,13 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
   /// then calls the API with a normalized +216 phone.
   Future<void> _showOdooAccountFlow(
       BuildContext context, OdooAccountProvider odooProvider) async {
-    // Step 1: get password (from memory or ask the user)
+    // Step 1: get password
+    // - Classic users: already in memory (set at login)
+    // - Google users: derive a deterministic throwaway password (alk + email).
+    //   Never shown to the user; only forwarded to Odoo as the portal password.
     String password = UserData.password;
     if (password.isEmpty) {
-      password = await _showPasswordDialog(context) ?? '';
-      if (password.isEmpty) return;
+      password = 'alk${UserData.email.toLowerCase()}';
       UserData.password = password;
       OdooAccountProvider.savePassword(password);
     }
@@ -745,45 +766,6 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
         ),
       );
     }
-  }
-
-  /// Dialog asking the user to re-enter their password.
-  Future<String?> _showPasswordDialog(BuildContext context) {
-    final ctrl = TextEditingController();
-    bool obscure = true;
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('Confirmer votre mot de passe'),
-          content: TextField(
-            controller: ctrl,
-            obscureText: obscure,
-            decoration: InputDecoration(
-              labelText: 'Mot de passe',
-              suffixIcon: IconButton(
-                icon: Icon(
-                    obscure ? Iconsax.eye_slash : Iconsax.eye),
-                onPressed: () => setState(() => obscure = !obscure),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Annuler'),
-            ),
-            TextButton(
-              onPressed: () {
-                final val = ctrl.text.trim();
-                if (val.isNotEmpty) Navigator.of(ctx).pop(val);
-              },
-              child: const Text('Suivant'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Dialog asking the user for their phone number.

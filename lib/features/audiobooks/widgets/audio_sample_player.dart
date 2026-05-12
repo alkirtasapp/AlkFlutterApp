@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
 import 'package:alkirtas/utils/backendData/userData.dart';
 import 'package:alkirtas/utils/constants/colors.dart' show AlkColors;
@@ -22,12 +24,25 @@ class AudioSamplePlayer extends StatefulWidget {
 }
 
 class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
+  static const List<String> _generationPhases = [
+    'Recherche de la description...',
+    'Analyse du contenu...',
+    'Génération de la voix...',
+    'Finalisation de l\'audio...',
+    'Presque prêt...',
+  ];
+
   final AudioSampleService _service = AudioSampleService();
   final AudioPlayer _player = AudioPlayer();
 
   AudioSample? _sample;
   bool _isLoading = true;
+  bool _eligible = false;
   bool _isPlaying = false;
+  bool _isGenerating = false;
+  int _generationPhaseIndex = 0;
+  Timer? _phaseTimer;
+  String? _generationError;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
 
@@ -62,16 +77,17 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
   }
 
   Future<void> _loadSample() async {
-    final sample = await _service.fetchSampleByProductId(widget.productId);
+    final lookup = await _service.fetchSampleByProductId(widget.productId);
     if (mounted) {
       setState(() {
-        _sample = sample;
+        _sample = lookup.sample;
+        _eligible = lookup.eligible;
         _isLoading = false;
       });
 
-      if (sample != null) {
+      if (lookup.sample != null) {
         try {
-          await _player.setUrl(sample.audioUrl);
+          await _player.setUrl(lookup.sample!.audioUrl);
         } catch (e) {
           AlkLoggerHelper.error("Audio URL load failed", e);
         }
@@ -80,6 +96,8 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
   }
 
   void _togglePlayPause(BuildContext context) async {
+    if (_isGenerating) return;
+
     if (!_isPlaying && UserData.id.isEmpty) {
       showDialog(
         context: context,
@@ -104,6 +122,12 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
       );
       return;
     }
+
+    if (_sample == null) {
+      await _generateAndPlay();
+      return;
+    }
+
     if (_isPlaying) {
       await _player.pause();
     } else {
@@ -111,8 +135,62 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
     }
   }
 
+  Future<void> _generateAndPlay() async {
+    setState(() {
+      _isGenerating = true;
+      _generationPhaseIndex = 0;
+      _generationError = null;
+    });
+    _phaseTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      if (_generationPhaseIndex < _generationPhases.length - 1) {
+        setState(() => _generationPhaseIndex++);
+      }
+    });
+
+    final result = await _service.generateSample(widget.productId);
+
+    _phaseTimer?.cancel();
+    _phaseTimer = null;
+    if (!mounted) return;
+
+    if (result.isSuccess) {
+      setState(() {
+        _sample = result.sample;
+        _isGenerating = false;
+      });
+      try {
+        await _player.setUrl(result.sample!.audioUrl);
+        await _player.play();
+      } catch (e) {
+        AlkLoggerHelper.error('Audio URL load failed', e);
+      }
+    } else {
+      setState(() {
+        _isGenerating = false;
+        _generationError = _errorMessageFor(result.error);
+      });
+    }
+  }
+
+  String _errorMessageFor(GenerateSampleErrorKind? kind) {
+    switch (kind) {
+      case GenerateSampleErrorKind.noBlurb:
+        return "Description du livre introuvable.";
+      case GenerateSampleErrorKind.timeout:
+        return "Délai dépassé. Réessayez.";
+      case GenerateSampleErrorKind.network:
+        return "Erreur réseau. Réessayez.";
+      case GenerateSampleErrorKind.ttsFailed:
+      case GenerateSampleErrorKind.unknown:
+      default:
+        return "Échec de la génération. Réessayez.";
+    }
+  }
+
   @override
   void dispose() {
+    _phaseTimer?.cancel();
     _player.dispose();
     super.dispose();
   }
@@ -125,7 +203,13 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading || _sample == null) {
+    if (_isLoading) {
+      return const SizedBox.shrink();
+    }
+
+    // Mirror the website hook gate: only render on book products
+    // (sample exists, or product belongs to allowed categories 13/14/15).
+    if (_sample == null && !_eligible) {
       return const SizedBox.shrink();
     }
 
@@ -136,7 +220,6 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
     // Gradient colors from app theme
     final gradientStart = AlkColors.AppSecColor;
     final gradientEnd = AlkColors.AppFirstColor;
-    const textColor = Color(0xFF6C757D);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -168,11 +251,19 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
                 color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
+              child: _isGenerating
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Icon(
+                      _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
             ),
           ),
           const SizedBox(width: 14),
@@ -191,26 +282,33 @@ class _AudioSamplePlayerState extends State<AudioSamplePlayer> {
                       color: Colors.white70,
                     ),
                     const SizedBox(width: 6),
-                    const Text(
-                      'Extrait audio',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
+                    Expanded(
+                      child: Text(
+                        _isGenerating
+                            ? _generationPhases[_generationPhaseIndex]
+                            : (_generationError ?? 'Extrait audio'),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: 0.3,
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      _isPlaying || _position.inSeconds > 0
-                          ? _formatDuration(_position)
-                          : _formatDuration(_duration.inSeconds > 0 ? _duration : _sample!.duration),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withOpacity(0.8),
+                    if (!_isGenerating && _sample != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        _isPlaying || _position.inSeconds > 0
+                            ? _formatDuration(_position)
+                            : _formatDuration(_duration.inSeconds > 0 ? _duration : _sample!.duration),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 10),

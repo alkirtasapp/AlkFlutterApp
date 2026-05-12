@@ -20,7 +20,7 @@ import 'package:alkirtas/providers/coupon_provider.dart';
 import 'package:alkirtas/providers/loyalty_provider.dart';
 import 'package:alkirtas/providers/odoo_account_provider.dart';
 import 'package:alkirtas/providers/app_config_provider.dart';
-import 'package:alkirtas/providers/price_alert_provider.dart';
+import 'package:alkirtas/providers/wishlist_provider.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 
 Future<void> main() async {
@@ -68,9 +68,9 @@ Future<void> main() async {
     final appConfigProvider = AppConfigProvider();
     await appConfigProvider.loadConfig();
 
-    // Initialize PriceAlertProvider (loads Hive + inits local notifications)
-    final priceAlertProvider = PriceAlertProvider();
-    await priceAlertProvider.init();
+    // Initialize WishlistProvider (loads Hive + inits local notifications)
+    final wishlistProvider = WishlistProvider();
+    await wishlistProvider.init();
 
     AlkLoggerHelper.info("App initialized: env, hive, cart, appConfig | caches cleared (firebase disabled)");
 
@@ -84,7 +84,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => AudioPlayerProvider()),
           ChangeNotifierProvider(create: (_) => LoyaltyProvider()),
           ChangeNotifierProvider(create: (_) => OdooAccountProvider()),
-          ChangeNotifierProvider.value(value: priceAlertProvider),
+          ChangeNotifierProvider.value(value: wishlistProvider),
         ],
         child: const SplashWrapper(),
       ),

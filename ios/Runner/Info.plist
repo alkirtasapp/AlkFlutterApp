@@ -56,6 +56,19 @@
 		<string>Alkirtas utilise la camera pour scanner les codes-barres et QR codes des produits.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>Alkirtas accede au microphone pour les fonctionnalites audio.</string>
+		<key>GIDClientID</key>
+		<string>756675095808-s1t4rg081ercc34q82ei54all7f7v2pl.apps.googleusercontent.com</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.756675095808-s1t4rg081ercc34q82ei54all7f7v2pl</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>
 

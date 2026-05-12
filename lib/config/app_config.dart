@@ -7,6 +7,10 @@ class AppConfig {
   static String get prestashopApiKey => dotenv.env['PRESTASHOP_API_KEY'] ?? '';
   static String get prestashopBaseUrl => dotenv.env['PRESTASHOP_BASE_URL'] ?? 'https://www.alkirtas.com/api';
 
+  // Google Sign-In: Web Client ID used as serverClientId so we get a proper ID token
+  // verifiable by the PrestaShop alkirtas_google_login module.
+  static String get googleWebClientId => dotenv.env['GOOGLE_WEB_CLIENT_ID'] ?? '';
+
   // Firebase Configuration
   static String get firebaseApiKey => dotenv.env['FIREBASE_API_KEY'] ?? '';
   static String get firebaseAppId => dotenv.env['FIREBASE_APP_ID'] ?? '';

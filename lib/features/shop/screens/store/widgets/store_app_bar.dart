@@ -3,6 +3,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import '../../../../../utils/constants/colors.dart';
 import '../controllers/store_controller.dart';
+import 'store_filter_sheet.dart';
 
 /// Custom AppBar for store screen with search, filter, and QR scanner
 class StoreAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -34,7 +35,8 @@ class StoreAppBar extends StatelessWidget implements PreferredSizeWidget {
               onPressed: onQrScannerPressed,
               tooltip: 'Scanner QR Code',
             ),
-            _buildFilterMenu(context, controller),
+            if (!controller.isSearching) _buildFilterAction(context, controller),
+            _buildSortMenu(context, controller),
           ],
         );
       },
@@ -116,15 +118,47 @@ class StoreAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _buildFilterMenu(BuildContext context, StoreController controller) {
+  Widget _buildFilterAction(BuildContext context, StoreController controller) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        IconButton(
+          icon: Icon(
+            Iconsax.filter,
+            color: controller.hasActiveFilter ? AlkColors.AppSecColor : null,
+          ),
+          tooltip: controller.hasActiveFilter
+              ? 'Filtres actifs (${controller.activeFilter.activeCount})'
+              : 'Filtrer',
+          onPressed: () => showStoreFilterSheet(context),
+        ),
+        if (controller.hasActiveFilter)
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: AlkColors.AppSecColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSortMenu(BuildContext context, StoreController controller) {
     return PopupMenuButton<String>(
       icon: Icon(
-        Iconsax.filter,
+        Icons.sort,
         color: controller.selectedSortOption != "None" ? Colors.purple : null,
       ),
       tooltip: controller.selectedSortOption != "None"
-          ? 'Filtre actif: ${controller.getSortOptionLabel(controller.selectedSortOption)}'
-          : 'Filtrer',
+          ? 'Tri actif: ${controller.getSortOptionLabel(controller.selectedSortOption)}'
+          : 'Trier',
       onSelected: (String value) => controller.updateSortOption(value),
       itemBuilder: (BuildContext context) => [
         _buildFilterMenuItem(

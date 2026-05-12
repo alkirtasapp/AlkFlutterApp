@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
-import 'package:alkirtas/providers/price_alert_provider.dart';
+import 'package:alkirtas/providers/wishlist_provider.dart';
+import 'package:alkirtas/features/shop/screens/product_details/widgets/wishlist_hint_overlay.dart';
 import 'package:alkirtas/common/widgets/images/AlkCircularImage.dart';
 import 'package:alkirtas/common/widgets/roundedContainer.dart';
 import 'package:alkirtas/common/widgets/texts/brand__title_text_verif_icon.dart';
@@ -44,6 +45,7 @@ class AlkProductMetadata extends StatefulWidget {
 class _AlkProductMetadataState extends State<AlkProductMetadata> {
   int? productStock;
   bool isLoadingStock = true;
+  final GlobalKey _bellKey = GlobalKey();
 
   @override
   void initState() {
@@ -55,10 +57,20 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
     final QuantityController quantityController = QuantityController();
     int? stock = await quantityController.fetchQuantity(int.parse(widget.productId));
 
+    if (!mounted) return;
     setState(() {
       productStock = stock;
       isLoadingStock = false;
     });
+
+    // One-time hint when user lands on an out-of-stock product
+    if (stock != null && stock <= 0) {
+      if (!await WishlistHint.alreadyShown() && mounted) {
+        // Delay slightly so the page settles before the overlay appears
+        await Future.delayed(const Duration(milliseconds: 600));
+        if (mounted) WishlistHint.show(context, _bellKey);
+      }
+    }
   }
 
   @override
@@ -170,8 +182,8 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
 
             const Spacer(),
 
-            // Bell icon — price drop alert toggle
-            Consumer<PriceAlertProvider>(
+            // Bell icon — wishlist toggle (price drop + stock comeback)
+            Consumer<WishlistProvider>(
               builder: (context, provider, _) {
                 final watched = provider.isWatched(widget.productId);
                 final effectivePrice = (widget.productDiscount != null &&
@@ -184,29 +196,31 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
                         0.0;
 
                 return GestureDetector(
+                  key: _bellKey,
                   onTap: () async {
                     if (watched) {
-                      await provider.removeAlert(widget.productId);
+                      await provider.removeItem(widget.productId);
                       Get.snackbar(
-                        'Alerte supprimée',
+                        'Retiré de la liste',
                         'Vous ne serez plus notifié pour ${widget.productName}',
                         snackPosition: SnackPosition.TOP,
                         duration: const Duration(seconds: 2),
                       );
                     } else {
                       if (effectivePrice <= 0) return;
-                      await provider.addAlert(
+                      await provider.addItem(
                         productId: widget.productId,
                         productName: widget.productName,
                         imageUrl: widget.productImage,
                         effectivePrice: effectivePrice,
                         taxRulesGroupId: 0,
+                        currentStock: productStock ?? 0,
                       );
                       Get.snackbar(
-                        'Alerte activée',
-                        'Vous serez notifié si le prix baisse',
+                        'Ajouté à votre liste',
+                        'Vous serez notifié si le prix baisse ou si ce produit revient en stock',
                         snackPosition: SnackPosition.TOP,
-                        duration: const Duration(seconds: 2),
+                        duration: const Duration(seconds: 3),
                         backgroundColor: Colors.green,
                         colorText: Colors.white,
                       );

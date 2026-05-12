@@ -8,6 +8,7 @@ import '../../../../../navigation_menu.dart';
 import '../../../../../utils/backendData/userData.dart';
 import '../../../controllers/categories_store_controller.dart';
 import '../../../controllers/product_controller_store.dart';
+import '../models/store_filter_state.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 
 /// Controller to manage store screen state and business logic
@@ -32,6 +33,13 @@ class StoreController extends ChangeNotifier {
   final int limit = 10;
   String currentSearchQuery = "";
   String selectedSortOption = "None";
+
+  // Filter state (server-side faceted filters)
+  StoreFilterState activeFilter = const StoreFilterState();
+  StoreFacets? availableFacets;
+  bool isLoadingFacets = false;
+
+  bool get hasActiveFilter => activeFilter.isNotEmpty;
 
   // Navigation stack for breadcrumbs
   List<String> navigationStack = [];
@@ -65,18 +73,42 @@ class StoreController extends ChangeNotifier {
     }
   }
 
-  /// Fetch products for a specific category
-  Future<void> fetchProductsForCategory(int categoryId) async {
+  /// Fetch products for a specific category.
+  /// By default resets sort and filter (used on category navigation / search-exit).
+  /// Pass keepFilter:true when re-fetching after a filter change, keepSort:true after a sort change.
+  Future<void> fetchProductsForCategory(
+    int categoryId, {
+    bool keepFilter = false,
+    bool keepSort = false,
+  }) async {
     isLoading = true;
     products.clear();
     fetchedProductIds.clear();
     offset = 0;
     isSearching = false;
-    selectedSortOption = "None";
+    if (!keepSort) selectedSortOption = "None";
+    if (!keepFilter) {
+      activeFilter = const StoreFilterState();
+      availableFacets = null;
+    }
     notifyListeners();
 
-    final List<Map<String, dynamic>> validProducts =
-        await productController.fetchProductDataStore(categoryId, offset, limit) ?? [];
+    List<Map<String, dynamic>> validProducts;
+    if (activeFilter.isNotEmpty) {
+      validProducts = await productController.fetchFilteredProductsForCategory(
+            categoryId,
+            filterParams: activeFilter.toQueryParams(),
+            sort: _apiSortKey(),
+            offset: 0,
+            limit: limit,
+          ) ?? [];
+    } else {
+      validProducts = await productController.fetchProductDataStore(
+            categoryId,
+            offset,
+            limit,
+          ) ?? [];
+    }
 
     if (validProducts.isNotEmpty) {
       for (var product in validProducts) {
@@ -86,7 +118,8 @@ class StoreController extends ChangeNotifier {
         }
       }
       offset += validProducts.length;
-      _applySorting();
+      // When filter is active, server already sorts. Skip client-side sort.
+      if (activeFilter.isEmpty) _applySorting();
       AlkLoggerHelper.debug("Fetched ${validProducts.length} products for category $categoryId");
     } else {
       AlkLoggerHelper.warning("No products found for category $categoryId");
@@ -103,9 +136,22 @@ class StoreController extends ChangeNotifier {
     isFetchingMore = true;
     notifyListeners();
 
-    // Use the same optimized path as initial fetch
-    final List<Map<String, dynamic>> moreProducts =
-        await productController.fetchProductDataStore(selectedCategoryId, offset, limit) ?? [];
+    List<Map<String, dynamic>> moreProducts;
+    if (activeFilter.isNotEmpty) {
+      moreProducts = await productController.fetchFilteredProductsForCategory(
+            selectedCategoryId,
+            filterParams: activeFilter.toQueryParams(),
+            sort: _apiSortKey(),
+            offset: offset,
+            limit: limit,
+          ) ?? [];
+    } else {
+      moreProducts = await productController.fetchProductDataStore(
+            selectedCategoryId,
+            offset,
+            limit,
+          ) ?? [];
+    }
 
     if (moreProducts.isNotEmpty) {
       for (var product in moreProducts) {
@@ -115,7 +161,7 @@ class StoreController extends ChangeNotifier {
         }
       }
       offset += moreProducts.length;
-      _applySorting();
+      if (activeFilter.isEmpty) _applySorting();
       AlkLoggerHelper.debug("Loaded ${moreProducts.length} more products for category $selectedCategoryId (optimized)");
     }
 
@@ -289,8 +335,60 @@ class StoreController extends ChangeNotifier {
   /// Update sorting option and re-sort
   void updateSortOption(String option) {
     selectedSortOption = option;
-    _applySorting();
+    if (activeFilter.isNotEmpty) {
+      // Server-side sort: re-fetch with the new sort, keep filter intact.
+      fetchProductsForCategory(selectedCategoryId, keepFilter: true, keepSort: true);
+    } else {
+      _applySorting();
+      notifyListeners();
+    }
+  }
+
+  /// Map the UI sort label to the API sort key used by getProductsFiltered.
+  String _apiSortKey() {
+    switch (selectedSortOption) {
+      case 'Price Asc':       return 'price_asc';
+      case 'Price Desc':      return 'price_desc';
+      case 'Name Asc':        return 'name_asc';
+      case 'Name Desc':       return 'name_desc';
+      case 'Référence Asc':   return 'reference_asc';
+      case 'Référence Desc':  return 'reference_desc';
+      default:                return 'default';
+    }
+  }
+
+  /// Load the filter facets for the current category.
+  /// Pass [withFilter] to get counts that respect an in-progress selection
+  /// (each section's count pool excludes that section's own filter).
+  /// If null, uses the currently-applied filter.
+  Future<void> loadFacets({StoreFilterState? withFilter}) async {
+    if (selectedCategoryId <= 0) return;
+    final filter = withFilter ?? activeFilter;
+
+    isLoadingFacets = true;
     notifyListeners();
+
+    final raw = await ProductEnrichedService.fetchFacets(
+      selectedCategoryId,
+      filterParams: filter.toQueryParams(),
+    );
+    availableFacets = raw != null ? StoreFacets.fromJson(raw) : StoreFacets.empty();
+
+    isLoadingFacets = false;
+    notifyListeners();
+  }
+
+  /// Apply a new filter and re-fetch products.
+  Future<void> applyFilter(StoreFilterState newFilter) async {
+    activeFilter = newFilter;
+    await fetchProductsForCategory(selectedCategoryId, keepFilter: true);
+  }
+
+  /// Clear all active filters and re-fetch with the default category view.
+  Future<void> clearFilter() async {
+    if (activeFilter.isEmpty) return;
+    activeFilter = const StoreFilterState();
+    await fetchProductsForCategory(selectedCategoryId);
   }
 
   /// Select a category and fetch its products

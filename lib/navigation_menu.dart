@@ -16,12 +16,11 @@ import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:alkirtas/services/app_update_service.dart';
-import 'package:alkirtas/providers/price_alert_provider.dart';
+import 'package:alkirtas/providers/wishlist_provider.dart';
 import 'package:alkirtas/data/controllers/product_enriched_service.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
 import 'package:alkirtas/features/scratch_card/scratch_card_screen.dart';
 import 'package:alkirtas/services/device_uuid_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class NavigationMenu extends StatefulWidget {
   /// the index of the selected tab
@@ -72,11 +71,11 @@ class _NavigationMenuState extends State<NavigationMenu>
     Get.put(GlobalFabService());
 
     // Set up notification tap → navigate to product
-    PriceAlertProvider.onNotificationTap = (productId) => _navigateToProduct(productId);
+    WishlistProvider.onNotificationTap = (productId) => _navigateToProduct(productId);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Check price drops silently on every app open
-      Provider.of<PriceAlertProvider>(context, listen: false).checkPriceDrops();
+      // Check price drops + stock comebacks silently on every app open
+      Provider.of<WishlistProvider>(context, listen: false).checkUpdates();
 
       // Handle tap when app was fully terminated
       final launchDetails = await FlutterLocalNotificationsPlugin()
@@ -145,15 +144,12 @@ class _NavigationMenuState extends State<NavigationMenu>
       // back to NavigationMenu, which re-runs initState and re-triggers this).
       if (UserData.id.isEmpty) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool('scratch_card_claimed') == true) return;
-
       final uuid = await DeviceUuidService.getOrCreate();
-      final alreadyClaimed = await ProductEnrichedService.checkScratchClaim(uuid);
-      if (alreadyClaimed) {
-        await prefs.setBool('scratch_card_claimed', true);
-        return;
-      }
+      final alreadyClaimed = await ProductEnrichedService.checkScratchClaim(
+        uuid,
+        email: UserData.email,
+      );
+      if (alreadyClaimed) return;
 
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
@@ -161,15 +157,11 @@ class _NavigationMenuState extends State<NavigationMenu>
       await showScratchCardDialog(
         context,
         uuid: uuid,
-        onClaim: (rewardLabel) async {
-          final error = await ProductEnrichedService.claimScratch(
-            uuid: uuid,
-            reward: rewardLabel,
-            email: UserData.email,
-          );
-          if (error == null) await prefs.setBool('scratch_card_claimed', true);
-          return error;
-        },
+        onClaim: (rewardLabel) => ProductEnrichedService.claimScratch(
+          uuid: uuid,
+          reward: rewardLabel,
+          email: UserData.email,
+        ),
       );
     } catch (_) {
       // Non-critical — never crash the app over a scratch card

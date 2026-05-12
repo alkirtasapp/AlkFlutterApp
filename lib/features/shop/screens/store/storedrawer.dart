@@ -14,7 +14,9 @@ import '../../../../navigation_menu.dart';
 import '../../../../utils/constants/size.dart';
 
 import 'controllers/store_controller.dart';
+import 'models/store_filter_state.dart';
 import 'widgets/store_app_bar.dart';
+import 'widgets/store_filter_sheet.dart';
 import 'widgets/store_search_bar.dart';
 
 class StoreDrawer extends StatefulWidget {
@@ -169,37 +171,32 @@ class _StorePageState extends State<StoreDrawer> {
                 onClose: () => setState(() => isSearchVisible = false),
               ),
 
-            // Sort filter chip (search chip removed - handled by suggestions)
+            // Sort + active-filter chip strip
             Consumer<StoreController>(
               builder: (context, controller, child) {
-                if (controller.selectedSortOption == "None") {
-                  return const SizedBox.shrink();
-                }
+                final hasSort = controller.selectedSortOption != "None";
+                final hasFilter = controller.hasActiveFilter;
+                if (!hasSort && !hasFilter) return const SizedBox.shrink();
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Chip(
-                    avatar: const Icon(
-                      Iconsax.filter,
-                      size: 16,
-                      color: Colors.white,
-                    ),
+                final chips = <Widget>[];
+                if (hasSort) {
+                  chips.add(Chip(
+                    avatar: const Icon(Icons.sort, size: 16, color: Colors.white),
                     label: Text(
                       controller.getSortOptionLabel(controller.selectedSortOption),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
-                    deleteIcon: const Icon(
-                      Icons.close,
-                      size: 18,
-                      color: Colors.white,
-                    ),
+                    deleteIcon: const Icon(Icons.close, size: 18, color: Colors.white),
                     onDeleted: () => controller.updateSortOption("None"),
                     backgroundColor: AlkColors.AppSecColor,
                     deleteIconColor: Colors.white,
-                  ),
+                  ));
+                }
+                chips.addAll(_buildActiveFilterChips(context, controller));
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Wrap(spacing: 6, runSpacing: 6, children: chips),
                 );
               },
             ),
@@ -485,6 +482,67 @@ class _StorePageState extends State<StoreDrawer> {
         ],
       ),
     );
+  }
+
+  /// Build chips for active filters (price, brands, features). Each chip is removable.
+  /// Tapping a chip opens the filter sheet so the user can edit selections.
+  List<Widget> _buildActiveFilterChips(BuildContext context, StoreController controller) {
+    final filter = controller.activeFilter;
+    final facets = controller.availableFacets;
+    final chips = <Widget>[];
+
+    Widget removableChip({required String label, required VoidCallback onDelete}) {
+      return Chip(
+        avatar: const Icon(Iconsax.filter, size: 14, color: Colors.white),
+        label: Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+        deleteIcon: const Icon(Icons.close, size: 16, color: Colors.white),
+        onDeleted: onDelete,
+        backgroundColor: AlkColors.AppSecColor,
+        deleteIconColor: Colors.white,
+      );
+    }
+
+    if (filter.priceMin != null || filter.priceMax != null) {
+      final min = (filter.priceMin ?? 0).toStringAsFixed(0);
+      final max = (filter.priceMax ?? 0).toStringAsFixed(0);
+      final sign = facets?.currencySign ?? 'TND';
+      chips.add(removableChip(
+        label: 'Prix: $min-$max $sign',
+        onDelete: () => controller.applyFilter(
+          filter.copyWith(clearPriceMin: true, clearPriceMax: true),
+        ),
+      ));
+    }
+
+    if (filter.manufacturerIds.isNotEmpty) {
+      chips.add(removableChip(
+        label: 'Marques (${filter.manufacturerIds.length})',
+        onDelete: () =>
+            controller.applyFilter(filter.copyWith(manufacturerIds: <int>{})),
+      ));
+    }
+
+    filter.selectedFeatures.forEach((featureId, valueIds) {
+      String name = 'Filtre';
+      if (facets != null) {
+        for (final g in facets.features) {
+          if (g.id == featureId) {
+            name = g.name;
+            break;
+          }
+        }
+      }
+      chips.add(removableChip(
+        label: '$name (${valueIds.length})',
+        onDelete: () {
+          final newFeats =
+              Map<int, Set<int>>.from(filter.selectedFeatures)..remove(featureId);
+          controller.applyFilter(filter.copyWith(selectedFeatures: newFeats));
+        },
+      ));
+    });
+
+    return chips;
   }
 
   Widget _buildBrandDropdownItem(Map<String, dynamic> brand) {

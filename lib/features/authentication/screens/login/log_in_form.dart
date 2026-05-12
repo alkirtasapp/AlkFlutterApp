@@ -14,12 +14,14 @@ class AlkLoginForm extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final void Function(BuildContext) onSignIn;
+  final Widget? googleButton;
 
   const AlkLoginForm({
     super.key,
     required this.emailController,
     required this.passwordController,
     required this.onSignIn,
+    this.googleButton,
   });
 
   @override
@@ -225,6 +227,11 @@ class _AlkLoginFormState extends State<AlkLoginForm> with TickerProviderStateMix
                   ],
                 ),
                 const SizedBox(height: AlkSize.spaceBtwSections),
+                // Google Sign-In button (compact, sits right above the Connexion button)
+                if (widget.googleButton != null) ...[
+                  widget.googleButton!,
+                  const SizedBox(height: AlkSize.spaceBtwItems),
+                ],
                 // Sign In Button with enhanced styling
                 Container(
                   width: double.infinity,

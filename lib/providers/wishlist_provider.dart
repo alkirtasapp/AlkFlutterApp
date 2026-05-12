@@ -5,22 +5,38 @@ import 'package:hive/hive.dart';
 import '../data/controllers/product_enriched_service.dart';
 import '../utils/logging/logger.dart';
 
-class WatchedProduct {
+class WishlistItem {
   final String productId;
   final String productName;
   final String imageUrl;
   final double watchedPrice;
   final int taxRulesGroupId;
+  final int lastKnownStock;
   final DateTime addedAt;
 
-  WatchedProduct({
+  WishlistItem({
     required this.productId,
     required this.productName,
     required this.imageUrl,
     required this.watchedPrice,
     required this.taxRulesGroupId,
+    required this.lastKnownStock,
     required this.addedAt,
   });
+
+  WishlistItem copyWith({
+    double? watchedPrice,
+    int? lastKnownStock,
+  }) =>
+      WishlistItem(
+        productId: productId,
+        productName: productName,
+        imageUrl: imageUrl,
+        watchedPrice: watchedPrice ?? this.watchedPrice,
+        taxRulesGroupId: taxRulesGroupId,
+        lastKnownStock: lastKnownStock ?? this.lastKnownStock,
+        addedAt: addedAt,
+      );
 
   Map<String, dynamic> toJson() => {
         'productId': productId,
@@ -28,32 +44,38 @@ class WatchedProduct {
         'imageUrl': imageUrl,
         'watchedPrice': watchedPrice,
         'taxRulesGroupId': taxRulesGroupId,
+        'lastKnownStock': lastKnownStock,
         'addedAt': addedAt.toIso8601String(),
       };
 
-  factory WatchedProduct.fromJson(Map<String, dynamic> json) => WatchedProduct(
+  factory WishlistItem.fromJson(Map<String, dynamic> json) => WishlistItem(
         productId: json['productId'] as String,
         productName: json['productName'] as String,
         imageUrl: (json['imageUrl'] as String?) ?? '',
         watchedPrice: (json['watchedPrice'] as num).toDouble(),
         taxRulesGroupId: (json['taxRulesGroupId'] as int?) ?? 0,
+        // Legacy entries (pre-stock-tracking) default to -1 = unknown.
+        // First check after upgrade sets the baseline without firing.
+        lastKnownStock: (json['lastKnownStock'] as int?) ?? -1,
         addedAt: DateTime.parse(json['addedAt'] as String),
       );
 }
 
-class PriceAlertProvider extends ChangeNotifier {
+class WishlistProvider extends ChangeNotifier {
   static const _boxName = 'priceAlertsBox';
   static const _hiveKey = 'alerts';
 
-  // Set by NavigationMenu — called when a price drop notification is tapped
+  // Set by NavigationMenu — called when a notification is tapped.
   static void Function(String productId)? onNotificationTap;
 
-  List<WatchedProduct> _alerts = [];
+  List<WishlistItem> _items = [];
   bool _isChecking = false;
 
-  List<WatchedProduct> get alerts => List.unmodifiable(_alerts);
+  List<WishlistItem> get items => List.unmodifiable(_items);
+  // Backwards-compat alias for any existing callers that read `.alerts`.
+  List<WishlistItem> get alerts => items;
   bool get isChecking => _isChecking;
-  int get count => _alerts.length;
+  int get count => _items.length;
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -87,13 +109,14 @@ class PriceAlertProvider extends ChangeNotifier {
       final raw = box.get(_hiveKey);
       if (raw != null) {
         final List decoded = jsonDecode(raw as String);
-        _alerts = decoded
-            .map((e) => WatchedProduct.fromJson(Map<String, dynamic>.from(e as Map)))
+        _items = decoded
+            .map((e) =>
+                WishlistItem.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
       }
     } catch (e) {
-      AlkLoggerHelper.error('Error loading price alerts', e);
-      _alerts = [];
+      AlkLoggerHelper.error('Error loading wishlist', e);
+      _items = [];
     }
     notifyListeners();
   }
@@ -101,51 +124,56 @@ class PriceAlertProvider extends ChangeNotifier {
   Future<void> _saveToHive() async {
     try {
       final box = await Hive.openBox(_boxName);
-      await box.put(_hiveKey, jsonEncode(_alerts.map((a) => a.toJson()).toList()));
+      await box.put(
+          _hiveKey, jsonEncode(_items.map((a) => a.toJson()).toList()));
     } catch (e) {
-      AlkLoggerHelper.error('Error saving price alerts', e);
+      AlkLoggerHelper.error('Error saving wishlist', e);
     }
   }
 
   bool isWatched(String productId) =>
-      _alerts.any((a) => a.productId == productId);
+      _items.any((a) => a.productId == productId);
 
-  Future<void> addAlert({
+  Future<void> addItem({
     required String productId,
     required String productName,
     required String imageUrl,
     required double effectivePrice,
     required int taxRulesGroupId,
+    required int currentStock,
   }) async {
     if (isWatched(productId)) return;
-    _alerts.add(WatchedProduct(
+    _items.add(WishlistItem(
       productId: productId,
       productName: productName,
       imageUrl: imageUrl,
       watchedPrice: effectivePrice,
       taxRulesGroupId: taxRulesGroupId,
+      lastKnownStock: currentStock,
       addedAt: DateTime.now(),
     ));
     await _saveToHive();
     notifyListeners();
   }
 
-  Future<void> removeAlert(String productId) async {
-    _alerts.removeWhere((a) => a.productId == productId);
+  Future<void> removeItem(String productId) async {
+    _items.removeWhere((a) => a.productId == productId);
     await _saveToHive();
     notifyListeners();
   }
 
-  /// Called on every app open. Fetches current prices via enriched API
-  /// and fires a local notification for any product that dropped in price.
-  Future<void> checkPriceDrops() async {
-    if (_alerts.isEmpty || _isChecking) return;
+  /// Called on every app open. Fetches current prices + stock via enriched API
+  /// and fires a local notification when either:
+  ///   - price drops below the watched price, or
+  ///   - stock comes back (was <= 0, now > 0).
+  Future<void> checkUpdates() async {
+    if (_items.isEmpty || _isChecking) return;
 
     _isChecking = true;
     notifyListeners();
 
     try {
-      final ids = _alerts
+      final ids = _items
           .map((a) => int.tryParse(a.productId) ?? 0)
           .where((id) => id > 0)
           .toList();
@@ -159,25 +187,34 @@ class PriceAlertProvider extends ChangeNotifier {
       final enrichedMap = await ProductEnrichedService.fetchEnrichedByIds(ids);
       bool changed = false;
 
-      for (int i = 0; i < _alerts.length; i++) {
-        final alert = _alerts[i];
-        final id = int.tryParse(alert.productId) ?? 0;
+      for (int i = 0; i < _items.length; i++) {
+        final item = _items[i];
+        final id = int.tryParse(item.productId) ?? 0;
         final enriched = enrichedMap[id];
         if (enriched == null) continue;
 
         final newPrice = _calcEffectivePrice(enriched);
+        final newStock = int.tryParse(enriched['quantity'].toString()) ?? 0;
 
-        // 0.01 tolerance to ignore floating-point noise
-        if (newPrice < alert.watchedPrice - 0.01) {
-          await _fireNotification(alert, newPrice);
-          // Update stored price so the next open doesn't re-notify
-          _alerts[i] = WatchedProduct(
-            productId: alert.productId,
-            productName: alert.productName,
-            imageUrl: alert.imageUrl,
-            watchedPrice: newPrice,
-            taxRulesGroupId: alert.taxRulesGroupId,
-            addedAt: alert.addedAt,
+        bool priceDropped = newPrice < item.watchedPrice - 0.01;
+        // -1 = unknown baseline (legacy entries) — set without firing.
+        bool stockCameBack =
+            item.lastKnownStock != -1 && item.lastKnownStock <= 0 && newStock > 0;
+
+        if (priceDropped) {
+          await _firePriceNotification(item, newPrice);
+        }
+        if (stockCameBack) {
+          await _fireStockNotification(item, newStock);
+        }
+
+        // Persist new values so we don't re-notify on next open.
+        if (priceDropped ||
+            newStock != item.lastKnownStock ||
+            item.lastKnownStock == -1) {
+          _items[i] = item.copyWith(
+            watchedPrice: priceDropped ? newPrice : item.watchedPrice,
+            lastKnownStock: newStock,
           );
           changed = true;
         }
@@ -188,16 +225,16 @@ class PriceAlertProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      AlkLoggerHelper.error('Error checking price drops', e);
+      AlkLoggerHelper.error('Error checking wishlist updates', e);
     }
 
     _isChecking = false;
     notifyListeners();
   }
 
-  // Same formula used by product cards in the UI
   double _calcEffectivePrice(Map<String, dynamic> enriched) {
-    final taxGroup = int.tryParse(enriched['id_tax_rules_group'].toString()) ?? 0;
+    final taxGroup =
+        int.tryParse(enriched['id_tax_rules_group'].toString()) ?? 0;
     final basePrice = taxGroup == 0
         ? (double.tryParse(enriched['price_ht'].toString()) ?? 0.0)
         : (double.tryParse(enriched['price_ttc'].toString()) ?? 0.0);
@@ -209,8 +246,9 @@ class PriceAlertProvider extends ChangeNotifier {
     return basePrice * (1 - discount / 100);
   }
 
-  Future<void> _fireNotification(WatchedProduct alert, double newPrice) async {
-    final oldStr = alert.watchedPrice.toStringAsFixed(2);
+  Future<void> _firePriceNotification(
+      WishlistItem item, double newPrice) async {
+    final oldStr = item.watchedPrice.toStringAsFixed(2);
     final newStr = newPrice.toStringAsFixed(2);
 
     final androidDetails = AndroidNotificationDetails(
@@ -222,22 +260,56 @@ class PriceAlertProvider extends ChangeNotifier {
       icon: '@mipmap/ic_launcher',
       styleInformation: BigTextStyleInformation(
         'Nouveau prix : $newStr TND\nAncien prix : $oldStr TND',
-        contentTitle: alert.productName,
+        contentTitle: item.productName,
         summaryText: 'Alerte prix',
       ),
     );
     const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    final details =
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     await _notifications.show(
-      alert.productId.hashCode,
-      alert.productName,
+      item.productId.hashCode,
+      item.productName,
       'Nouveau prix : $newStr TND  (avant : $oldStr TND)',
       details,
-      payload: alert.productId,
+      payload: item.productId,
     );
 
     AlkLoggerHelper.info(
-        'Price drop: ${alert.productName} $oldStr → $newStr TND');
+        'Price drop: ${item.productName} $oldStr → $newStr TND');
+  }
+
+  Future<void> _fireStockNotification(
+      WishlistItem item, int newStock) async {
+    final androidDetails = AndroidNotificationDetails(
+      'stock_alerts',
+      'Alertes Stock',
+      channelDescription: 'Notifications de retour en stock',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      styleInformation: BigTextStyleInformation(
+        'Ce produit est à nouveau disponible.',
+        contentTitle: item.productName,
+        summaryText: 'Retour en stock',
+      ),
+    );
+    const iosDetails = DarwinNotificationDetails();
+    final details =
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    // +1 on hash so price + stock notifications for the same product
+    // don't overwrite each other in the notification tray.
+    await _notifications.show(
+      item.productId.hashCode + 1,
+      item.productName,
+      'De retour en stock !',
+      details,
+      payload: item.productId,
+    );
+
+    AlkLoggerHelper.info(
+        'Stock comeback: ${item.productName} (now $newStock available)');
   }
 }

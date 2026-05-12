@@ -25,6 +25,7 @@ import 'package:alkirtas/utils/logging/logger.dart';
 
 import '../../../../utils/backendData/userData.dart';
 import '../../../../providers/odoo_account_provider.dart';
+import '../../services/google_sign_in_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -195,6 +196,42 @@ class _LoginScreenState extends State<LoginScreen> {
 //    }
  // }
 
+  Future<void> _signInWithGoogle() async {
+    if (!mounted) return;
+    setState(() => isLoading = true);
+
+    final error = await GoogleSignInService.signIn();
+
+    if (!mounted) return;
+    setState(() => isLoading = false);
+
+    if (error != null) {
+      // Only show error if it wasn't a user cancellation
+      if (!error.contains('cancelled')) {
+        showErrorDialog(context, error);
+      }
+      return;
+    }
+
+    // Success — navigate like classic login
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getString('pendingNavigation');
+    if (pending != null) {
+      prefs.remove('pendingNavigation');
+      Get.offAll(
+        () => NavigationMenu(selectedMenu: pending == 'Promos' ? 2 : 0),
+        transition: Transition.fadeIn,
+        duration: const Duration(milliseconds: 400),
+      );
+    } else {
+      Get.offAll(
+        () => const NavigationMenu(selectedMenu: 0),
+        transition: Transition.fadeIn,
+        duration: const Duration(milliseconds: 400),
+      );
+    }
+  }
+
   // Show error dialog
   void showErrorDialog(BuildContext context, String message) {
     showDialog(
@@ -247,19 +284,75 @@ class _LoginScreenState extends State<LoginScreen> {
                     /// Logo title and subtitle
                     AlkLoginHeader(dark: dark),
 
-                    /// Form with email/password input and login logic
+                    /// Form with email/password input and login logic.
+                    /// The Google button is rendered inside the form, right above the Connexion button.
                     AlkLoginForm(
                       emailController: emailController,
                       passwordController: passwordController,
                       onSignIn: (_) => signInUser(),
+                      googleButton: Center(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.grey.shade200,
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: isLoading ? null : _signInWithGoogle,
+                              borderRadius: BorderRadius.circular(12),
+                              splashColor:
+                                  AlkColors.AppSecColor.withOpacity(0.08),
+                              highlightColor:
+                                  AlkColors.AppSecColor.withOpacity(0.04),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 11,
+                                  horizontal: 22,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Image.asset(
+                                      'lib/assets/icons/icons8-google-48.png',
+                                      width: 20,
+                                      height: 20,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Iconsax.global, size: 20),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Text(
+                                      'Continuer avec Google',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF1F1F1F),
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
 
                     /// Divider
                     //AlkLoginDivider(dark: dark), *will be used once FireBase is implemented*
                     const SizedBox(height: AlkSize.spaceBtwSections),
-
-                    /// Footer with social login buttons
-                    //AlkLoginFooter()   *will be used once FireBase is implemented*
 
                     SizedBox(
                       width: double.infinity,

@@ -209,7 +209,7 @@ class _AlkProductCardVerticalState extends State<AlkProductCardVertical> {
                       brandName != 'False' ? brandName : 'A L K I R T A S ',
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
-                      style: Theme.of(context).textTheme.labelMedium,
+                      style: Theme.of(context).textTheme.labelSmall,
                     ),
 
                     ///original price mfassa5
