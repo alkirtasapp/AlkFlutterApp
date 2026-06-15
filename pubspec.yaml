@@ -1,6 +1,6 @@
 name: alkirtas
 description: "A new Flutter project."
-version: 1.0.7+10
+version: 1.0.8+26
 
 environment:
   sdk: ^3.6.0
@@ -61,8 +61,6 @@ dependencies:
   # In-app updates from Google Play
   in_app_update: ^4.2.3
 
-  # Secure storage for device UUID (persists across iOS reinstalls via Keychain)
-  flutter_secure_storage: ^9.2.2
 
   # Google Sign-In
   google_sign_in: ^6.2.1

@@ -52,15 +52,23 @@ class GoogleSignInService {
         body: {'credential': idToken},
       ).timeout(const Duration(seconds: 15));
 
+      // Try to parse the body as JSON regardless of status — onetap.php returns
+      // JSON for both success and error paths, and the error message is useful.
+      Map<dynamic, dynamic>? data;
+      try {
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        if (decoded is Map) data = decoded;
+      } catch (_) {}
+
       if (response.statusCode != 200) {
+        final serverMsg = data?['error']?.toString() ?? response.body;
         AlkLoggerHelper.error(
-            '[GoogleSignIn] onetap HTTP ${response.statusCode}: ${response.body}');
-        return 'Server rejected Google sign-in (${response.statusCode}).';
+            '[GoogleSignIn] onetap HTTP ${response.statusCode}: $serverMsg');
+        return 'Sign-in failed: $serverMsg';
       }
 
-      final data = jsonDecode(utf8.decode(response.bodyBytes));
-      if (data is! Map || data['success'] != true) {
-        final err = (data is Map ? data['error']?.toString() : null) ?? 'Unknown error';
+      if (data == null || data['success'] != true) {
+        final err = data?['error']?.toString() ?? 'Unknown error';
         return 'Sign-in failed: $err';
       }
 

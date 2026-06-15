@@ -87,8 +87,8 @@ class _NavigationMenuState extends State<NavigationMenu>
         }
       }
 
-      // Show scratch card dialog on first install (once per device)
-      _checkAndShowScratchCard();
+      // Scratch card disabled for this release — re-enable when loyalty wiring is done
+      // _checkAndShowScratchCard();
     });
   }
 
@@ -138,6 +138,7 @@ class _NavigationMenuState extends State<NavigationMenu>
         ));
   }
 
+  // ignore: unused_element
   Future<void> _checkAndShowScratchCard() async {
     try {
       // Guests can't claim — wait until they log in (the login flow Get.offAll's

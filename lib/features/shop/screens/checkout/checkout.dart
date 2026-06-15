@@ -22,6 +22,8 @@ import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/providers/coupon_provider.dart';
 import 'package:alkirtas/config/app_config.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
+import 'package:alkirtas/data/controllers/wallet_service.dart';
+import 'package:alkirtas/features/shop/screens/checkout/widgets/wallet_block.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key}); // Remove cartId
@@ -43,6 +45,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final gouverneratController = TextEditingController();
 
   bool isTermsAccepted = true; // Checkbox state
+  // How much the customer chose to take from their Odoo wallet (0 = not used).
+  double _walletAmount = 0.0;
 
   // Dynamic carriers
   List<Carrier> carriers = [];
@@ -225,7 +229,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
     double subtotalAfterDiscount = subtotal - discountAmount;
-    double totalWithDelivery = subtotalAfterDiscount + deliveryFee;
+    // Cap the wallet amount at what's actually due so the customer can never
+    // make the order negative if they edit the cart after applying.
+    double subtotalBeforeWallet = subtotalAfterDiscount + deliveryFee;
+    double walletAmount = _walletAmount;
+    if (walletAmount > subtotalBeforeWallet) {
+      walletAmount = subtotalBeforeWallet;
+    }
+    double totalWithDelivery = subtotalBeforeWallet - walletAmount;
 
     return Scaffold(
       appBar: AppBar(
@@ -425,6 +436,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(height: AlkSize.spaceBtwInputFields),
 
+                  // Wallet block (Odoo wallet credit) — hidden for non-whitelisted customers
+                  WalletBlock(
+                    cartTotal: subtotalBeforeWallet,
+                    currentAppliedAmount: walletAmount,
+                    onAmountChanged: (v) {
+                      setState(() => _walletAmount = v);
+                    },
+                  ),
+
                   // Coupon selection section
                   if (couponProvider.coupons.isNotEmpty)
                     Column(
@@ -452,8 +472,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                       ],
                     ),
-                  // Price breakdown
-                  if (selectedCoupon != null)
+                  // Price breakdown (shown when coupon OR wallet is applied)
+                  if (selectedCoupon != null || walletAmount > 0)
                     Card(
                       margin: EdgeInsets.symmetric(vertical: 12),
                       child: Padding(
@@ -470,13 +490,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 Text('${subtotal.toStringAsFixed(2)} TND'),
                               ],
                             ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Réduction:'),
-                                Text('-${discountAmount.toStringAsFixed(2)} TND'),
-                              ],
-                            ),
+                            if (selectedCoupon != null)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Réduction:'),
+                                  Text('-${discountAmount.toStringAsFixed(2)} TND'),
+                                ],
+                              ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -484,6 +505,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 Text('${deliveryFee.toStringAsFixed(2)} TND'),
                               ],
                             ),
+                            if (walletAmount > 0)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Portefeuille:'),
+                                  Text('-${walletAmount.toStringAsFixed(2)} TND'),
+                                ],
+                              ),
                             Divider(),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -551,7 +580,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                                   final totalProducts = await calculateTotalProducts(cartProvider.cartItems);
                                   final totalProductsWt = await calculateTotalProductsWt(cartProvider);
-                                  final totalPaid = totalProductsWt + deliveryFee;
+
+                                  // Step 2b: Apply wallet voucher to the PS cart, if any
+                                  double effectiveWallet = 0.0;
+                                  if (walletAmount > 0) {
+                                    final applyResult = await WalletService.applyToCart(
+                                      cartId: cartId,
+                                      amount: walletAmount,
+                                    );
+                                    if (applyResult.success) {
+                                      effectiveWallet = applyResult.appliedAmount;
+                                    } else {
+                                      AlkLoggerHelper.warning(
+                                          'Wallet apply failed (${applyResult.error}). Continuing without wallet discount.');
+                                      Get.snackbar(
+                                        'Portefeuille',
+                                        'Impossible d\'appliquer votre solde portefeuille. La commande continue sans.',
+                                        snackPosition: SnackPosition.TOP,
+                                        backgroundColor: Colors.orange,
+                                        colorText: Colors.white,
+                                        duration: const Duration(seconds: 3),
+                                      );
+                                    }
+                                  }
+
+                                  // Total paid by the customer = order total minus what came from wallet
+                                  final totalPaid =
+                                      totalProductsWt + deliveryFee - discountAmount - effectiveWallet;
 
                                   final orderSuccess = await orderController.createOrder(
                                     idCart: cartId,
@@ -562,7 +617,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     shippingCost: deliveryFee,
                                     idCarrier: selectedCarrier?.id ?? 7,
                                     coupon: selectedCoupon,
-                                    discountAmount: discountAmount,
+                                    discountAmount: discountAmount + effectiveWallet,
                                   );
 
                                   if (orderSuccess) {

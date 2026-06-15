@@ -584,12 +584,17 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
                     children: [
                       Icon(Iconsax.gift, color: Colors.white70, size: 20),
                       const SizedBox(height: 6),
-                      Text(
-                        _formatPoints(loyaltyProvider.totalPoints),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0, end: loyaltyProvider.totalPoints),
+                        duration: const Duration(milliseconds: 1400),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, v, _) => Text(
+                          _formatPoints(v),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const Text(
@@ -618,12 +623,17 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
                     children: [
                       Icon(Iconsax.wallet, color: Colors.white70, size: 20),
                       const SizedBox(height: 6),
-                      Text(
-                        loyaltyProvider.walletBalance.toStringAsFixed(2),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0, end: loyaltyProvider.walletBalance),
+                        duration: const Duration(milliseconds: 1400),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, v, _) => Text(
+                          v.toStringAsFixed(2),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const Text(

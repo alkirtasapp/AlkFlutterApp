@@ -86,7 +86,7 @@ class WishlistProvider extends ChangeNotifier {
   }
 
   Future<void> _initNotifications() async {
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const android = AndroidInitializationSettings('@drawable/ic_notification');
     const ios = DarwinInitializationSettings(
       requestSoundPermission: false,
       requestBadgePermission: false,
@@ -257,7 +257,7 @@ class WishlistProvider extends ChangeNotifier {
       channelDescription: 'Notifications de baisse de prix',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/ic_notification',
       styleInformation: BigTextStyleInformation(
         'Nouveau prix : $newStr TND\nAncien prix : $oldStr TND',
         contentTitle: item.productName,
@@ -288,7 +288,7 @@ class WishlistProvider extends ChangeNotifier {
       channelDescription: 'Notifications de retour en stock',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/ic_notification',
       styleInformation: BigTextStyleInformation(
         'Ce produit est à nouveau disponible.',
         contentTitle: item.productName,
