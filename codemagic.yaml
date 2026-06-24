@@ -4,8 +4,8 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
-      flutter: stable
-      xcode: latest
+      flutter: 3.41.9
+      xcode: 26.4.1
       groups:
         - ios_signing
     scripts:
