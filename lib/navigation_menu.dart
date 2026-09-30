@@ -19,8 +19,8 @@ import 'package:alkirtas/services/app_update_service.dart';
 import 'package:alkirtas/providers/wishlist_provider.dart';
 import 'package:alkirtas/data/controllers/product_enriched_service.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
-import 'package:alkirtas/features/scratch_card/scratch_card_screen.dart';
-import 'package:alkirtas/services/device_uuid_service.dart';
+import 'package:alkirtas/features/shop/services/delivered_order_review_prompt_service.dart';
+import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 
 class NavigationMenu extends StatefulWidget {
   /// the index of the selected tab
@@ -87,8 +87,12 @@ class _NavigationMenuState extends State<NavigationMenu>
         }
       }
 
-      // Scratch card disabled for this release — re-enable when loyalty wiring is done
-      // _checkAndShowScratchCard();
+      if (mounted && UserData.id.isNotEmpty) {
+        await DeliveredOrderReviewPromptService.checkAndPrompt(
+          context: context,
+          cartProvider: Provider.of<CartProvider>(context, listen: false),
+        );
+      }
     });
   }
 
@@ -136,37 +140,6 @@ class _NavigationMenuState extends State<NavigationMenu>
           productImageList: imageUrls,
           productStock: ((product['quantity'] as int?) ?? 0).toString(),
         ));
-  }
-
-  // ignore: unused_element
-  Future<void> _checkAndShowScratchCard() async {
-    try {
-      // Guests can't claim — wait until they log in (the login flow Get.offAll's
-      // back to NavigationMenu, which re-runs initState and re-triggers this).
-      if (UserData.id.isEmpty) return;
-
-      final uuid = await DeviceUuidService.getOrCreate();
-      final alreadyClaimed = await ProductEnrichedService.checkScratchClaim(
-        uuid,
-        email: UserData.email,
-      );
-      if (alreadyClaimed) return;
-
-      await Future.delayed(const Duration(seconds: 2));
-      if (!mounted) return;
-
-      await showScratchCardDialog(
-        context,
-        uuid: uuid,
-        onClaim: (rewardLabel) => ProductEnrichedService.claimScratch(
-          uuid: uuid,
-          reward: rewardLabel,
-          email: UserData.email,
-        ),
-      );
-    } catch (_) {
-      // Non-critical — never crash the app over a scratch card
-    }
   }
 
   void _onNavDestinationSelected(int navIdx) {

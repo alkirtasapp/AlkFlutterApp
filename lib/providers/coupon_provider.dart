@@ -32,7 +32,42 @@ class Coupon {
   });
 
   get percentage => null;
+
+  bool get isPercent => reductionPercent != null && reductionPercent! > 0;
+  bool get isAmount => !isPercent && reductionAmount != null && reductionAmount! > 0;
+
+  /// Short discount label, e.g. "-20%" or "-5 TND". Empty when the rule has
+  /// no percent/amount reduction (free shipping, gift product...).
+  String get discountLabel {
+    if (isPercent) return '-${_trim(reductionPercent!)}%';
+    if (isAmount) return '-${_trim(reductionAmount!)} TND';
+    return '';
+  }
+
+  /// Discount this coupon gives on [subtotal], never more than the subtotal.
+  double discountOn(double subtotal) {
+    double d = 0;
+    if (isPercent) {
+      d = subtotal * (reductionPercent! / 100);
+    } else if (isAmount) {
+      d = reductionAmount!;
+    }
+    return d.clamp(0, subtotal < 0 ? 0 : subtotal).toDouble();
+  }
+
+  /// Calendar days left before expiry (0 = expires today).
+  int get daysLeft {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final expiryDay = DateTime(expiryDate.year, expiryDate.month, expiryDate.day);
+    return expiryDay.difference(today).inHours ~/ 24;
+  }
+
+  static String _trim(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 }
+
+enum CouponAddResult { added, alreadyAdded, invalid, expired, networkError }
 
 class CouponProvider extends ChangeNotifier {
   final List<Coupon> _coupons = [];
@@ -73,43 +108,57 @@ class CouponProvider extends ChangeNotifier {
   }
 
   Future<bool> addCoupon(String code) async {
-    final url = 'https://www.alkirtas.com/api/cart_rules?display=full&limit=1&filter[code]=$code&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data is Map && data['cart_rules'] != null && data['cart_rules'].isNotEmpty) {
-        final rule = data['cart_rules'][0];
-        DateTime expiry = DateTime.now().add(Duration(days: 30)); // Default 30 days
-        if (rule['date_to'] != null && rule['date_to'].toString().isNotEmpty) {
-          try {
-            expiry = DateTime.parse(rule['date_to']);
-          } catch (_) {}
-        }
-        final coupon = Coupon(
-          id: int.tryParse(rule['id'].toString()) ?? 0,
-          code: rule['code'],
-          reductionPercent: double.tryParse(rule['reduction_percent'] ?? '0'),
-          reductionAmount: double.tryParse(rule['reduction_amount'] ?? '0'),
-          name: rule['name'] ?? '',
-          expiryDate: expiry,
-        );
-        if (!_coupons.any((c) => c.code == coupon.code)) {
-          if (coupon.expiryDate.isAfter(DateTime.now())) {
-            _coupons.add(coupon);
-            await _saveCoupons();
-            notifyListeners();
-            return true;
-          } else {
-            AlkLoggerHelper.warning("Coupon expired: ${coupon.code}");
-            return false;
-          }
-        }
-        return true;
-      }
-    } else {
-      AlkLoggerHelper.error("Coupon API failed: ${response.statusCode}");
+    final result = await redeemCoupon(code);
+    return result == CouponAddResult.added || result == CouponAddResult.alreadyAdded;
+  }
+
+  /// Same as [addCoupon] but tells the caller *why* it failed.
+  Future<CouponAddResult> redeemCoupon(String code) async {
+    final trimmed = code.trim();
+    if (_coupons.any((c) => c.code.toUpperCase() == trimmed.toUpperCase())) {
+      return CouponAddResult.alreadyAdded;
     }
-    return false;
+    final url = 'https://www.alkirtas.com/api/cart_rules?display=full&limit=1&filter[code]=${Uri.encodeQueryComponent(trimmed)}&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}';
+    try {
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        AlkLoggerHelper.error("Coupon API failed: ${response.statusCode}");
+        return CouponAddResult.networkError;
+      }
+      final data = json.decode(response.body);
+      if (data is! Map || data['cart_rules'] is! List || (data['cart_rules'] as List).isEmpty) {
+        return CouponAddResult.invalid;
+      }
+      final rule = data['cart_rules'][0];
+      DateTime expiry = DateTime.now().add(Duration(days: 30)); // Default 30 days
+      if (rule['date_to'] != null && rule['date_to'].toString().isNotEmpty) {
+        try {
+          expiry = DateTime.parse(rule['date_to'].toString());
+        } catch (_) {}
+      }
+      final coupon = Coupon(
+        id: int.tryParse(rule['id'].toString()) ?? 0,
+        code: (rule['code'] ?? trimmed).toString(),
+        reductionPercent: double.tryParse((rule['reduction_percent'] ?? '0').toString()),
+        reductionAmount: double.tryParse((rule['reduction_amount'] ?? '0').toString()),
+        name: (rule['name'] ?? '').toString(),
+        expiryDate: expiry,
+      );
+      if (_coupons.any((c) => c.code == coupon.code)) {
+        return CouponAddResult.alreadyAdded;
+      }
+      if (!coupon.expiryDate.isAfter(DateTime.now())) {
+        AlkLoggerHelper.warning("Coupon expired: ${coupon.code}");
+        return CouponAddResult.expired;
+      }
+      _coupons.add(coupon);
+      await _saveCoupons();
+      notifyListeners();
+      return CouponAddResult.added;
+    } catch (e) {
+      AlkLoggerHelper.error("Coupon API error: $e");
+      return CouponAddResult.networkError;
+    }
   }
 
   void selectCoupon(Coupon? coupon) {

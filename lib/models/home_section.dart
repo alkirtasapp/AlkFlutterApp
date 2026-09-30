@@ -6,13 +6,31 @@ class HomeSection {
   final String title;
   final IconData icon;
   final List<CategoryTab> tabs;
+  final String layout;
+  final String? image;
+  final String? headline;
+  final String? backgroundColor;
+  final int? categoryId;
 
-  HomeSection({required this.title, required this.icon, required this.tabs});
+  HomeSection(
+      {required this.title,
+      required this.icon,
+      required this.tabs,
+      this.layout = 'auto',
+      this.image,
+      this.headline,
+      this.backgroundColor,
+      this.categoryId});
 
   // Factory constructor to create HomeSection from JSON
   factory HomeSection.fromJson(Map<String, dynamic> json) {
     return HomeSection(
       title: json['title'] as String,
+      layout: json['layout']?.toString() ?? 'auto',
+      image: json['image']?.toString(),
+      headline: json['headline']?.toString(),
+      backgroundColor: json['backgroundColor']?.toString(),
+      categoryId: int.tryParse(json['categoryId']?.toString() ?? ''),
       icon: _getIconFromName(json['icon'] as String? ?? 'category'),
       tabs: (json['tabs'] as List<dynamic>)
           .map((tab) => CategoryTab.fromJson(tab as Map<String, dynamic>))
@@ -24,6 +42,11 @@ class HomeSection {
   Map<String, dynamic> toJson() {
     return {
       'title': title,
+      'layout': layout,
+      if (image != null) 'image': image,
+      if (headline != null) 'headline': headline,
+      if (backgroundColor != null) 'backgroundColor': backgroundColor,
+      if (categoryId != null) 'categoryId': categoryId,
       'icon': _getIconName(icon),
       'tabs': tabs.map((tab) => tab.toJson()).toList(),
     };
@@ -93,13 +116,15 @@ class HomeSection {
 class CategoryTab {
   final String name;
   final int categoryId;
+  final String? image;
 
-  CategoryTab({required this.name, required this.categoryId});
+  CategoryTab({required this.name, required this.categoryId, this.image});
 
   // Factory constructor to create CategoryTab from JSON
   factory CategoryTab.fromJson(Map<String, dynamic> json) {
     return CategoryTab(
       name: json['name'] as String,
+      image: json['image']?.toString(),
       categoryId: json['categoryId'] as int,
     );
   }
@@ -108,6 +133,7 @@ class CategoryTab {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
+      if (image != null) 'image': image,
       'categoryId': categoryId,
     };
   }

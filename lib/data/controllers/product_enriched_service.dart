@@ -1,12 +1,20 @@
 import 'dart:convert';
+import 'package:alkirtas/data/controllers/product_list_Category.dart';
 import 'package:http/http.dart' as http;
 import 'package:alkirtas/config/app_config.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
+import 'package:alkirtas/utils/network/cache_buster.dart';
 
 /// Service to fetch pre-calculated product enrichment data from PrestaShop module.
 /// This replaces multiple API calls (quantity, discount, tax, brand) with a single call.
 class ProductEnrichedService {
   static const String _moduleBaseUrl = 'https://www.alkirtas.com/module/productenriched/api';
+  static const String _homeDealsConfigUrl = 'https://www.alkirtas.com/banners/home_deals.json';
+  static final Map<String, Future<List<Map<String, dynamic>>>>
+      _homeSellingRequests = {};
+
+  /// Reload configured home deals after an explicit home refresh.
+  static void clearHomeSellingCache() => _homeSellingRequests.clear();
 
   /// Fetch enriched data for multiple product IDs
   /// Returns a Map with product ID as key for easy lookup
@@ -83,6 +91,136 @@ class ProductEnrichedService {
     } catch (e) {
       AlkLoggerHelper.error('Error fetching enriched data by category', e);
       return [];
+    }
+  }
+
+  /// First-screen selling feed using existing enriched category endpoints.
+  /// This lets us test a conversion block before adding a dedicated backend route.
+  static Future<List<Map<String, dynamic>>> fetchHomeSellingProducts({
+    List<int> categoryIds = const [290],
+    int limit = 8,
+  }) {
+    final cacheKey = '${categoryIds.join(',')}:$limit';
+    return _homeSellingRequests.putIfAbsent(
+      cacheKey,
+      () => _loadHomeSellingProducts(categoryIds: categoryIds, limit: limit),
+    );
+  }
+
+  static Future<List<Map<String, dynamic>>> _loadHomeSellingProducts({
+    required List<int> categoryIds,
+    required int limit,
+  }) async {
+    final configuredIds = await _fetchHomeDealProductIds();
+    if (configuredIds != null) {
+      if (configuredIds.isEmpty) return [];
+
+      final productsById = await fetchEnrichedByIds(configuredIds.take(100).toList());
+      final configuredProducts = configuredIds
+          .where((id) => productsById.containsKey(id))
+          .map((id) => productsById[id]!)
+          .where((row) {
+            final stock = int.tryParse(row['quantity'].toString()) ?? 0;
+            return stock > 0;
+          })
+          .take(limit)
+          .toList();
+
+      if (configuredProducts.isNotEmpty) return configuredProducts;
+      AlkLoggerHelper.warning('Home deals config returned no valid in-stock products, using fallback');
+    }
+
+    return _loadHomeFallbackByModifiedDate(categoryIds, limit);
+  }
+
+  /// Read dates for the complete category before choosing the newest deals.
+  /// Enriched category responses do not guarantee modification-date ordering.
+  static Future<List<Map<String, dynamic>>> _loadHomeFallbackByModifiedDate(
+    List<int> categoryIds,
+    int limit,
+  ) async {
+    if (limit <= 0) return [];
+    try {
+      final categories = await Future.wait(categoryIds.map(
+        (id) => ProductListCategory().fetchProductIdsFromCategory(id),
+      ));
+      final ids = categories.expand((ids) => ids).toSet().toList();
+      final datedProducts = <Map<String, dynamic>>[];
+      for (var offset = 0; offset < ids.length; offset += 100) {
+        final batch = ids.skip(offset).take(100).join('|');
+        final uri = Uri.parse(AppConfig.prestashopUrl('products', params: {
+          'display': '[id,date_upd]',
+          'filter[id]': '[$batch]',
+          'filter[active]': '[1]',
+        }));
+        final response = await http.get(uri).timeout(const Duration(seconds: 15));
+        if (response.statusCode != 200) {
+          AlkLoggerHelper.warning('Home deals modification dates unavailable: HTTP ${response.statusCode}');
+          return [];
+        }
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        final rows = data['products'] as List<dynamic>? ?? [];
+        datedProducts.addAll(rows.map((row) => Map<String, dynamic>.from(row)));
+      }
+      datedProducts.sort((a, b) {
+        final aDate = DateTime.tryParse(a['date_upd'].toString());
+        final bDate = DateTime.tryParse(b['date_upd'].toString());
+        final dateOrder = (bDate?.millisecondsSinceEpoch ?? 0)
+            .compareTo(aDate?.millisecondsSinceEpoch ?? 0);
+        if (dateOrder != 0) return dateOrder;
+        return (int.tryParse(b['id'].toString()) ?? 0)
+            .compareTo(int.tryParse(a['id'].toString()) ?? 0);
+      });
+
+      final products = <Map<String, dynamic>>[];
+      // Keep scanning in date order if newer products are unavailable or sold out.
+      for (var offset = 0; offset < datedProducts.length; offset += 30) {
+        final batch = datedProducts.skip(offset).take(30).toList();
+        final enriched = await fetchEnrichedByIds(batch
+            .map((row) => int.parse(row['id'].toString())).toList());
+        for (final row in batch) {
+          final product = enriched[int.parse(row['id'].toString())];
+          if (product == null) continue;
+          final stock = int.tryParse(product['quantity'].toString()) ?? 0;
+          if (stock <= 0) continue;
+          products.add(product);
+          if (products.length == limit) return products;
+        }
+      }
+      return products;
+    } catch (e) {
+      AlkLoggerHelper.warning('Home deals fallback could not load modification dates');
+      return [];
+    }
+  }
+  static Future<List<int>?> _fetchHomeDealProductIds() async {
+    try {
+      final response = await http
+          .get(CacheBuster.uri(_homeDealsConfigUrl))
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode != 200) return null;
+
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      if (data is! Map<String, dynamic>) return null;
+
+      final enabled = data['enabled'];
+      if (enabled == false || enabled == 'false' || enabled == 0 || enabled == '0') {
+        return <int>[];
+      }
+
+      final rawIds = data['product_ids'];
+      if (rawIds is! List) return null;
+
+      final ids = rawIds
+          .map((value) => int.tryParse(value.toString()) ?? 0)
+          .where((id) => id > 0)
+          .toList();
+
+      return ids.isEmpty ? null : ids;
+    } catch (e) {
+      AlkLoggerHelper.warning('Home deals config unavailable: $e');
+      return null;
     }
   }
 
@@ -341,57 +479,6 @@ class ProductEnrichedService {
       'image_urls': imageUrls, // For product detail page
       'id_manufacturer': manufacturerId,
     };
-  }
-
-  /// Check whether a device UUID OR a customer email has already claimed.
-  /// Email is checked alongside UUID so Android reinstalls (which rotate the UUID)
-  /// don't let the same account claim again.
-  /// Returns true if claimed, false otherwise (errors default to unclaimed).
-  static Future<bool> checkScratchClaim(String uuid, {String email = ''}) async {
-    try {
-      final url = '$_moduleBaseUrl?action=checkScratchClaim'
-          '&uuid=${Uri.encodeComponent(uuid)}'
-          '&email=${Uri.encodeComponent(email)}'
-          '&ws_key=${AppConfig.prestashopApiKey}';
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
-      if (response.statusCode != 200) return false;
-      final data = json.decode(utf8.decode(response.bodyBytes));
-      if (data['success'] != true) return false;
-      return data['data']['claimed'] == true;
-    } catch (e) {
-      AlkLoggerHelper.error('Error checking scratch claim', e);
-      return false;
-    }
-  }
-
-  /// Record a scratch card claim for the given UUID.
-  /// Returns null on success, or an error message string on failure.
-  static Future<String?> claimScratch({
-    required String uuid,
-    required String reward,
-    String email = '',
-  }) async {
-    try {
-      final url = '$_moduleBaseUrl?action=claimScratch'
-          '&uuid=${Uri.encodeComponent(uuid)}'
-          '&reward=${Uri.encodeComponent(reward)}'
-          '&email=${Uri.encodeComponent(email)}'
-          '&ws_key=${AppConfig.prestashopApiKey}';
-      AlkLoggerHelper.debug('claimScratch URL: $url');
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
-      final body = utf8.decode(response.bodyBytes);
-      AlkLoggerHelper.debug('claimScratch response (${response.statusCode}): $body');
-
-      if (response.statusCode != 200) {
-        return 'HTTP ${response.statusCode}: ${body.length > 200 ? body.substring(0, 200) : body}';
-      }
-      final data = json.decode(body);
-      if (data['success'] == true) return null;
-      return (data['error'] ?? 'Unknown server error').toString();
-    } catch (e) {
-      AlkLoggerHelper.error('Error claiming scratch card', e);
-      return e.toString();
-    }
   }
 
   /// Check if the enriched module is available

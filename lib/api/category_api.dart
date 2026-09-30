@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:alkirtas/utils/network/cache_buster.dart';
 import 'package:hive/hive.dart';
 
 class CategoryApi {
@@ -14,7 +15,7 @@ class CategoryApi {
 
     try {
       final response = await http.get(
-        Uri.parse('https://alkirtas.com/banners/categories.json'),
+        CacheBuster.uri('https://alkirtas.com/banners/categories.json'),
       );
 
       if (response.statusCode == 200) {

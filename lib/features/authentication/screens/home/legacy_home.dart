@@ -1,5 +1,3 @@
-import 'editorial/editorial_department.dart';
-import 'editorial/editorial_repository.dart';
 import 'package:alkirtas/features/authentication/screens/home/widgets/top_sales_books.dart';
 import 'package:alkirtas/features/audiobooks/audiobooks.dart';
 import 'package:flutter/material.dart';
@@ -24,17 +22,14 @@ import 'widgets/trending_searches_widget.dart';
 import 'widgets/home_search_overlay.dart';
 import 'widgets/home_selling_feed.dart';
 
-/// Only changes the server-configured department blocks. Set false to restore them.
-const bool useRedesignedSections = true;
-
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class LegacyHomeScreen extends StatefulWidget {
+  const LegacyHomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<LegacyHomeScreen> createState() => _LegacyHomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _LegacyHomeScreenState extends State<LegacyHomeScreen> {
   // --- Constants for Special Section ---
   static const String livresSectionTitle = "Alkirtas Books";
   static const String espaceBureauSectionTitle = "Alkirtas Office";
@@ -42,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // !!! IMPORTANT: Replace '20' with the actual Prestashop Category ID for your top-selling books !!!
   //static const int topSellingBooksCategoryId = 763;
 
-  final EditorialRepository _departmentRepository = EditorialRepository();
   List<HomeSection> sections = [];
   bool isLoadingSections = true;
   bool _isSearchActive = false;
@@ -132,82 +126,74 @@ class _HomeScreenState extends State<HomeScreen> {
                   // --- Trending Searches Section ---
                   const TrendingSearchesWidget(),
 
+
+
                   // --- Product Sections (with conditional special section) ---
                   // Show loading indicator while sections are loading
                   if (isLoadingSections)
                     const Center(child: CircularProgressIndicator())
                   else
                     // Use map to potentially return multiple widgets per section
-                    ...sections.asMap().entries.map((entry) {
-                      final section = entry.value;
-                      // 1. Create the standard TabbedCategoryCarousel widget
-                      final standardCarousel = Padding(
-                        padding: useRedesignedSections
-                            ? const EdgeInsets.symmetric(horizontal: 16)
-                            : const EdgeInsets.only(
-                                bottom: AlkSize.spaceBtwItems / 2),
-                        child: useRedesignedSections
-                            ? EditorialDepartment(
-                                key: ValueKey(
-                                    'department_${entry.key}_${section.title}'),
-                                section: section,
-                                index: entry.key,
-                                repository: _departmentRepository,
-                                onCategory: (id, name) =>
-                                    Get.find<NavigationController>()
-                                        .navigateToStoreDrawer(
-                                  categoryId: id,
-                                  categoryName: name,
-                                ),
-                              )
-                            : TabbedCategoryCarousel(
-                                key: ValueKey('tabbed_${section.title}'),
-                                section: section,
-                                itemsPerCategory: 8,
-                              ),
+                    ...sections.map((section) {
+                    // 1. Create the standard TabbedCategoryCarousel widget
+                    final standardCarousel = Padding(
+                      // Further reduced bottom padding below standard carousels
+                      padding: const EdgeInsets.only(
+                          bottom: AlkSize.spaceBtwItems /
+                              2), // Was AlkSize.spaceBtwItems
+                      child: TabbedCategoryCarousel(
+                        key: ValueKey('tabbed_${section.title}'),
+                        section: section,
+                        itemsPerCategory: 8,
+                      ),
+                    );
+
+                    // 2. Check if this is the "Livres" section to add the special grid
+                    if (section.title == livresSectionTitle) {
+                      // Return a Column containing the standard carousel AND the special grid
+                      return Column(
+                        children: [
+
+                          standardCarousel,
+                                             // --- Authors Section ---
+                  const HomeAuthorsSection(),
+                          BestSellersSection(
+                            itemCount: 10,
+                            categoryId: 901,
+                            context: context,
+                            title: '   Best Sellers ',
+                            icon: Icon(Iconsax.ranking_1,
+                                color: AlkColors.white),
+                            productsPerPage: 2, 
+                          ),
+                           // Add the special section below
+                           
+                        ],
                       );
-                      // 2. Check if this is the "Livres" section to add the special grid
-                      if (section.title == livresSectionTitle) {
-                        // Return a Column containing the standard carousel AND the special grid
-                        return Column(
-                          children: [
-                            standardCarousel,
-                            // --- Authors Section ---
-                            const HomeAuthorsSection(),
-                            BestSellersSection(
-                              itemCount: 10,
-                              categoryId: 901,
+                    } else if (section.title == espaceBureauSectionTitle) {
+                      // Return a Column containing the standard carousel AND the special grid
+                      return Column(
+                        children: [
+                          standardCarousel,
+                          BestSellersSection(
+                            itemCount: 6,
+                              categoryId:
+                                  763,
                               context: context,
-                              title: '   Best Sellers ',
-                              icon: Icon(Iconsax.ranking_1,
-                                  color: AlkColors.white),
+                              icon: Icon(Iconsax.star_1,
+                                color: AlkColors.white), 
+                              title:
+                                  '   Déstockage ',
                               productsPerPage: 2,
-                            ),
-                            // Add the special section below
-                          ],
-                        );
-                      } else if (section.title == espaceBureauSectionTitle) {
-                        // Return a Column containing the standard carousel AND the special grid
-                        return Column(
-                          children: [
-                            standardCarousel,
-                            BestSellersSection(
-                              itemCount: 6,
-                              categoryId: 763,
-                              context: context,
-                              icon:
-                                  Icon(Iconsax.star_1, color: AlkColors.white),
-                              title: '   Déstockage ',
-                              productsPerPage: 2,
-                            ),
-                            // Add the special section below
-                          ],
-                        );
-                      } else {
-                        // For all other sections, just return the standard carousel
-                        return standardCarousel;
-                      }
-                    }),
+                              ),
+                                   // Add the special section below
+                        ],
+                      );
+                    } else {
+                      // For all other sections, just return the standard carousel
+                      return standardCarousel;
+                    }
+                  }),
                 ],
               ),
             ),

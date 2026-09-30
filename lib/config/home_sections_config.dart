@@ -1,3 +1,4 @@
+import 'section_artwork.dart';
 import 'package:alkirtas/models/home_section.dart';
 import 'package:alkirtas/api/sections_api.dart';
 
@@ -11,7 +12,8 @@ List<HomeSection> get homeSections => _cachedHomeSections;
 // Function to load home sections from server
 Future<List<HomeSection>> getHomeSections() async {
   try {
-    final sections = await SectionsApi.fetchHomeSections();
+    final sections =
+        await SectionArtwork.apply(await SectionsApi.fetchHomeSections());
     _cachedHomeSections = sections;
     return sections;
   } catch (e) {

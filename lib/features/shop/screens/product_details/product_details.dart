@@ -60,7 +60,11 @@ class _ProductDetailsState extends State<ProductDetails> {
   @override
   void initState() {
     super.initState();
-    productImages = widget.productImageList;
+    // Keep the cover shown on the product card, including cover-only callers.
+    productImages = <String>{
+      if (widget.productImage.trim().isNotEmpty) widget.productImage.trim(),
+      ...widget.productImageList.map((url) => url.trim()).where((url) => url.isNotEmpty),
+    }.toList();
     _fetchProductFeatures();
     _fetchProductImages();
   }
@@ -94,7 +98,11 @@ class _ProductDetailsState extends State<ProductDetails> {
 
       if (fetchedImages.isNotEmpty) {
         setState(() {
-          productImages = fetchedImages;
+          // Append gallery images without replacing the known cover or its order.
+          productImages = <String>{
+            ...productImages,
+            ...fetchedImages.map((url) => url.trim()).where((url) => url.isNotEmpty),
+          }.toList();
         });
       }
     } catch (e) {
@@ -145,6 +153,8 @@ class _ProductDetailsState extends State<ProductDetails> {
             AlkProductImageSlider(
               productImages: effectiveImageList,
               productName: widget.productName,
+              productId: widget.productId,
+              productStock: widget.productStock,
             ),
 
             // Audio sample player (appears if product has linked sample)

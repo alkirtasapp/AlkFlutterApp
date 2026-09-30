@@ -16,7 +16,7 @@ class AnimatedOnboardingScreen extends StatefulWidget {
 }
 
 class _AnimatedOnboardingScreenState extends State<AnimatedOnboardingScreen> with TickerProviderStateMixin {
-  static const int _pageCount = 8;
+  static const int _pageCount = 7;
 
   int currentPage = 0;
   late PageController pageController;
@@ -76,7 +76,6 @@ class _AnimatedOnboardingScreenState extends State<AnimatedOnboardingScreen> wit
                   OnboardingCouponPage(key: ValueKey('page_coupon')),
                   OnboardingCartQrPosPage(key: ValueKey('page_cart_qr')),
                   OnboardingLoyaltyPage(key: ValueKey('page_loyalty')),
-                  OnboardingScratchCardPage(key: ValueKey('page_scratch')),
                   OnboardingWishlistPage(key: ValueKey('page_wishlist')),
                 ],
               ),
@@ -1176,152 +1175,6 @@ class _OnboardingLoyaltyPageState extends State<OnboardingLoyaltyPage>
       footerText: 'Scannez en magasin pour utiliser vos points',
     );
   }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 7. Scratch card
-// ─────────────────────────────────────────────────────────────────────────────
-
-class OnboardingScratchCardPage extends StatefulWidget {
-  const OnboardingScratchCardPage({super.key});
-
-  @override
-  State<OnboardingScratchCardPage> createState() =>
-      _OnboardingScratchCardPageState();
-}
-
-class _OnboardingScratchCardPageState extends State<OnboardingScratchCardPage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 2400),
-      vsync: this,
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _PageScaffold(
-      title: 'Carte à gratter',
-      subtitle:
-          'À l\'inscription, grattez votre carte pour gagner des points, une remise ou la livraison gratuite',
-      illustration: SizedBox(
-        width: 260,
-        height: 200,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            // 0..1 progress: scratch reveals; then resets
-            final t = _controller.value;
-            // First half scratches, second half holds
-            final reveal = (t * 2).clamp(0.0, 1.0);
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                // Reward card (back)
-                Container(
-                  width: 240,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFD54F), Color(0xFFFF8A65)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Iconsax.gift, size: 50, color: Colors.white),
-                      SizedBox(height: 8),
-                      Text(
-                        '+200 points',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Bienvenue chez Alkirtas!',
-                        style: TextStyle(color: Colors.white, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                // Scratch overlay
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: SizedBox(
-                    width: 240,
-                    height: 180,
-                    child: ClipPath(
-                      clipper: _ScratchClipper(reveal),
-                      child: Container(
-                        color: Colors.grey.shade400,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Iconsax.magicpen,
-                                  color: Colors.white, size: 36),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Grattez ici',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-      footerText: 'Disponible une seule fois — à la première connexion',
-    );
-  }
-}
-
-class _ScratchClipper extends CustomClipper<Path> {
-  final double reveal;
-  _ScratchClipper(this.reveal);
-
-  @override
-  Path getClip(Size size) {
-    // The clip keeps the overlay only outside the reveal area.
-    final outer = Path()..addRect(Offset.zero & size);
-    final cx = size.width * (0.2 + 0.6 * reveal);
-    final cy = size.height / 2;
-    final r = size.width * 0.6 * reveal;
-    final hole = Path()
-      ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
-    return Path.combine(PathOperation.difference, outer, hole);
-  }
-
-  @override
-  bool shouldReclip(covariant _ScratchClipper oldClipper) =>
-      oldClipper.reveal != reveal;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

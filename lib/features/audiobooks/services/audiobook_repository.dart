@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:alkirtas/utils/logging/logger.dart';
+import 'package:alkirtas/utils/network/cache_buster.dart';
 import '../models/audiobook_model.dart';
 
 /// Repository to fetch audiobooks from server
@@ -37,7 +38,7 @@ class AudiobookRepository {
 
     try {
       final response = await http.get(
-        Uri.parse(_audiobooksUrl),
+        CacheBuster.uri(_audiobooksUrl),
         headers: {'Accept-Charset': 'utf-8'},
       );
 

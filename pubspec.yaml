@@ -1,6 +1,6 @@
 name: alkirtas
 description: "A new Flutter project."
-version: 1.0.8+26
+version: 1.0.9+27
 
 environment:
   sdk: ^3.6.0
@@ -87,6 +87,7 @@ flutter:
     - lib/assets/logos/
     - lib/assets/logos/logo_light.png
     - lib/assets/images/banners/
+    - lib/assets/images/departments/
     - lib/assets/audio/
     - shorebird.yaml
 

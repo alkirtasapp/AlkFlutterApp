@@ -1,11 +1,12 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:ui';
 import 'package:alkirtas/features/authentication/screens/login/log_in_divider.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in_footer.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in_form.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in_header.dart';
 import 'package:alkirtas/features/authentication/screens/home/home.dart';
-import 'package:bcrypt/bcrypt.dart';
+import '../../services/customer_password_verifier.dart';
 //import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -18,7 +19,7 @@ import 'package:alkirtas/utils/constants/size.dart';
 import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io' show Platform;
+import 'dart:io' show SocketException;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:alkirtas/config/app_config.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
@@ -59,26 +60,31 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-       // Create the request with CORS-friendly headers for web platform
-       final request = http.Request(
-         'GET',
-         Uri.parse(
-           'https://www.alkirtas.com/api/customers?filter[email]=$email&display=[id,firstname,lastname,email,passwd]&output_format=JSON&ws_key=${AppConfig.prestashopApiKey}',
-         ),
-       );
+      // Create the request with CORS-friendly headers for web platform
+      final request = http.Request(
+        'GET',
+        Uri.https('www.alkirtas.com', '/api/customers', {
+          'filter[email]': email,
+          'display': '[id,firstname,lastname,email,passwd]',
+          'output_format': 'JSON',
+          'ws_key': AppConfig.prestashopApiKey,
+        }),
+      );
 
-       // Add headers to handle CORS issues on web platform
-       request.headers.addAll({
-         'Content-Type': 'application/json',
-         'Accept': 'application/json',
-         'User-Agent': 'Flutter-Web-App/1.0',
-         // Add Origin header for web platform
-         if (kIsWeb)
-           'Origin': 'https://www.alkirtas.com', // Match the API domain
-       });
+      // Add headers to handle CORS issues on web platform
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Flutter-Web-App/1.0',
+        // Add Origin header for web platform
+        if (kIsWeb)
+          'Origin': 'https://www.alkirtas.com', // Match the API domain
+      });
 
-       final streamedResponse = await request.send();
-       final response = await http.Response.fromStream(streamedResponse);
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 20));
+      final response = await http.Response.fromStream(streamedResponse)
+          .timeout(const Duration(seconds: 20));
 
       if (!mounted) return;
       setState(() {
@@ -86,16 +92,17 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = json.decode(utf8.decode(response.bodyBytes));
 
         if (data['customers'] != null &&
             data['customers'] is List &&
             data['customers'].isNotEmpty) {
           final customer = data['customers'][0];
 
-          if (customer['email'] == email) {
+          if (customer['email']?.toString().toLowerCase() ==
+              email.toLowerCase()) {
             final bool passwordMatch =
-                BCrypt.checkpw(password, customer['passwd']);
+                verifyCustomerPassword(password, customer['passwd']);
             if (passwordMatch) {
               // Convert the ID to string when storing
               UserData.email = customer['email'].toString();
@@ -103,15 +110,16 @@ class _LoginScreenState extends State<LoginScreen> {
               UserData.lastname = customer['lastname'].toString();
               UserData.id = customer['id'].toString();
               UserData.password = password;
-              OdooAccountProvider.savePassword(password);
+              await OdooAccountProvider.savePassword(password);
 
               // Restore phone from SharedPreferences (saved at signup, keyed by email)
               final phonePrefs = await SharedPreferences.getInstance();
-              UserData.phone =
-                  phonePrefs.getString('customer_phone_${email.toLowerCase()}') ?? '';
+              UserData.phone = phonePrefs
+                      .getString('customer_phone_${email.toLowerCase()}') ??
+                  '';
 
               // Pass the ID as integer to Firebase
-     //         await registerAppUser(customer['id'] as int);
+              //         await registerAppUser(customer['id'] as int);
 
               // Add a small delay to let the loading animation complete smoothly
               await Future.delayed(const Duration(milliseconds: 500));
@@ -124,7 +132,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 if (pending == 'Promos') {
                   Get.offAll(
-                    () => const NavigationMenu(selectedMenu: 2), // Boutique page
+                    () =>
+                        const NavigationMenu(selectedMenu: 2), // Boutique page
                     transition: Transition.fadeIn,
                     duration: const Duration(milliseconds: 400),
                   );
@@ -161,25 +170,45 @@ class _LoginScreenState extends State<LoginScreen> {
         showErrorDialog(context, 'Erreur de connexion.');
       }
     } catch (e) {
-       if (!mounted) return;
-       setState(() {
-         isLoading = false;
-       });
-       AlkLoggerHelper.error("Login failed", e);
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
+      AlkLoggerHelper.error("Login failed (${e.runtimeType})");
 
-       // Provide more specific error messages based on the error type
-       String errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
+      // Provide more specific error messages based on the error type
+      String errorMessage =
+          'Une erreur est survenue. Veuillez réessayer. (LOGIN_ERROR)';
 
-       if (e.toString().contains('XMLHttpRequest')) {
-         errorMessage = 'Erreur de connexion réseau. Vérifiez votre connexion internet ou essayez sur l\'application mobile.';
-       } else if (e.toString().contains('CORS')) {
-         errorMessage = 'Erreur CORS. Cette fonctionnalité nécessite l\'application mobile ou un serveur configuré.';
-       } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed to connect')) {
-         errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion internet.';
-       }
+      if (e is PasswordVerificationException) {
+        errorMessage = e.message;
+      } else if (e is FormatException) {
+        errorMessage =
+            'La réponse du serveur de connexion est invalide. Veuillez contacter le support. (LOGIN_FORMAT)';
+      } else if (e is TimeoutException) {
+        errorMessage =
+            'Le serveur met trop de temps à répondre. Veuillez réessayer. (LOGIN_TIMEOUT)';
+      } else if (e is SocketException || e is http.ClientException) {
+        errorMessage =
+            'Impossible de contacter le serveur. Vérifiez votre connexion internet. (LOGIN_NETWORK)';
+      } else if (e.toString().toLowerCase().contains('salt') ||
+          e.toString().toLowerCase().contains('hash')) {
+        errorMessage =
+            'Le format de votre mot de passe enregistré n’est pas pris en charge. Veuillez réinitialiser votre mot de passe. (LOGIN_PASSWORD_FORMAT)';
+      } else if (e.toString().contains('XMLHttpRequest')) {
+        errorMessage =
+            'Erreur de connexion réseau. Vérifiez votre connexion internet ou essayez sur l\'application mobile.';
+      } else if (e.toString().contains('CORS')) {
+        errorMessage =
+            'Erreur CORS. Cette fonctionnalité nécessite l\'application mobile ou un serveur configuré.';
+      } else if (e.toString().contains('Connection refused') ||
+          e.toString().contains('Failed to connect')) {
+        errorMessage =
+            'Impossible de contacter le serveur. Vérifiez votre connexion internet.';
+      }
 
-       showErrorDialog(context, errorMessage);
-     }
+      showErrorDialog(context, errorMessage);
+    }
   }
 
 //  Future<void> registerAppUser(int prestashopId) async {
@@ -194,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
 //        'timestamp': FieldValue.serverTimestamp(),
 //      });
 //    }
- // }
+  // }
 
   Future<void> _signInWithGoogle() async {
     if (!mounted) return;
@@ -408,18 +437,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 5,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                AlkColors.AppFirstColor
-                              ),
+                                  AlkColors.AppFirstColor),
                             ),
                           ),
                           const SizedBox(height: 24),
                           Text(
                             'Connexion en cours...',
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AlkColors.AppSecColor
-                            ),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AlkColors.AppSecColor),
                           ),
                           const SizedBox(height: 8),
                           Text(

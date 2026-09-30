@@ -26,6 +26,7 @@ import '../../../../features/shop/controllers/cart_provider.dart';
 import '../../../../utils/backendData/userData.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/coupon_provider.dart';
+import 'package:alkirtas/features/shop/widgets/coupons_sheet.dart';
 import '../../../../providers/loyalty_provider.dart';
 import '../../../../providers/odoo_account_provider.dart';
 import '../../../../features/authentication/services/google_sign_in_service.dart';
@@ -244,7 +245,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   AlkSettingMenuTile(
                       icon: Iconsax.bag_tick,
                       title: 'Historique des Commandes',
-                      subtitle: 'Accedez a vos paniers sauvegardes',
+                      subtitle: 'Vos commandes en ligne et en magasin',
                       onPressed: () {
                         Get.to(() => const CartHistoryScreen());
                       },),
@@ -252,12 +253,7 @@ class _SettingScreenState extends State<SettingScreen> {
                     icon: Iconsax.discount_shape,
                     title: 'Mes Coupons',
                     subtitle: 'Liste de tous les coupons de reduction',
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => CouponPopup(),
-                      );
-                    },
+                    onPressed: () => showCouponsSheet(context),
                   ),
                   AlkSettingMenuTile(
                     icon: Iconsax.notification_bing,
@@ -806,187 +802,6 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
           ),
         ],
       ),
-    );
-  }
-}
-
-
-class CouponPopup extends StatefulWidget {
-  const CouponPopup({super.key});
-
-  @override
-  _CouponPopupState createState() => _CouponPopupState();
-}
-
-class _CouponPopupState extends State<CouponPopup> {
-  final TextEditingController _controller = TextEditingController();
-  String? _error;
-  bool _isLoading = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final couponProvider = Provider.of<CouponProvider>(context);
-    return AlertDialog(
-      title: Text('Mes Coupons'),
-      content: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 450,
-            maxHeight: 500,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  labelText: 'Ajouter un code',
-                  errorText: _error,
-                ),
-              ),
-              SizedBox(height: 8),
-              _isLoading
-                  ? CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: () async {
-                        setState(() {
-                          _isLoading = true;
-                          _error = null;
-                        });
-                        final code = _controller.text.trim();
-                        if (code.isEmpty) {
-                          setState(() {
-                            _error = 'Veuillez entrer un code.';
-                            _isLoading = false;
-                          });
-                          return;
-                        }
-                        final success = await couponProvider.addCoupon(code);
-                        setState(() {
-                          _isLoading = false;
-                          _error = success ? null : 'Code invalide ou deja utilise.';
-                          if (success) _controller.clear();
-                        });
-                      },
-                      child: Text('Ajouter'),
-                    ),
-              Divider(),
-              Text('Coupons collectes :'),
-              SizedBox(
-                height: 280,
-                child: ListView.builder(
-                  itemCount: couponProvider.coupons.length,
-                  itemBuilder: (context, i) {
-                    final coupon = couponProvider.coupons[i];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.local_offer, color: Colors.orange, size: 32),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 4,
-                                      crossAxisAlignment: WrapCrossAlignment.center,
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.orange.shade100,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            coupon.code,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                              letterSpacing: 1.2,
-                                              color: Colors.orange.shade900,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        if (coupon.reductionPercent != null && coupon.reductionPercent! > 0)
-                                          Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.green.shade100,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              '-${coupon.reductionPercent!.toStringAsFixed(0)}%',
-                                              style: TextStyle(
-                                                color: Colors.green.shade800,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          )
-                                        else if (coupon.reductionAmount != null && coupon.reductionAmount! > 0)
-                                          Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.blue.shade100,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              '-${coupon.reductionAmount!.toStringAsFixed(2)} MAD',
-                                              style: TextStyle(
-                                                color: AlkColors.AppSecColor,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      coupon.name,
-                                      style: TextStyle(fontSize: 14, color: Colors.black87),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      'Expire le : ${coupon.expiryDate != null ? "${coupon.expiryDate.day.toString().padLeft(2, '0')}/${coupon.expiryDate.month.toString().padLeft(2, '0')}/${coupon.expiryDate.year}" : "Inconnue"}',
-                                      style: TextStyle(fontSize: 12, color: Colors.redAccent),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete, color: Colors.redAccent),
-                                onPressed: () {
-                                  couponProvider.removeCoupon(coupon);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Fermer'),
-        ),
-      ],
     );
   }
 }

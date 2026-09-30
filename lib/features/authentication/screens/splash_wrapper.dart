@@ -8,6 +8,7 @@ import 'package:alkirtas/api/banner_api.dart';
 import 'package:alkirtas/api/category_api.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
+import 'package:alkirtas/data/controllers/product_enriched_service.dart';
 
 class SplashWrapper extends StatefulWidget {
   const SplashWrapper({super.key});
@@ -35,6 +36,8 @@ class _SplashWrapperState extends State<SplashWrapper> {
       // Load sections and categories from server first (in parallel)
       final sectionsResult = getHomeSections();
       final categoriesResult = CategoryApi.fetchHomeCategories();
+      final homeSellingResult =
+          ProductEnrichedService.fetchHomeSellingProducts();
 
       final sections = await sectionsResult;
       await categoriesResult; // Just wait for it to cache
@@ -69,13 +72,33 @@ class _SplashWrapperState extends State<SplashWrapper> {
       // Wait only for priority categories
       await Future.wait(priorityPreloadTasks, eagerError: false);
 
-      // Prefetch banner images
+      // Prefetch banner and special selling-feed images before showing Home.
       final bannerUrls = await BannerApi.fetchBannerUrls();
-      await Future.wait(bannerUrls.map((url) => precacheImage(CachedNetworkImageProvider(url), context)));
+      final homeSellingProducts = await homeSellingResult;
+      final homeSellingImageUrls = homeSellingProducts
+          .map(ProductEnrichedService.buildProductFromEnriched)
+          .expand<String>(
+            (product) =>
+                (product['image_urls'] as List<String>?) ?? const <String>[],
+          )
+          .take(5)
+          .toList();
+      final preloadImageUrls = <String>{
+        ...bannerUrls,
+        ...homeSellingImageUrls,
+      };
+      await Future.wait(
+        preloadImageUrls.map(
+          (url) => precacheImage(CachedNetworkImageProvider(url), context),
+        ),
+      );
       SplashWrapper.preloadedBannerUrls = bannerUrls;
 
-      AlkLoggerHelper.info("App preload complete: ${priorityCategories.length} priority categories, ${bannerUrls.length} banners");
-
+      AlkLoggerHelper.info(
+        'App preload complete: ${priorityCategories.length} priority categories, '
+        '${homeSellingProducts.length} selling products, '
+        '${bannerUrls.length} banners',
+      );
       // Set app as ready after priority categories and banners are loaded
       if (mounted) {
         setState(() => isReady = true);

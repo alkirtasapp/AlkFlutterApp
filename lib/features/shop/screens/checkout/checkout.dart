@@ -20,6 +20,7 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:alkirtas/common/widgets/providers/product_provider.dart';
 import 'package:alkirtas/providers/coupon_provider.dart';
+import 'package:alkirtas/features/shop/widgets/coupons_sheet.dart';
 import 'package:alkirtas/config/app_config.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 import 'package:alkirtas/data/controllers/wallet_service.dart';
@@ -220,14 +221,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return sum + price * quantity;
     }) : 0.0;
 
-    double discountAmount = 0.0;
-    if (selectedCoupon != null) {
-      if (selectedCoupon.reductionPercent != null && selectedCoupon.reductionPercent! > 0) {
-        discountAmount = subtotal * (selectedCoupon.reductionPercent! / 100);
-      } else if (selectedCoupon.reductionAmount != null && selectedCoupon.reductionAmount! > 0) {
-        discountAmount = selectedCoupon.reductionAmount!;
-      }
-    }
+    // Capped at the subtotal so a fixed-amount coupon can't push it negative.
+    final double discountAmount = selectedCoupon?.discountOn(subtotal) ?? 0.0;
     double subtotalAfterDiscount = subtotal - discountAmount;
     // Cap the wallet amount at what's actually due so the customer can never
     // make the order negative if they edit the cart after applying.
@@ -446,32 +441,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
 
                   // Coupon selection section
-                  if (couponProvider.coupons.isNotEmpty)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Code de réduction', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        DropdownButton<Coupon>(
-                          value: selectedCoupon,
-                          hint: Text('Sélectionner un coupon'),
-                          isExpanded: true,
-                          items: couponProvider.coupons.map((coupon) {
-                            return DropdownMenuItem<Coupon>(
-                              value: coupon,
-                              child: Text('${coupon.code} - ${coupon.name}'),
-                            );
-                          }).toList(),
-                          onChanged: (coupon) {
-                            couponProvider.selectCoupon(coupon);
-                          },
-                        ),
-                        if (selectedCoupon != null)
-                          TextButton(
-                            onPressed: () => couponProvider.selectCoupon(null),
-                            child: Text('Retirer le coupon'),
-                          ),
-                      ],
-                    ),
+                  CheckoutCouponBlock(subtotal: subtotal),
                   // Price breakdown (shown when coupon OR wallet is applied)
                   if (selectedCoupon != null || walletAmount > 0)
                     Card(

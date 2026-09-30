@@ -1,0 +1,25 @@
+{
+  "alkirtas school": {
+    "layout": "products", "image": "lib/assets/images/departments/school.png",
+    "headline": "Prêts pour de nouvelles aventures", "backgroundColor": "#EAD5BD"
+  },
+  "alkirtas fun": {
+    "layout": "discovery", "headline": "Place aux bons moments",
+    "tabs": {
+      "676": "lib/assets/images/departments/beach.png",
+      "606": "lib/assets/images/departments/outdoor.png"
+    }
+  },
+  "alkirtas books": {
+    "layout": "shelf", "image": "lib/assets/images/departments/books.png",
+    "headline": "Votre prochaine belle histoire", "backgroundColor": "#E4D7C7"
+  },
+  "alkirtas office": {
+    "layout": "campaign", "image": "lib/assets/images/departments/office.png",
+    "headline": "Un bureau qui inspire", "backgroundColor": "#E8DED2"
+  },
+  "alkirtas gifts": {
+    "layout": "campaign", "image": "lib/assets/images/departments/gifts.png",
+    "headline": "Le plaisir de faire plaisir", "backgroundColor": "#EBCDBA"
+  }
+}

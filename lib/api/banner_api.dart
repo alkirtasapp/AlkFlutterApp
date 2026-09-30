@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:alkirtas/utils/network/cache_buster.dart';
 
 class BannerApi {
   static const String _boxName = 'bannerBox';
@@ -12,7 +13,7 @@ class BannerApi {
     var box = await Hive.openBox(_boxName);
 
     try {
-      final response = await http.get(Uri.parse('https://alkirtas.com/banners/banners.json'));
+      final response = await http.get(CacheBuster.uri('https://alkirtas.com/banners/banners.json'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         final urls = data.cast<String>();

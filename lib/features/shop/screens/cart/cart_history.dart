@@ -284,6 +284,9 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
     final orderState = order['orderState']?.toString() ?? 'Payé';
     final prestashopOrderRef = order['prestashopOrderRef']?.toString() ?? '';
     final posOrderName = order['posOrderName']?.toString() ?? '';
+    final isStoreOrder = order['isStoreOrder'] as bool? ?? false;
+    final storeName = order['storeName']?.toString() ?? '';
+    final paymentMethod = order['paymentMethod']?.toString() ?? '';
 
     showModalBottomSheet(
       context: context,
@@ -306,7 +309,10 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
             posOrderName: isWebsiteOrder ? prestashopOrderRef : posOrderName,
             hasModifications: hasModifications,
             isWebsiteOrder: isWebsiteOrder,
+            isStoreOrder: isStoreOrder,
             orderState: orderState,
+            storeName: storeName,
+            paymentMethod: paymentMethod,
           );
         },
       ),
@@ -323,16 +329,19 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
     String posOrderName = '',
     bool hasModifications = false,
     bool isWebsiteOrder = false,
+    bool isStoreOrder = false,
     String orderState = 'Payé',
+    String storeName = '',
+    String paymentMethod = '',
   }) {
     // Get state color based on order state
     Color stateColor = Colors.green[700]!;
     Color stateBgColor = Colors.green[100]!;
     IconData stateIcon = Icons.check_circle;
 
-    if (isWebsiteOrder) {
+    if (isWebsiteOrder || isStoreOrder) {
       final lowerState = orderState.toLowerCase();
-      if (lowerState.contains('annul') || lowerState.contains('cancel')) {
+      if (lowerState.contains('annul') || lowerState.contains('cancel') || lowerState.contains('rembours')) {
         stateColor = Colors.red[700]!;
         stateBgColor = Colors.red[100]!;
         stateIcon = Icons.cancel;
@@ -378,7 +387,11 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                       children: [
                         Flexible(
                           child: Text(
-                            isWebsiteOrder ? 'Détails de la Commande' : 'Détails du Panier',
+                            isWebsiteOrder
+                                ? 'Détails de la Commande'
+                                : isStoreOrder
+                                    ? 'Achat en Magasin'
+                                    : 'Détails du Panier',
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -451,6 +464,41 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                             color: Colors.grey[600],
                           ),
                     ),
+                    if (storeName.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.store, size: 16, color: Colors.teal[700]),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              storeName,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.teal[700],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (paymentMethod.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.payments_outlined, size: 16, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              paymentMethod,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -766,7 +814,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
             Icon(Icons.history, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'Aucun panier payé',
+              'Aucune commande',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -775,7 +823,7 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 48),
               child: Text(
-                'Vos paniers payés en magasin apparaîtront ici',
+                'Vos commandes en ligne et vos achats en magasin apparaîtront ici',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[500],
                     ),
@@ -802,6 +850,8 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
           final itemCount = cart['itemCount'] ?? 0;
           final hasModifications = cart['hasModifications'] as bool? ?? false;
           final isWebsiteOrder = cart['isWebsiteOrder'] as bool? ?? false;
+          final isStoreOrder = cart['isStoreOrder'] as bool? ?? false;
+          final storeName = cart['storeName']?.toString() ?? '';
           final orderState = cart['orderState']?.toString() ?? 'Payé';
 
           // Determine order name to display
@@ -812,10 +862,10 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
           Color stateBgColor = Colors.green[100]!;
           IconData stateIcon = Icons.check_circle;
 
-          if (isWebsiteOrder) {
+          if (isWebsiteOrder || isStoreOrder) {
             // Dynamic color based on order state
             final lowerState = orderState.toLowerCase();
-            if (lowerState.contains('annul') || lowerState.contains('cancel')) {
+            if (lowerState.contains('annul') || lowerState.contains('cancel') || lowerState.contains('rembours')) {
               stateColor = Colors.red[700]!;
               stateBgColor = Colors.red[100]!;
               stateIcon = Icons.cancel;
@@ -951,6 +1001,14 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                                       color: Colors.grey[600],
                                     ),
                               ),
+                              if (storeName.isNotEmpty)
+                                Text(
+                                  storeName,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Colors.teal[700],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
                               const SizedBox(height: 8),
                               // Items and Total
                               Row(
@@ -974,8 +1032,10 @@ class _CartHistoryScreenState extends State<CartHistoryScreen> {
                             ],
                           ),
                         ),
-                        // QR button (only for POS orders)
-                        if (!isWebsiteOrder)
+                        // QR button (only for app carts paid at POS)
+                        if (isStoreOrder)
+                          Icon(Icons.storefront_outlined, color: Colors.teal[400], size: 28)
+                        else if (!isWebsiteOrder)
                           IconButton(
                             onPressed: () => _showCartQR(context, cart),
                             icon: Icon(Icons.qr_code, color: AlkColors.AppSecColor, size: 28),

@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../../common/widgets/appbar/appbar.dart';
 import '../../../../../common/widgets/custom_shapes/curved_edges/curved_edges_widgets.dart';
 import '../../../../../common/widgets/images/AlkRoundedImages.dart';
+import '../../../../../common/widgets/products/low_stock_ribbon.dart';
 import '../../../../../utils/constants/colors.dart';
 import '../../../../../utils/constants/size.dart';
 
@@ -11,11 +12,18 @@ class AlkProductImageSlider extends StatefulWidget {
   final String productName;
   final List<Widget>? actions;
 
+  /// Supplied so the low-stock ribbon can be resolved for this product.
+  /// Omit both and no ribbon is drawn.
+  final String? productId;
+  final String? productStock;
+
   const AlkProductImageSlider({
     super.key,
     required this.productImages,
     required this.productName,
     this.actions,
+    this.productId,
+    this.productStock,
   });
 
   @override
@@ -122,6 +130,14 @@ class _AlkProductImageSliderState extends State<AlkProductImageSlider> {
                     ),
                   ),
 
+
+                  // --- Low-stock ribbon (rules come from the back office) ---
+                  if (LowStockRibbon.enabled && widget.productId != null)
+                    LowStockRibbon(
+                      productId: widget.productId!,
+                      stock: widget.productStock,
+                      variant: LowStockRibbonVariant.cover,
+                    ),
 
                   // Thumbnail Slider
                   if (widget.productImages.length > 1) // Only show if there are multiple images

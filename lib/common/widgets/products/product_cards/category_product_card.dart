@@ -14,6 +14,7 @@ import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/size.dart';
 import '../../../styles/shadows.dart';
 import '../../roundedContainer.dart';
+import '../low_stock_ribbon.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class CategoryProductCard extends StatelessWidget {
@@ -177,6 +178,12 @@ class CategoryProductCard extends StatelessWidget {
                                 .apply(color: AlkColors.white)),
                       ),
                     ),
+                  // --- Low-stock ribbon (rules come from the back office) ---
+                  if (LowStockRibbon.enabled)
+                  LowStockRibbon(
+                    productId: id,
+                    stock: productStock,
+                  ),
                 ],
               ),
             ),

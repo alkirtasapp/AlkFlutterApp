@@ -590,6 +590,7 @@ class CartProvider with ChangeNotifier {
 
       List<Map<String, dynamic>> orders = [];
       for (var order in ordersData) {
+        final isStoreOrder = order['is_store_order'] == true;
         // Parse items from the order
         final items = (order['items'] as List? ?? []).map((item) {
           return {
@@ -617,7 +618,8 @@ class CartProvider with ChangeNotifier {
           'orderId': order['order_id']?.toString() ?? '',
           'cartId': order['cart_id']?.toString() ?? '',
           'sessionId': order['session_id']?.toString() ?? '',  // For matching with active cart
-          'posOrderName': order['pos_order_name']?.toString() ?? '',
+          // Store orders: pos_order_name is "Store · Name" for old app versions
+          'posOrderName': (isStoreOrder ? order['odoo_order_name'] : order['pos_order_name'])?.toString() ?? '',
           'customerName': order['customer_name']?.toString() ?? '',
           'posTotal': (order['total_amount'] is num)
               ? (order['total_amount'] as num).toDouble()
@@ -628,6 +630,9 @@ class CartProvider with ChangeNotifier {
           'hasModifications': order['has_modifications'] ?? false,
           'items': items, // Items are included in the response
           'isWebsiteOrder': false, // POS order flag
+          'isStoreOrder': isStoreOrder, // Paid in store without the app (from Odoo)
+          'storeName': order['store_name']?.toString() ?? '',
+          'paymentMethod': (order['payment_methods'] as List? ?? []).join(', '),
           'orderState': 'Payé', // POS orders are always paid
         });
       }
@@ -643,7 +648,7 @@ class CartProvider with ChangeNotifier {
         return dateB.compareTo(dateA); // Descending order
       });
 
-      AlkLoggerHelper.info('Total orders: ${orders.length} (POS: ${orders.where((o) => o['isWebsiteOrder'] != true).length}, Website: ${prestashopOrders.length})');
+      AlkLoggerHelper.info('Total orders: ${orders.length} (POS: ${ordersData.length}, Website: ${prestashopOrders.length})');
 
       return orders;
     } catch (e) {

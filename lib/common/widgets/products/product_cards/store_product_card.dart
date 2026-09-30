@@ -13,6 +13,7 @@ import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/size.dart';
 import '../../../styles/shadows.dart';
 import '../../roundedContainer.dart';
+import '../low_stock_ribbon.dart';
 
 class ProductCardStore extends StatelessWidget {
   final int categoryId;
@@ -165,6 +166,12 @@ class ProductCardStore extends StatelessWidget {
                         ),
                       ),
                     ),
+                  // --- Low-stock ribbon (rules come from the back office) ---
+                  if (LowStockRibbon.enabled)
+                  LowStockRibbon(
+                    productId: id,
+                    stock: productStock,
+                  ),
                 ],
               ),
             ),

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
+import 'package:alkirtas/utils/network/cache_buster.dart';
 
 class AppConfigProvider extends ChangeNotifier {
   static const String _configUrl = 'https://www.alkirtas.com/banners/app_config.json';
@@ -64,7 +65,7 @@ class AppConfigProvider extends ChangeNotifier {
 
   Future<void> _fetchFromServer() async {
     try {
-      final response = await http.get(Uri.parse(_configUrl)).timeout(
+      final response = await http.get(CacheBuster.uri(_configUrl)).timeout(
         const Duration(seconds: 10),
       );
 

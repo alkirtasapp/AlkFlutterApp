@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
 import 'package:alkirtas/models/home_section.dart';
+import 'package:alkirtas/utils/network/cache_buster.dart';
 
 class SectionsApi {
   static const String _boxName = 'sectionsBox';
@@ -15,7 +16,7 @@ class SectionsApi {
 
     try {
       final response = await http.get(
-        Uri.parse('https://alkirtas.com/banners/sections.json'),
+        CacheBuster.uri('https://alkirtas.com/banners/sections.json'),
       );
 
       if (response.statusCode == 200) {
