@@ -56,6 +56,14 @@ workflows:
         script: |
           mkdir -p ~/.appstoreconnect/private_keys
           echo $APP_STORE_CONNECT_PRIVATE_KEY | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_PRRR468QZB.p8
-          xcrun altool --upload-app --type ios -f build/ios/ipa/*.ipa --apiKey PRRR468QZB --apiIssuer 00e4e96f-1999-46c8-9344-4c7ee3518aa0
+          # Xcode 26's altool can't resolve the app from the bundle ID alone
+          # ("Cannot determine the Apple ID from Bundle ID"), so pass it explicitly.
+          # Keep --bundle-version / --bundle-short-version-string in sync with the build step.
+          xcrun altool --upload-package build/ios/ipa/*.ipa --type ios \
+            --apple-id 6762003420 \
+            --bundle-id com.alkirtas.alkirtas \
+            --bundle-version 24 \
+            --bundle-short-version-string 1.1.1 \
+            --apiKey PRRR468QZB --apiIssuer 00e4e96f-1999-46c8-9344-4c7ee3518aa0
     artifacts:
       - build/ios/ipa/*.ipa
