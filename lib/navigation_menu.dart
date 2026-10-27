@@ -18,6 +18,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:alkirtas/services/app_update_service.dart';
 import 'package:alkirtas/providers/wishlist_provider.dart';
 import 'package:alkirtas/services/push_notification_service.dart';
+import 'package:alkirtas/features/audiobooks/screens/audiobook_library_screen.dart';
+import 'package:alkirtas/features/personalization/screens/settings/wishlist_screen.dart';
+import 'package:alkirtas/features/shop/screens/cart/cart_history.dart';
+import 'package:alkirtas/features/shop/widgets/coupons_sheet.dart';
 import 'package:alkirtas/data/controllers/product_enriched_service.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
 import 'package:alkirtas/features/shop/services/delivered_order_review_prompt_service.dart';
@@ -71,12 +75,9 @@ class _NavigationMenuState extends State<NavigationMenu>
     // Initialize GlobalFabService
     Get.put(GlobalFabService());
 
-    // Set up notification tap → navigate to product
-    WishlistProvider.onNotificationTap = (productId) => _navigateToProduct(productId);
-    PushNotificationService.onTap = (data) {
-      final productId = data['product_id']?.toString();
-      if (productId != null && productId.isNotEmpty) _navigateToProduct(productId);
-    };
+    // Set up notification taps → product / category / screen
+    WishlistProvider.onNotificationTap = _handleLocalPayload;
+    PushNotificationService.onTap = _openPushTarget;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Check price drops + stock comebacks silently on every app open
@@ -91,7 +92,7 @@ class _NavigationMenuState extends State<NavigationMenu>
       if (launchDetails?.didNotificationLaunchApp == true) {
         final payload = launchDetails?.notificationResponse?.payload;
         if (payload != null && payload.isNotEmpty) {
-          _navigateToProduct(payload);
+          _handleLocalPayload(payload);
         }
       }
 
@@ -108,6 +109,61 @@ class _NavigationMenuState extends State<NavigationMenu>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  /// Local notification payloads are either a product id (wishlist alerts)
+  /// or push data mirrored while the app was in the foreground.
+  void _handleLocalPayload(String payload) {
+    final data = PushNotificationService.decodePayload(payload);
+    if (data != null) {
+      _openPushTarget(data);
+    } else {
+      _navigateToProduct(payload);
+    }
+  }
+
+  /// Opens what a push notification points to. Keys are set by the
+  /// alkirtas_push PrestaShop module: product_id, category_id(+name), screen.
+  void _openPushTarget(Map<String, dynamic> data) {
+    final productId = data['product_id']?.toString();
+    if (productId != null && productId.isNotEmpty) {
+      _navigateToProduct(productId);
+      return;
+    }
+
+    final nav = Get.find<NavigationController>();
+    final categoryId = int.tryParse(data['category_id']?.toString() ?? '') ?? 0;
+    if (categoryId > 0) {
+      nav.navigateToStoreDrawer(
+        categoryId: categoryId,
+        categoryName: data['category_name']?.toString(),
+      );
+      return;
+    }
+
+    switch (data['screen']) {
+      case 'audiobooks':
+        Get.to(() => const AudiobookLibraryScreen());
+        break;
+      case 'wishlist':
+        Get.to(() => const WishlistScreen());
+        break;
+      case 'coupons':
+        showCouponsSheet(context);
+        break;
+      case 'loyalty':
+        nav.navigateToSettings();
+        break;
+      case 'cart':
+        nav.navigateToCart();
+        break;
+      case 'orders':
+        Get.to(() => const CartHistoryScreen());
+        break;
+      case 'categories':
+        nav.navigateToMenu();
+        break;
+    }
   }
 
   Future<void> _navigateToProduct(String productId) async {

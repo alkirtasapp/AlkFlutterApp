@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -152,9 +153,23 @@ class PushNotificationService {
   /// Whether this device joined the [broadcastTopic] topic.
   static bool subscribed = false;
 
+  static const String _payloadPrefix = 'push:';
+
+  /// Returns the push data stored in a local notification payload, or null
+  /// when the payload is something else (a wishlist product id).
+  static Map<String, dynamic>? decodePayload(String payload) {
+    if (!payload.startsWith(_payloadPrefix)) return null;
+    try {
+      return Map<String, dynamic>.from(
+          jsonDecode(payload.substring(_payloadPrefix.length)) as Map);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Android doesn't display pushes while the app is in the foreground, so
-  /// mirror them as a local notification. The payload is the product id,
-  /// which WishlistProvider's tap handler already knows how to open.
+  /// mirror them as a local notification carrying the push data; taps come
+  /// back through WishlistProvider's handler and [decodePayload].
   static Future<void> _showForeground(RemoteMessage message) async {
     if (!Platform.isAndroid) return;
     final notification = message.notification;
@@ -173,7 +188,9 @@ class PushNotificationService {
           icon: '@drawable/ic_notification',
         ),
       ),
-      payload: message.data['product_id']?.toString(),
+      payload: message.data.isEmpty
+          ? null
+          : _payloadPrefix + jsonEncode(message.data),
     );
   }
 }

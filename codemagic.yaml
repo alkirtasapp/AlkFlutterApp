@@ -19,7 +19,7 @@ workflows:
           security import /tmp/certificate.p12 -k build.keychain -P $CM_CERTIFICATE_PASSWORD -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/de540f8a-6cf8-4f9c-a906-d63f0b6b4720.mobileprovision
+          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/3f99dff2-5caf-44f8-86c5-6141db018989.mobileprovision
       - name: Get Flutter dependencies
         script: flutter pub get
       - name: Install CocoaPods
@@ -27,7 +27,7 @@ workflows:
       - name: Build and Archive IPA
         script: |
           flutter build ios --release \
-            --build-number=24 \
+            --build-number=25 \
             --build-name=1.1.1
           cat > /tmp/ExportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -62,7 +62,7 @@ workflows:
           xcrun altool --upload-package build/ios/ipa/*.ipa --type ios \
             --apple-id 6762003420 \
             --bundle-id com.alkirtas.alkirtas \
-            --bundle-version 24 \
+            --bundle-version 25 \
             --bundle-short-version-string 1.1.1 \
             --apiKey PRRR468QZB --apiIssuer 00e4e96f-1999-46c8-9344-4c7ee3518aa0
     artifacts:
