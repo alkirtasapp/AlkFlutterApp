@@ -117,6 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
               UserData.phone = phonePrefs
                       .getString('customer_phone_${email.toLowerCase()}') ??
                   '';
+              await UserData.saveSession();
 
               // Add a small delay to let the loading animation complete smoothly
               await Future.delayed(const Duration(milliseconds: 500));

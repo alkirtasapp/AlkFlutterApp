@@ -110,7 +110,7 @@ class _SettingScreenState extends State<SettingScreen> {
 
       // 3. Clear SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('isLoggedIn');
+      await UserData.clearSession();
       await prefs.remove('pendingNavigation');
       await prefs.remove('saved_email');
       await prefs.remove('saved_password');

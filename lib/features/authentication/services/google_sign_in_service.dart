@@ -85,6 +85,11 @@ class GoogleSignInService {
               .getString('customer_phone_${UserData.email.toLowerCase()}') ??
           '';
 
+      // Drop any classic-login password left from a previous account, then
+      // persist so the session survives the app being killed.
+      await prefs.remove('current_user_password');
+      await UserData.saveSession();
+
       AlkLoggerHelper.info(
           '[GoogleSignIn] Signed in: customer_id=${UserData.id}, email=${UserData.email}');
 

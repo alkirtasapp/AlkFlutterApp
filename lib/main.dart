@@ -19,6 +19,7 @@ import 'package:alkirtas/providers/app_config_provider.dart';
 import 'package:alkirtas/providers/wishlist_provider.dart';
 import 'package:alkirtas/services/push_notification_service.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
 
 Future<void> main() async {
   // Wrap everything in error handling to prevent white screens
@@ -46,6 +47,9 @@ Future<void> main() async {
     await bannerBox.clear();
     var sectionsBox = await Hive.openBox('sectionsBox');
     await sectionsBox.clear();
+
+    // Restore the logged-in customer so killing the app doesn't log them out
+    await UserData.restoreSession();
 
     // Initialize CartProvider and load saved cart (cart persists across restarts)
     final cartProvider = CartProvider();
