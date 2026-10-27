@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -102,6 +103,13 @@ class PushNotificationService {
     final messaging = FirebaseMessaging.instance;
 
     try {
+      // iOS: also goes through FCM so it registers for remote notifications.
+      if (Platform.isIOS) {
+        await messaging
+            .requestPermission(alert: true, badge: true, sound: true)
+            .timeout(const Duration(seconds: 30));
+      }
+
       // iOS: show pushes as banners while the app is open.
       await messaging.setForegroundNotificationPresentationOptions(
         alert: true,
@@ -120,34 +128,77 @@ class PushNotificationService {
 
       FirebaseMessaging.onMessage.listen(_showForeground);
       FirebaseMessaging.onMessageOpenedApp.listen((m) => onTap?.call(m.data));
-
-      final initial = await messaging.getInitialMessage();
-      if (initial != null) onTap?.call(initial.data);
-
-      await _subscribe(messaging);
+      // A new FCM token (e.g. APNs arriving late) is a good moment to retry.
+      messaging.onTokenRefresh.listen((_) => ensureSubscribed());
     } catch (e) {
       lastError = 'FCM: $e';
       AlkLoggerHelper.error('Push notification setup failed', e);
     }
+
+    // Subscribe independently so a slow step above can't block it.
+    ensureSubscribed();
+
+    try {
+      final initial = await messaging.getInitialMessage();
+      if (initial != null) onTap?.call(initial.data);
+    } catch (e) {
+      AlkLoggerHelper.error('getInitialMessage failed', e);
+    }
   }
 
-  static Future<void> _subscribe(FirebaseMessaging messaging) async {
-    // iOS needs the APNs token before any FCM call; it can lag on first launch.
-    if (Platform.isIOS) {
-      String? apns;
-      for (var i = 0; i < 5 && apns == null; i++) {
-        apns = await messaging.getAPNSToken();
-        if (apns == null) await Future.delayed(const Duration(seconds: 2));
+  static Future<void>? _subscribing;
+
+  /// Joins the [broadcastTopic] topic if not done yet. Safe to call often;
+  /// concurrent calls share the same attempt.
+  static Future<void> ensureSubscribed() {
+    if (!_ready || subscribed) return Future.value();
+    return _subscribing ??= _subscribe().whenComplete(() => _subscribing = null);
+  }
+
+  /// Each step has a timeout: the iOS SDK can wait forever on a missing
+  /// APNs/FCM token, which used to leave the status red with no error.
+  static Future<void> _subscribe() async {
+    final messaging = FirebaseMessaging.instance;
+    try {
+      // iOS needs the APNs token before any FCM call; it can lag on launch.
+      if (Platform.isIOS) {
+        lastError = 'En attente du jeton APNs…';
+        String? apns;
+        for (var i = 0; i < 10 && apns == null; i++) {
+          apns = await messaging
+              .getAPNSToken()
+              .timeout(const Duration(seconds: 5), onTimeout: () => null);
+          if (apns == null) await Future.delayed(const Duration(seconds: 2));
+        }
+        if (apns == null) {
+          lastError = "Jeton APNs indisponible (Apple n'a pas répondu)";
+          AlkLoggerHelper.info('APNs token unavailable, skipping topic subscribe');
+          return;
+        }
       }
-      if (apns == null) {
-        lastError = 'Jeton APNs indisponible';
-        AlkLoggerHelper.info('APNs token unavailable, skipping topic subscribe');
+
+      lastError = 'En attente du jeton Firebase…';
+      final token =
+          await messaging.getToken().timeout(const Duration(seconds: 20));
+      if (token == null) {
+        lastError = 'Jeton Firebase vide';
         return;
       }
+      AlkLoggerHelper.info('FCM token: $token');
+
+      lastError = 'Inscription au sujet "$broadcastTopic"…';
+      await messaging
+          .subscribeToTopic(broadcastTopic)
+          .timeout(const Duration(seconds: 20));
+      subscribed = true;
+      lastError = null;
+    } on TimeoutException {
+      lastError = '$lastError (délai dépassé)';
+      AlkLoggerHelper.info('Push subscribe timed out: $lastError');
+    } catch (e) {
+      lastError = 'FCM: $e';
+      AlkLoggerHelper.error('Push topic subscribe failed', e);
     }
-    await messaging.subscribeToTopic(broadcastTopic);
-    subscribed = true;
-    AlkLoggerHelper.info('FCM token: ${await messaging.getToken()}');
   }
 
   /// Whether this device joined the [broadcastTopic] topic.

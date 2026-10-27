@@ -227,6 +227,16 @@ class _SettingScreenState extends State<SettingScreen> {
               },
               child: const Text('Ouvrir les réglages'),
             ),
+          if (PushNotificationService.isFirebaseReady &&
+              !PushNotificationService.subscribed)
+            TextButton(
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                await PushNotificationService.ensureSubscribed();
+                if (context.mounted) _showNotificationStatus(context);
+              },
+              child: const Text('Réessayer'),
+            ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('OK'),

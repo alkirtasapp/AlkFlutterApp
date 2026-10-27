@@ -27,7 +27,7 @@ workflows:
       - name: Build and Archive IPA
         script: |
           flutter build ios --release \
-            --build-number=25 \
+            --build-number=26 \
             --build-name=1.1.2
           cat > /tmp/ExportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -62,7 +62,7 @@ workflows:
           xcrun altool --upload-package build/ios/ipa/*.ipa --type ios \
             --apple-id 6762003420 \
             --bundle-id com.alkirtas.alkirtas \
-            --bundle-version 25 \
+            --bundle-version 26 \
             --bundle-short-version-string 1.1.2 \
             --apiKey PRRR468QZB --apiIssuer 00e4e96f-1999-46c8-9344-4c7ee3518aa0
     artifacts:
