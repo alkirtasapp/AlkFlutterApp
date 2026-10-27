@@ -28,7 +28,7 @@ workflows:
         script: |
           flutter build ios --release \
             --build-number=25 \
-            --build-name=1.1.1
+            --build-name=1.1.2
           cat > /tmp/ExportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -63,7 +63,7 @@ workflows:
             --apple-id 6762003420 \
             --bundle-id com.alkirtas.alkirtas \
             --bundle-version 25 \
-            --bundle-short-version-string 1.1.1 \
+            --bundle-short-version-string 1.1.2 \
             --apiKey PRRR468QZB --apiIssuer 00e4e96f-1999-46c8-9344-4c7ee3518aa0
     artifacts:
       - build/ios/ipa/*.ipa
