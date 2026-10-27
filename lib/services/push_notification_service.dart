@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alkirtas/config/firebase_options.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 
@@ -146,6 +147,17 @@ class PushNotificationService {
     }
   }
 
+  /// What iOS answered to the push registration, recorded by AppDelegate.
+  static Future<String> _apnsResult() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      return prefs.getString('apns_result') ?? 'aucune réponse';
+    } catch (_) {
+      return 'inconnu';
+    }
+  }
+
   static Future<void>? _subscribing;
 
   /// Joins the [broadcastTopic] topic if not done yet. Safe to call often;
@@ -171,7 +183,7 @@ class PushNotificationService {
           if (apns == null) await Future.delayed(const Duration(seconds: 2));
         }
         if (apns == null) {
-          lastError = "Jeton APNs indisponible (Apple n'a pas répondu)";
+          lastError = 'Jeton APNs indisponible — Apple: ${await _apnsResult()}';
           AlkLoggerHelper.info('APNs token unavailable, skipping topic subscribe');
           return;
         }
