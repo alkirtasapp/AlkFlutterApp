@@ -118,9 +118,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       .getString('customer_phone_${email.toLowerCase()}') ??
                   '';
 
-              // Pass the ID as integer to Firebase
-              //         await registerAppUser(customer['id'] as int);
-
               // Add a small delay to let the loading animation complete smoothly
               await Future.delayed(const Duration(milliseconds: 500));
 
@@ -210,20 +207,6 @@ class _LoginScreenState extends State<LoginScreen> {
       showErrorDialog(context, errorMessage);
     }
   }
-
-//  Future<void> registerAppUser(int prestashopId) async {
-//    final usersRef = FirebaseFirestore.instance.collection('app_users');
-//
-//    final existingUser =
-//        await usersRef.where('prestashop_id', isEqualTo: prestashopId).get();
-//
-//    if (existingUser.docs.isEmpty) {
-//      await usersRef.add({
-//        'prestashop_id': prestashopId,
-//        'timestamp': FieldValue.serverTimestamp(),
-//      });
-//    }
-  // }
 
   Future<void> _signInWithGoogle() async {
     if (!mounted) return;

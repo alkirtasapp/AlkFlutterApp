@@ -17,6 +17,7 @@ import 'package:alkirtas/utils/helpers/helper_functions.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:alkirtas/services/app_update_service.dart';
 import 'package:alkirtas/providers/wishlist_provider.dart';
+import 'package:alkirtas/services/push_notification_service.dart';
 import 'package:alkirtas/data/controllers/product_enriched_service.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
 import 'package:alkirtas/features/shop/services/delivered_order_review_prompt_service.dart';
@@ -72,10 +73,17 @@ class _NavigationMenuState extends State<NavigationMenu>
 
     // Set up notification tap → navigate to product
     WishlistProvider.onNotificationTap = (productId) => _navigateToProduct(productId);
+    PushNotificationService.onTap = (data) {
+      final productId = data['product_id']?.toString();
+      if (productId != null && productId.isNotEmpty) _navigateToProduct(productId);
+    };
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Check price drops + stock comebacks silently on every app open
       Provider.of<WishlistProvider>(context, listen: false).checkUpdates();
+
+      // Ask for notification permission + subscribe to push broadcasts
+      PushNotificationService.start();
 
       // Handle tap when app was fully terminated
       final launchDetails = await FlutterLocalNotificationsPlugin()

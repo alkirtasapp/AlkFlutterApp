@@ -11,13 +11,6 @@ class AppConfig {
   // verifiable by the PrestaShop alkirtas_google_login module.
   static String get googleWebClientId => dotenv.env['GOOGLE_WEB_CLIENT_ID'] ?? '';
 
-  // Firebase Configuration
-  static String get firebaseApiKey => dotenv.env['FIREBASE_API_KEY'] ?? '';
-  static String get firebaseAppId => dotenv.env['FIREBASE_APP_ID'] ?? '';
-  static String get firebaseProjectId => dotenv.env['FIREBASE_PROJECT_ID'] ?? '';
-  static String get firebaseMessagingSenderId => dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '';
-  static String get firebaseStorageBucket => dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? '';
-
   /// Helper to build PrestaShop API URLs with the API key
   static String prestashopUrl(String endpoint, {Map<String, String>? params}) {
     final baseUrl = prestashopBaseUrl;
