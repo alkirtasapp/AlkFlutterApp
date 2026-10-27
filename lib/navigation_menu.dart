@@ -18,6 +18,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:alkirtas/services/app_update_service.dart';
 import 'package:alkirtas/providers/wishlist_provider.dart';
 import 'package:alkirtas/services/push_notification_service.dart';
+import 'package:alkirtas/services/notification_inbox_service.dart';
 import 'package:alkirtas/features/audiobooks/screens/audiobook_library_screen.dart';
 import 'package:alkirtas/features/personalization/screens/settings/wishlist_screen.dart';
 import 'package:alkirtas/features/shop/screens/cart/cart_history.dart';
@@ -85,6 +86,7 @@ class _NavigationMenuState extends State<NavigationMenu>
 
       // Ask for notification permission + subscribe to push broadcasts
       PushNotificationService.start();
+      NotificationInboxService.refresh();
 
       // Handle tap when app was fully terminated
       final launchDetails = await FlutterLocalNotificationsPlugin()

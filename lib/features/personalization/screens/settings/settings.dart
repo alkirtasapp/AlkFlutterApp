@@ -17,8 +17,7 @@ import 'package:alkirtas/features/shop/screens/cart/cart_history.dart';
 import 'package:alkirtas/utils/constants/colors.dart';
 import 'package:alkirtas/utils/constants/size.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:alkirtas/services/push_notification_service.dart';
+import 'package:alkirtas/features/personalization/screens/settings/notifications_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../common/widgets/list_tiles/userProfile_tile.dart';
@@ -176,76 +175,6 @@ class _SettingScreenState extends State<SettingScreen> {
     );
   }
 
-  Future<void> _showNotificationStatus(BuildContext context) async {
-    final enabled = await PushNotificationService.areNotificationsEnabled();
-    if (!context.mounted) return;
-
-    Widget row(String label, bool ok, [String? detail]) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(ok ? Icons.check_circle : Icons.cancel,
-                  color: ok ? Colors.green : Colors.red, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(detail == null ? label : '$label\n$detail'),
-              ),
-            ],
-          ),
-        );
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Notifications'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            row('Autorisées sur ce téléphone', enabled),
-            row('Service de notifications connecté',
-                PushNotificationService.isFirebaseReady),
-            row('Inscrit aux annonces Alkirtas',
-                PushNotificationService.subscribed),
-            if (PushNotificationService.lastError != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  PushNotificationService.lastError!,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          if (!enabled)
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                openAppSettings();
-              },
-              child: const Text('Ouvrir les réglages'),
-            ),
-          if (PushNotificationService.isFirebaseReady &&
-              !PushNotificationService.subscribed)
-            TextButton(
-              onPressed: () async {
-                Navigator.of(ctx).pop();
-                await PushNotificationService.ensureSubscribed();
-                if (context.mounted) _showNotificationStatus(context);
-              },
-              child: const Text('Réessayer'),
-            ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -336,8 +265,8 @@ class _SettingScreenState extends State<SettingScreen> {
                   AlkSettingMenuTile(
                     icon: Iconsax.notification,
                     title: 'Notifications',
-                    subtitle: 'Definir tout type de message de notification',
-                    onPressed: () => _showNotificationStatus(context),
+                    subtitle: 'Promotions et nouveautés reçues',
+                    onPressed: () => Get.to(() => const NotificationsScreen()),
                   ),
                   SizedBox(height: AlkSize.spaceBtwSections),
                   // Log out

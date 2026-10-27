@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../common/widgets/appbar/appbar.dart';
 import '../../../../../common/widgets/products/cart/cart_menu_icon.dart';
+import '../../../../../common/widgets/icons/notification_bell_icon.dart';
 import '../../../../../navigation_menu.dart'; // Import NavigationMenu
 import '../../../../../utils/constants/colors.dart';
 import '../../../../../utils/constants/text_strings.dart';
@@ -40,6 +41,7 @@ class AlkHomeAppBar extends StatelessWidget {
         ],
       ),
       actions: [
+        const AlkNotificationBellIcon(),
          if (showCartIcon)
         AlkCartCounterIcon(
           onPressed: () {

@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alkirtas/config/firebase_options.dart';
+import 'package:alkirtas/services/notification_inbox_service.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 
 /// Background/terminated messages with a `notification` block are shown by
@@ -127,7 +128,10 @@ class PushNotificationService {
             importance: Importance.high,
           ));
 
-      FirebaseMessaging.onMessage.listen(_showForeground);
+      FirebaseMessaging.onMessage.listen((m) {
+        _showForeground(m);
+        NotificationInboxService.refresh();
+      });
       FirebaseMessaging.onMessageOpenedApp.listen((m) => onTap?.call(m.data));
       // A new FCM token (e.g. APNs arriving late) is a good moment to retry.
       messaging.onTokenRefresh.listen((_) => ensureSubscribed());
