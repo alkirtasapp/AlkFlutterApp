@@ -39,7 +39,8 @@ class _DeliveredOrderReviewDialogState
         .map((item) => Map<String, dynamic>.from(item))
         .where((item) {
       final productId = item['productId']?.toString() ?? '';
-      return productId.isNotEmpty &&
+      return DeliveredOrderReviewPromptService.isReviewableProductId(
+              productId) &&
           !widget.reviewedProductIds.contains(productId);
     }).toList();
     _isComplete = _items.isEmpty;
@@ -79,8 +80,13 @@ class _DeliveredOrderReviewDialogState
     final item = _items[_currentIndex];
     final productName = item['productName']?.toString().trim();
     final imageUrl = item['productImage']?.toString() ?? '';
-    final orderReference =
-        widget.order['prestashopOrderRef']?.toString().trim() ?? '';
+    final isStoreOrder = widget.order['isStoreOrder'] == true;
+    final orderReference = (isStoreOrder
+                ? widget.order['storeName']
+                : widget.order['prestashopOrderRef'])
+            ?.toString()
+            .trim() ??
+        '';
 
     return Column(
       children: [
@@ -109,9 +115,13 @@ class _DeliveredOrderReviewDialogState
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      orderReference.isEmpty
-                          ? 'Commande livrée'
-                          : 'Commande $orderReference · livrée',
+                      isStoreOrder
+                          ? (orderReference.isEmpty
+                              ? 'Achat en magasin'
+                              : 'Achat en magasin · $orderReference')
+                          : orderReference.isEmpty
+                              ? 'Commande livrée'
+                              : 'Commande $orderReference · livrée',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AlkColors.textSecondary,
                           ),
@@ -374,6 +384,7 @@ class _DeliveredOrderReviewDialogState
       final success = await ProductReviewService().submitReview(
         ProductReviewSubmission(
           orderId: widget.order['orderId']?.toString() ?? '',
+          isStoreOrder: widget.order['isStoreOrder'] == true,
           productId: productId,
           rating: _rating,
           title: 'Avis client',

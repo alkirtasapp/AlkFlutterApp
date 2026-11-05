@@ -6,6 +6,7 @@ import 'package:alkirtas/providers/wishlist_provider.dart';
 import 'package:alkirtas/features/shop/screens/product_details/widgets/wishlist_hint_overlay.dart';
 import 'package:alkirtas/common/widgets/images/AlkCircularImage.dart';
 import 'package:alkirtas/common/widgets/roundedContainer.dart';
+import 'package:alkirtas/common/widgets/products/ets_reward_badge.dart';
 import 'package:alkirtas/common/widgets/texts/brand__title_text_verif_icon.dart';
 import 'package:alkirtas/common/widgets/texts/product_title_text.dart';
 import 'package:alkirtas/data/controllers/quantity_controller.dart';
@@ -179,6 +180,10 @@ class _AlkProductMetadataState extends State<AlkProductMetadata> {
                           style: TextStyle(color: Colors.white),
                         ),
                       )),
+
+            // ETS reward for buying it ("+X DT"), nothing if none
+            const SizedBox(width: AlkSize.sm),
+            EtsRewardTag(productId: widget.productId),
 
             const Spacer(),
 

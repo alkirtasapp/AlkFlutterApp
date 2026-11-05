@@ -23,8 +23,8 @@ import 'package:alkirtas/providers/coupon_provider.dart';
 import 'package:alkirtas/features/shop/widgets/coupons_sheet.dart';
 import 'package:alkirtas/config/app_config.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
-import 'package:alkirtas/data/controllers/wallet_service.dart';
-import 'package:alkirtas/features/shop/screens/checkout/widgets/wallet_block.dart';
+import 'package:alkirtas/data/controllers/ets_service.dart';
+import 'package:alkirtas/features/shop/screens/checkout/widgets/ets_block.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key}); // Remove cartId
@@ -46,8 +46,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final gouverneratController = TextEditingController();
 
   bool isTermsAccepted = true; // Checkbox state
-  // How much the customer chose to take from their Odoo wallet (0 = not used).
-  double _walletAmount = 0.0;
+  // ETS voucher chosen in "Utiliser mes récompenses" (null = not used).
+  EtsVoucher? _etsVoucher;
 
   // Dynamic carriers
   List<Carrier> carriers = [];
@@ -224,14 +224,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Capped at the subtotal so a fixed-amount coupon can't push it negative.
     final double discountAmount = selectedCoupon?.discountOn(subtotal) ?? 0.0;
     double subtotalAfterDiscount = subtotal - discountAmount;
-    // Cap the wallet amount at what's actually due so the customer can never
-    // make the order negative if they edit the cart after applying.
-    double subtotalBeforeWallet = subtotalAfterDiscount + deliveryFee;
-    double walletAmount = _walletAmount;
-    if (walletAmount > subtotalBeforeWallet) {
-      walletAmount = subtotalBeforeWallet;
+    // The rewards voucher pays products only, never delivery (like PrestaShop).
+    double walletAmount = _etsVoucher?.amount ?? 0.0;
+    if (walletAmount > subtotalAfterDiscount) {
+      walletAmount = subtotalAfterDiscount;
     }
-    double totalWithDelivery = subtotalBeforeWallet - walletAmount;
+    double totalWithDelivery = subtotalAfterDiscount + deliveryFee - walletAmount;
 
     return Scaffold(
       appBar: AppBar(
@@ -431,12 +429,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(height: AlkSize.spaceBtwInputFields),
 
-                  // Wallet block (Odoo wallet credit) — hidden for non-whitelisted customers
-                  WalletBlock(
-                    cartTotal: subtotalBeforeWallet,
-                    currentAppliedAmount: walletAmount,
-                    onAmountChanged: (v) {
-                      setState(() => _walletAmount = v);
+                  // "Utiliser mes récompenses" (ETS voucher), like on the website;
+                  // hidden for customers outside "Clients concernés" or without balance.
+                  EtsBlock(
+                    productsTotal: subtotalAfterDiscount,
+                    hasCoupon: selectedCoupon != null,
+                    applied: _etsVoucher,
+                    onChanged: (v) {
+                      setState(() => _etsVoucher = v);
                     },
                   ),
 
@@ -479,7 +479,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('Portefeuille:'),
+                                  const Text('Récompenses:'),
                                   Text('-${walletAmount.toStringAsFixed(2)} TND'),
                                 ],
                               ),
@@ -516,6 +516,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 isLoading = true; // Start loading
                               });
 
+                              // Cart holding the ETS voucher until the order exists; on failure the
+                              // voucher is taken off it (the server refuses once the order is created).
+                              String? etsVoucherCartId;
+
                               try {
                                 // Step 1: Create Address (if needed)
                                 if (!isUsingExistingAddress) {
@@ -551,27 +555,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   final totalProducts = await calculateTotalProducts(cartProvider.cartItems);
                                   final totalProductsWt = await calculateTotalProductsWt(cartProvider);
 
-                                  // Step 2b: Apply wallet voucher to the PS cart, if any
+                                  // Step 2b: Put the rewards voucher (converted at "Appliquer") in the PS cart.
+                                  // If it can't be used, stop: the customer saw a lower total.
+                                  final etsVoucher = _etsVoucher;
                                   double effectiveWallet = 0.0;
-                                  if (walletAmount > 0) {
-                                    final applyResult = await WalletService.applyToCart(
+                                  if (etsVoucher != null && walletAmount > 0) {
+                                    final attachResult = await EtsService.attach(
                                       cartId: cartId,
-                                      amount: walletAmount,
+                                      idCartRule: etsVoucher.idCartRule,
                                     );
-                                    if (applyResult.success) {
-                                      effectiveWallet = applyResult.appliedAmount;
-                                    } else {
-                                      AlkLoggerHelper.warning(
-                                          'Wallet apply failed (${applyResult.error}). Continuing without wallet discount.');
+                                    if (!attachResult.success) {
+                                      AlkLoggerHelper.warning('ETS voucher attach failed: ${attachResult.error}');
                                       Get.snackbar(
-                                        'Portefeuille',
-                                        'Impossible d\'appliquer votre solde portefeuille. La commande continue sans.',
+                                        'Récompenses',
+                                        '${attachResult.error} Votre bon est gardé dans "Mes bons".',
                                         snackPosition: SnackPosition.TOP,
                                         backgroundColor: Colors.orange,
                                         colorText: Colors.white,
-                                        duration: const Duration(seconds: 3),
+                                        duration: const Duration(seconds: 5),
                                       );
+                                      setState(() => _etsVoucher = null);
+                                      return;
                                     }
+                                    effectiveWallet = walletAmount;
+                                    etsVoucherCartId = cartId;
                                   }
 
                                   // Total paid by the customer = order total minus what came from wallet
@@ -591,6 +598,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   );
 
                                   if (orderSuccess) {
+                                    etsVoucherCartId = null;
                                     // Show success notification
                                     Get.snackbar(
                                       "Succès",
@@ -644,6 +652,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   dismissDirection: DismissDirection.horizontal,
                                 );
                               } finally {
+                                // Order failed or crashed: the voucher goes back to "Mes bons".
+                                final voucherCartId = etsVoucherCartId;
+                                if (voucherCartId != null) {
+                                  await EtsService.remove(cartId: voucherCartId);
+                                }
                                 setState(() {
                                   isLoading = false; // Stop loading
                                 });

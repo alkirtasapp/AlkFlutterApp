@@ -27,6 +27,7 @@ import 'package:alkirtas/utils/logging/logger.dart';
 import '../../../../utils/backendData/userData.dart';
 import '../../../../providers/odoo_account_provider.dart';
 import '../../services/google_sign_in_service.dart';
+import 'package:alkirtas/data/controllers/ets_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -111,6 +112,8 @@ class _LoginScreenState extends State<LoginScreen> {
               UserData.id = customer['id'].toString();
               UserData.password = password;
               await OdooAccountProvider.savePassword(password);
+              // Ticket for paying with ETS: alkirtas.com checks the password itself.
+              unawaited(EtsService.loginWithPassword(email, password));
 
               // Restore phone from SharedPreferences (saved at signup, keyed by email)
               final phonePrefs = await SharedPreferences.getInstance();

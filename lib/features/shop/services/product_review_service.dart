@@ -7,6 +7,7 @@ import 'package:alkirtas/utils/logging/logger.dart';
 
 class ProductReviewSubmission {
   final String orderId;
+  final bool isStoreOrder;
   final String productId;
   final int rating;
   final String title;
@@ -14,6 +15,7 @@ class ProductReviewSubmission {
 
   const ProductReviewSubmission({
     required this.orderId,
+    this.isStoreOrder = false,
     required this.productId,
     required this.rating,
     required this.title,
@@ -39,6 +41,7 @@ class ProductReviewService {
         'id_customer': UserData.id,
         'customer_name': '${UserData.firstname} ${UserData.lastname}'.trim(),
         'order_id': review.orderId,
+        if (review.isStoreOrder) 'order_source': 'store',
         'iqitreviews_id_product': review.productId,
         'iqitreviews_rating': review.rating.toString(),
         'iqitreviews_title': review.title,

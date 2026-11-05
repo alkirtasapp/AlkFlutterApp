@@ -31,6 +31,7 @@ import 'package:alkirtas/features/shop/widgets/coupons_sheet.dart';
 import '../../../../providers/loyalty_provider.dart';
 import '../../../../providers/odoo_account_provider.dart';
 import '../../../../features/authentication/services/google_sign_in_service.dart';
+import 'package:alkirtas/data/controllers/ets_service.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -97,6 +98,7 @@ class _SettingScreenState extends State<SettingScreen> {
 
       // Sign out from Google (no-op if user logged in classically)
       await GoogleSignInService.signOut();
+      await EtsService.clearTicket();
 
       // 2. Clear static UserData
       UserData.id = '';
@@ -309,7 +311,7 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 }
 
-/// Widget to display loyalty points, balance, and QR code in an expandable card
+/// Widget to display loyalty points, balance, and QR code as a loyalty card
 class LoyaltyPointsCard extends StatefulWidget {
   const LoyaltyPointsCard({super.key});
 
@@ -317,8 +319,7 @@ class LoyaltyPointsCard extends StatefulWidget {
   State<LoyaltyPointsCard> createState() => _LoyaltyPointsCardState();
 }
 
-class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
-    with SingleTickerProviderStateMixin {
+class _LoyaltyPointsCardState extends State<LoyaltyPointsCard> {
   bool _isExpanded = false;
 
   @override
@@ -361,118 +362,84 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
           return const SizedBox.shrink();
         }
 
+        final deepColor =
+            Color.lerp(AlkColors.AppFirstColor, Colors.black, 0.4)!;
+        final endColor = Color.lerp(AlkColors.AppSecColor, Colors.black, 0.1)!;
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: AlkSize.defaultSpace),
           child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               setState(() {
                 _isExpanded = !_isExpanded;
               });
             },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
+            child: Container(
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    AlkColors.AppFirstColor.withOpacity(0.7),
-                    AlkColors.AppSecColor.withOpacity(0.7),
-                  ],
+                  colors: [deepColor, endColor],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
-                    color: AlkColors.AppFirstColor.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
+                    color: deepColor.withOpacity(0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
-              child: Column(
+              child: Stack(
                 children: [
-                  // Collapsed header - always visible
+                  // Decorative circle
+                  Positioned(
+                    top: -45,
+                    right: -35,
+                    child: Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
                   Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Icon
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Iconsax.card,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Summary info
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Carte de fidelite',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(Iconsax.gift, color: Colors.white70, size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${_formatPoints(loyaltyProvider.totalPoints)} pts',
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Icon(Iconsax.wallet, color: Colors.white70, size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${loyaltyProvider.walletBalance.toStringAsFixed(2)} TND',
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Expand/collapse indicator
-                        AnimatedRotation(
-                          turns: _isExpanded ? 0.5 : 0,
+                        _buildHeader(loyaltyProvider),
+                        const SizedBox(height: 16),
+                        _buildBalances(loyaltyProvider),
+
+                        // Expanded content
+                        AnimatedSize(
                           duration: const Duration(milliseconds: 300),
-                          child: const Icon(
-                            Iconsax.arrow_down_1,
-                            color: Colors.white70,
-                            size: 20,
+                          curve: Curves.easeInOut,
+                          alignment: Alignment.topCenter,
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: _isExpanded
+                                ? Column(
+                                    children: [
+                                      if (loyaltyProvider.hasBarcode) ...[
+                                        const SizedBox(height: 16),
+                                        _buildCodePanel(
+                                            loyaltyProvider.barcode!,
+                                            deepColor),
+                                      ],
+                                      _buildClaimButton(),
+                                    ],
+                                  )
+                                : null,
                           ),
                         ),
                       ],
                     ),
-                  ),
-
-                  // Expanded content
-                  AnimatedCrossFade(
-                    firstChild: const SizedBox.shrink(),
-                    secondChild: _buildExpandedContent(loyaltyProvider),
-                    crossFadeState: _isExpanded
-                        ? CrossFadeState.showSecond
-                        : CrossFadeState.showFirst,
-                    duration: const Duration(milliseconds: 300),
                   ),
                 ],
               ),
@@ -483,216 +450,296 @@ class _LoyaltyPointsCardState extends State<LoyaltyPointsCard>
     );
   }
 
-  /// Format points: integer if whole, otherwise up to 2 decimals (trimmed), with French comma.
-  /// e.g. 100.0 → "100", 100.5 → "100,5", 100.55 → "100,55", 100.50 → "100,5"
+  /// Format points: integer if whole, otherwise up to 2 decimals (trimmed), with
+  /// French comma and thousands separator.
+  /// e.g. 100.0 → "100", 100.5 → "100,5", 100.55 → "100,55", 1240.0 → "1 240"
   String _formatPoints(double points) {
     var s = points.toStringAsFixed(2);
     s = s.replaceAll(RegExp(r'0+$'), '');
     s = s.replaceAll(RegExp(r'\.$'), '');
-    return s.replaceAll('.', ',');
+    final parts = s.split('.');
+    parts[0] = parts[0]
+        .replaceAllMapped(RegExp(r'\B(?=(\d{3})+$)'), (_) => ' ');
+    return parts.join(',');
   }
 
-  Widget _buildExpandedContent(LoyaltyProvider loyaltyProvider) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Column(
-        children: [
-          const Divider(color: Colors.white24, height: 1),
-          const SizedBox(height: 16),
+  Widget _buildHeader(LoyaltyProvider loyaltyProvider) {
+    return Row(
+      children: [
+        const Icon(Iconsax.medal_star, color: Color(0xFFFFC83D), size: 26),
+        const SizedBox(width: 10),
+        const Expanded(
+          child: Text(
+            'Carte fidélité',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: loyaltyProvider.fetchLoyaltyPoints,
+          tooltip: 'Actualiser',
+          icon: const Icon(Iconsax.refresh, color: Colors.white70, size: 18),
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        ),
+        // Expand/collapse indicator
+        AnimatedRotation(
+          turns: _isExpanded ? 0.5 : 0,
+          duration: const Duration(milliseconds: 300),
+          child: const Icon(
+            Iconsax.arrow_down_1,
+            color: Colors.white70,
+            size: 20,
+          ),
+        ),
+      ],
+    );
+  }
 
-          // QR Code section
-          if (loyaltyProvider.hasBarcode) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+  Widget _buildBalances(LoyaltyProvider loyaltyProvider) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Loyalty Points
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Solde actuel',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
-              child: Column(
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    TweenAnimationBuilder<double>(
+                      tween: Tween<double>(
+                          begin: 0, end: loyaltyProvider.totalPoints),
+                      duration: const Duration(milliseconds: 1400),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, v, _) => Text(
+                        _formatPoints(v),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 38,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'points',
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        // Wallet Balance
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.16),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  Icon(Iconsax.wallet, color: Colors.white70, size: 13),
+                  SizedBox(width: 4),
                   Text(
-                    'Code-barres',
-                    style: TextStyle(
-                      color: AlkColors.AppFirstColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    loyaltyProvider.barcode!,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 11,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  QrImageView(
-                    data: loyaltyProvider.barcode!,
-                    version: QrVersions.auto,
-                    size: 120,
-                    backgroundColor: Colors.white,
-                    eyeStyle: QrEyeStyle(
-                      eyeShape: QrEyeShape.square,
-                      color: AlkColors.AppFirstColor,
-                    ),
-                    dataModuleStyle: QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.square,
-                      color: AlkColors.AppFirstColor,
-                    ),
+                    'Portefeuille',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // Points and Balance row
-          Row(
-            children: [
-              // Loyalty Points
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.yellowAccent.withOpacity(0.75),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Iconsax.gift, color: Colors.white70, size: 20),
-                      const SizedBox(height: 6),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween<double>(begin: 0, end: loyaltyProvider.totalPoints),
-                        duration: const Duration(milliseconds: 1400),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, v, _) => Text(
-                          _formatPoints(v),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const Text(
-                        'Points',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Wallet Balance
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.75),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Iconsax.wallet, color: Colors.white70, size: 20),
-                      const SizedBox(height: 6),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween<double>(begin: 0, end: loyaltyProvider.walletBalance),
-                        duration: const Duration(milliseconds: 1400),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, v, _) => Text(
-                          v.toStringAsFixed(2),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const Text(
-                        'TND',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
+              const SizedBox(height: 2),
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(
+                    begin: 0, end: loyaltyProvider.walletBalance),
+                duration: const Duration(milliseconds: 1400),
+                curve: Curves.easeOutCubic,
+                builder: (context, v, _) => Text(
+                  '${v.toStringAsFixed(2)} TND',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
 
-          const SizedBox(height: 12),
-
-          // Refresh button
-          TextButton.icon(
-            onPressed: () {
-              loyaltyProvider.fetchLoyaltyPoints();
-            },
-            icon: const Icon(Iconsax.refresh, size: 16),
-            label: const Text('Actualiser'),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white70,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-          ),
-
-          // Odoo account creation button — hidden once created
-          Consumer<OdooAccountProvider>(
-            builder: (context, odooProvider, _) {
-              if (odooProvider.isCreated) return const SizedBox.shrink();
-              return Column(
-                children: [
-                  const Divider(color: Colors.white24, height: 1),
-                  const SizedBox(height: 8),
-                  odooProvider.isLoading
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        )
-                      : TextButton.icon(
-                          onPressed: () =>
-                              _showOdooAccountFlow(context, odooProvider),
-                          icon: const Icon(Iconsax.card, size: 16),
-                          label: const Text('Réclamer votre carte de fidélité'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                          ),
-                        ),
-                  if (odooProvider.error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        odooProvider.error!,
-                        style: const TextStyle(
-                          color: Colors.redAccent,
-                          fontSize: 11,
-                        ),
-                        textAlign: TextAlign.center,
+  /// White strip holding the QR code, like the barcode area of a physical card.
+  Widget _buildCodePanel(String code, Color qrColor) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => _showQrDialog(code, qrColor),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              _buildQr(code, qrColor, 84),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Code-barres',
+                      style: TextStyle(
+                        color: qrColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                ],
-              );
-            },
+                    const SizedBox(height: 4),
+                    Text(
+                      code,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 13,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Touchez pour agrandir',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildQr(String code, Color color, double size) {
+    return QrImageView(
+      data: code,
+      version: QrVersions.auto,
+      size: size,
+      padding: EdgeInsets.zero,
+      backgroundColor: Colors.white,
+      eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: color),
+      dataModuleStyle: QrDataModuleStyle(
+        dataModuleShape: QrDataModuleShape.square,
+        color: color,
+      ),
+    );
+  }
+
+  /// Larger QR code so it is easy to scan at the till.
+  void _showQrDialog(String code, Color qrColor) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildQr(code, qrColor, 220),
+              const SizedBox(height: 12),
+              Text(
+                code,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontSize: 13,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Odoo account creation button — hidden once created
+  Widget _buildClaimButton() {
+    return Consumer<OdooAccountProvider>(
+      builder: (context, odooProvider, _) {
+        if (odooProvider.isCreated) return const SizedBox.shrink();
+        return Center(
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              odooProvider.isLoading
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    )
+                  : TextButton.icon(
+                      onPressed: () =>
+                          _showOdooAccountFlow(context, odooProvider),
+                      icon: const Icon(Iconsax.card, size: 16),
+                      label: const Text('Réclamer votre carte de fidélité'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                      ),
+                    ),
+              if (odooProvider.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    odooProvider.error!,
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 11,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 

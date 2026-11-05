@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/app_config.dart';
 import '../../../utils/backendData/userData.dart';
 import '../../../utils/logging/logger.dart';
+import '../../../data/controllers/ets_service.dart';
 
 /// Handles Google Sign-In + bridging to the PrestaShop `alkirtas_google_login`
 /// module's onetap endpoint (which logs in or auto-registers the customer).
@@ -78,6 +79,10 @@ class GoogleSignInService {
       UserData.firstname = (data['firstname'] ?? '').toString();
       UserData.lastname = (data['lastname'] ?? '').toString();
       UserData.password = ''; // Empty marks this as a Google session
+      // Ticket for paying with ETS (Google sign-in was verified by alkirtas.com).
+      if (data['app_ticket'] != null) {
+        await EtsService.saveTicket(data['app_ticket'].toString());
+      }
 
       // 5. Restore phone from SharedPreferences if previously stored (same key as classic flow)
       final prefs = await SharedPreferences.getInstance();

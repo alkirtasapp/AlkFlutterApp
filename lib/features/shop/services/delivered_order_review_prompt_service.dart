@@ -9,6 +9,10 @@ class DeliveredOrderReviewPromptService {
   DeliveredOrderReviewPromptService._();
 
   static const String _deliveredOrderStateId = '5';
+
+  /// In-store purchases younger than this are offered for review. If none is,
+  /// only the most recent in-store purchase is offered.
+  static const int _storeOrderReviewWindowDays = 30;
   static bool _isChecking = false;
   static bool _isSheetOpen = false;
 
@@ -26,8 +30,10 @@ class DeliveredOrderReviewPromptService {
       final prefs = await SharedPreferences.getInstance();
       if (!context.mounted) return;
 
+      final storeOrderIds = _reviewableStoreOrderIds(orders);
       final order = orders.cast<Map<String, dynamic>?>().firstWhere(
-            (order) => order != null && _shouldPrompt(order, prefs),
+            (order) =>
+                order != null && _shouldPrompt(order, prefs, storeOrderIds),
             orElse: () => null,
           );
 
@@ -58,13 +64,45 @@ class DeliveredOrderReviewPromptService {
     }
   }
 
+  /// Store orders eligible for a review prompt: those of the last
+  /// [_storeOrderReviewWindowDays] days, or else only the most recent one.
+  static Set<String> _reviewableStoreOrderIds(
+    List<Map<String, dynamic>> orders,
+  ) {
+    final storeOrders = orders
+        .where((order) => order['isStoreOrder'] == true)
+        .map((order) => (
+              id: order['orderId']?.toString() ?? '',
+              date: DateTime.tryParse(order['paidAt']?.toString() ?? ''),
+            ))
+        .where((order) => order.id.isNotEmpty && order.date != null)
+        .toList()
+      ..sort((a, b) => b.date!.compareTo(a.date!));
+    if (storeOrders.isEmpty) return {};
+
+    final limit = DateTime.now()
+        .subtract(const Duration(days: _storeOrderReviewWindowDays));
+    final recent = storeOrders.where((order) => order.date!.isAfter(limit));
+    return recent.isNotEmpty
+        ? recent.map((order) => order.id).toSet()
+        : {storeOrders.first.id};
+  }
+
   static bool _shouldPrompt(
     Map<String, dynamic> order,
     SharedPreferences prefs,
+    Set<String> reviewableStoreOrderIds,
   ) {
-    if (order['isWebsiteOrder'] != true) return false;
-    if (order['orderStateId']?.toString() != _deliveredOrderStateId) {
-      return false;
+    if (order['isStoreOrder'] == true) {
+      // Paid in store = already received
+      if (!reviewableStoreOrderIds.contains(order['orderId']?.toString())) {
+        return false;
+      }
+    } else {
+      if (order['isWebsiteOrder'] != true) return false;
+      if (order['orderStateId']?.toString() != _deliveredOrderStateId) {
+        return false;
+      }
     }
 
     final orderId = order['orderId']?.toString() ?? '';
@@ -74,7 +112,7 @@ class DeliveredOrderReviewPromptService {
     final hasUnreviewedProducts = items.any((item) {
       if (item is! Map) return false;
       final productId = item['productId']?.toString() ?? '';
-      return productId.isNotEmpty &&
+      return isReviewableProductId(productId) &&
           prefs.getBool(_reviewedProductKey(productId)) != true;
     });
     if (!hasUnreviewedProducts) return false;
@@ -102,6 +140,11 @@ class DeliveredOrderReviewPromptService {
           prefs.getBool(_reviewedProductKey(productId)) == true;
     }).toSet();
   }
+
+  /// Store items not found in PrestaShop come with product id 0: they have no
+  /// product page and cannot be reviewed.
+  static bool isReviewableProductId(String productId) =>
+      productId.isNotEmpty && productId != '0';
 
   static Future<void> markProductReviewed(String productId) async {
     final prefs = await SharedPreferences.getInstance();
