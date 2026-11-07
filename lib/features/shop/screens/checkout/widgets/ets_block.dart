@@ -67,12 +67,27 @@ class _EtsBlockState extends State<EtsBlock> {
     return max < 0 ? 0 : double.parse(max.toStringAsFixed(3));
   }
 
+  /// ETS minimum per voucher (0 = none).
+  double get _min {
+    final m = _rewards?.min ?? 0;
+    return m > 0 ? m : 0;
+  }
+
   double get _amount => double.tryParse(_amountController.text.replaceAll(',', '.').trim()) ?? 0;
 
-  bool get _amountValid => _amount > 0 && _amount <= _max;
+  bool get _amountValid => _amount > 0 && _amount >= _min && _amount <= _max;
 
   void _onAmountChanged() {
-    setState(() => _error = _amount > _max ? 'Maximum ${EtsService.format(_max)} DT.' : '');
+    final a = _amount;
+    setState(() {
+      if (a > _max) {
+        _error = 'Maximum ${EtsService.format(_max)} DT.';
+      } else if (a > 0 && a < _min) {
+        _error = 'Minimum ${EtsService.format(_min)} DT.';
+      } else {
+        _error = '';
+      }
+    });
   }
 
   Future<void> _convert() async {
@@ -123,6 +138,9 @@ class _EtsBlockState extends State<EtsBlock> {
     final vouchers = r.vouchers.where((v) => v.idCartRule != applied?.idCartRule).toList();
     if (applied == null && r.balance <= 0 && vouchers.isEmpty) return const SizedBox.shrink();
     final max = _max;
+    final min = _min;
+    // Under the ETS minimum (balance or order too small): no field, just say when it becomes usable.
+    final belowMin = max > 0 && max < min;
 
     return Container(
       width: double.infinity,
@@ -231,7 +249,17 @@ class _EtsBlockState extends State<EtsBlock> {
                   ),
                 ),
               ),
-            if (max > 0) ...[
+            if (belowMin)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  r.balance < min
+                      ? 'Utilisable dès ${EtsService.format(min)} TND de solde.'
+                      : "Utilisable sur une commande d'au moins ${EtsService.format(min)} TND.",
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                ),
+              ),
+            if (max > 0 && !belowMin) ...[
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -243,7 +271,9 @@ class _EtsBlockState extends State<EtsBlock> {
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.,]?\d{0,3}'))],
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: 'Montant (max ${EtsService.format(max)})',
+                        hintText: min > 0
+                            ? 'Montant (${EtsService.format(min)} à ${EtsService.format(max)})'
+                            : 'Montant (max ${EtsService.format(max)})',
                         hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
