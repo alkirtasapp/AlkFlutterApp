@@ -32,7 +32,7 @@ class PersonalizationService {
             }),
           )
           .timeout(_timeout);
-      final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      final decoded = _decode(response);
       if (response.statusCode == 200 && decoded is Map<String, dynamic>) {
         return decoded;
       }
@@ -54,7 +54,7 @@ class PersonalizationService {
         ...params,
       });
       final response = await http.get(uri).timeout(_timeout);
-      final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      final decoded = _decode(response);
       if (response.statusCode == 200 && decoded is Map<String, dynamic>) {
         return decoded;
       }
@@ -63,6 +63,13 @@ class PersonalizationService {
       AlkLoggerHelper.error('personalize $action failed', e);
     }
     return null;
+  }
+
+  /// alkirtas.com answers start with a UTF-8 BOM, which jsonDecode rejects.
+  static dynamic _decode(http.Response response) {
+    var text = utf8.decode(response.bodyBytes);
+    if (text.startsWith('﻿')) text = text.substring(1);
+    return jsonDecode(text);
   }
 
   static List<int> _ids(Map<String, dynamic>? data) =>
