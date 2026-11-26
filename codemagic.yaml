@@ -26,9 +26,8 @@ workflows:
         script: cd ios && pod install --repo-update
       - name: Build and Archive IPA
         script: |
-          flutter build ios --release \
-            --build-number=30 \
-            --build-name=1.1.4
+          # Version comes from pubspec.yaml (version: NAME+NUMBER)
+          flutter build ios --release
           cat > /tmp/ExportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
