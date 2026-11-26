@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:alkirtas/services/analytics_service.dart';
 
  class UserData {
   static String id = '';
@@ -21,6 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
     await prefs.setString('${_sessionPrefix}lastname', lastname);
     await prefs.setString('${_sessionPrefix}phone', phone);
     await prefs.setBool('isLoggedIn', id.isNotEmpty);
+    AnalyticsService.setUser(id);
   }
 
   /// Restore the last logged-in customer. Returns true if a session was found.
@@ -47,5 +49,6 @@ import 'package:shared_preferences/shared_preferences.dart';
       await prefs.remove('$_sessionPrefix$key');
     }
     await prefs.remove('isLoggedIn');
+    AnalyticsService.setUser('');
   }
 }

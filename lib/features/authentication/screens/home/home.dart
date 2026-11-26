@@ -23,6 +23,7 @@ import 'widgets/home_authors.dart';
 import 'widgets/trending_searches_widget.dart';
 import 'widgets/home_search_overlay.dart';
 import 'widgets/home_selling_feed.dart';
+import 'widgets/home_for_you.dart';
 
 /// Only changes the server-configured department blocks. Set false to restore them.
 const bool useRedesignedSections = true;
@@ -128,6 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: AlkBannerSlider(),
                   ),
                   const SizedBox(height: AlkSize.spaceBtwItems),
+
+                  // --- Pour vous (logged-in customers with history) ---
+                  const HomeForYou(),
 
                   // --- Trending Searches Section ---
                   const TrendingSearchesWidget(),

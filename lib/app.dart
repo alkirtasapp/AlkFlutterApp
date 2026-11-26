@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alkirtas/features/authentication/screens/onBoarding/onboarding.dart';
 import 'package:alkirtas/features/authentication/screens/onBoarding/animated_onboarding.dart';
 import 'package:alkirtas/navigation_menu.dart';
+import 'package:alkirtas/services/analytics_service.dart';
 import 'utils/theme/theme.dart';
 
 class App extends StatelessWidget {
@@ -24,6 +25,8 @@ class App extends StatelessWidget {
       themeMode: ThemeMode.light,
       theme: AlkAppTheme.lightTheme,
       darkTheme: AlkAppTheme.darkTheme,
+      // Reports each page to Google Analytics under its real name.
+      navigatorObservers: [AnalyticsRouteObserver()],
       home: FutureBuilder<bool>(
         future: _hasSeenOnboarding(),
         builder: (context, snapshot) {

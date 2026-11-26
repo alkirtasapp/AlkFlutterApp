@@ -4,6 +4,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive/hive.dart';
 import '../data/controllers/product_enriched_service.dart';
 import '../utils/logging/logger.dart';
+import '../services/analytics_service.dart';
+import '../services/personalization_service.dart';
 
 class WishlistItem {
   final String productId;
@@ -154,12 +156,61 @@ class WishlistProvider extends ChangeNotifier {
     ));
     await _saveToHive();
     notifyListeners();
+    PersonalizationService.addToWishlist(productId);
+    AnalyticsService.logAddToWishlist(
+        productId: productId, name: productName, price: effectivePrice);
   }
 
   Future<void> removeItem(String productId) async {
     _items.removeWhere((a) => a.productId == productId);
     await _saveToHive();
     notifyListeners();
+    PersonalizationService.removeFromWishlist(productId);
+  }
+
+  bool _isSyncing = false;
+
+  /// Logged-in customers: uploads this phone's wishlist to their account and
+  /// pulls in items saved from another phone, so the list survives a
+  /// reinstall or a new device. Removals are sent as they happen.
+  Future<void> syncWithServer() async {
+    if (_isSyncing || !PersonalizationService.isLoggedIn) return;
+    _isSyncing = true;
+    try {
+      final localIds = _items
+          .map((a) => int.tryParse(a.productId) ?? 0)
+          .where((id) => id > 0)
+          .toList();
+      final serverIds = await PersonalizationService.mergeWishlist(localIds);
+      if (serverIds == null) return;
+
+      final missing = serverIds.where((id) => !localIds.contains(id)).toList();
+      if (missing.isEmpty) return;
+
+      final enrichedMap = await ProductEnrichedService.fetchEnrichedByIds(missing);
+      for (final id in missing) {
+        final enriched = enrichedMap[id];
+        if (enriched == null || isWatched('$id')) continue;
+        final product = ProductEnrichedService.buildProductFromEnriched(enriched);
+        final images = (product['image_urls'] as List<String>?) ?? [];
+        _items.add(WishlistItem(
+          productId: '$id',
+          productName: (product['name'] as String?) ?? '',
+          imageUrl: images.isEmpty ? '' : images.first,
+          watchedPrice: _calcEffectivePrice(enriched),
+          taxRulesGroupId:
+              int.tryParse(enriched['id_tax_rules_group'].toString()) ?? 0,
+          lastKnownStock: int.tryParse(enriched['quantity'].toString()) ?? 0,
+          addedAt: DateTime.now(),
+        ));
+      }
+      await _saveToHive();
+      notifyListeners();
+    } catch (e) {
+      AlkLoggerHelper.error('Error syncing wishlist', e);
+    } finally {
+      _isSyncing = false;
+    }
   }
 
   /// Called on every app open. Fetches current prices + stock via enriched API

@@ -1,3 +1,4 @@
+import 'package:alkirtas/services/analytics_service.dart';
 import 'package:alkirtas/features/authentication/screens/login/log_in.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
 import 'package:alkirtas/utils/backendData/userData.dart';
@@ -174,6 +175,13 @@ class _AlkBottomAddToCartState extends State<AlkBottomAddToCart> {
                     final qty = quantity;
                     final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
+                    AnalyticsService.logAddToCart(
+                      productId: widget.productId,
+                      name: widget.productName,
+                      brand: widget.productBrand,
+                      price: double.tryParse(widget.productNewPrice) ?? 0,
+                      quantity: qty,
+                    );
                     await cartProvider.addToCart(
                       productId: widget.productId,
                       productName: widget.productName,

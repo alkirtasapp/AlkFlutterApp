@@ -27,6 +27,7 @@ import 'package:alkirtas/data/controllers/product_enriched_service.dart';
 import 'package:alkirtas/features/shop/screens/product_details/product_details.dart';
 import 'package:alkirtas/features/shop/services/delivered_order_review_prompt_service.dart';
 import 'package:alkirtas/features/shop/controllers/cart_provider.dart';
+import 'package:alkirtas/services/analytics_service.dart';
 
 class NavigationMenu extends StatefulWidget {
   /// the index of the selected tab
@@ -81,8 +82,13 @@ class _NavigationMenuState extends State<NavigationMenu>
     PushNotificationService.onTap = _openPushTarget;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Check price drops + stock comebacks silently on every app open
-      Provider.of<WishlistProvider>(context, listen: false).checkUpdates();
+      // Firebase is ready by now: attach the restored customer id to analytics
+      AnalyticsService.setUser(UserData.id);
+
+      // Sync the wishlist with the customer's account, then check price
+      // drops + stock comebacks silently on every app open
+      final wishlist = Provider.of<WishlistProvider>(context, listen: false);
+      wishlist.syncWithServer().whenComplete(wishlist.checkUpdates);
 
       // Ask for notification permission + subscribe to push broadcasts
       PushNotificationService.start();
@@ -339,6 +345,36 @@ class NavigationController extends GetxController {
 
   // For backward compatibility
   Rx<int> get selectedIndex => navIndex;
+
+  /// Screen names reported to Google Analytics, by page index.
+  static const List<String> analyticsPageNames = [
+    'HomeScreen',
+    'CategoriesMenuScreen',
+    'StoreDrawer',
+    'CartScreen',
+    'SettingScreen',
+  ];
+
+  void _reportPage(int index) {
+    if (index >= 0 && index < analyticsPageNames.length) {
+      AnalyticsService.logTab(analyticsPageNames[index]);
+    }
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Every tab switch (bottom bar, FAB, swipe, notification) goes through
+    // pageIndex, so one listener covers them all.
+    ever<int>(pageIndex, _reportPage);
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    AnalyticsService.markShellReady();
+    _reportPage(pageIndex.value);
+  }
 
   // Screens: Page 0 = Home, Pages 1-4 = Nav tabs
   List<Widget> get screens => [

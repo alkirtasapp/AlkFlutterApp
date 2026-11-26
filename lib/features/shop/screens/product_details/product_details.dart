@@ -8,6 +8,8 @@ import 'package:alkirtas/features/shop/screens/product_details/widgets/bottom_ad
 import 'package:alkirtas/features/shop/screens/product_details/widgets/product_features.dart';
 import 'package:alkirtas/features/audiobooks/widgets/audio_sample_player.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
+import 'package:alkirtas/services/analytics_service.dart';
+import 'package:alkirtas/services/personalization_service.dart';
 import '../../../../common/widgets/texts/section_heading.dart';
 import '../../../../utils/constants/size.dart';
 import '../../controllers/product_card_controller.dart';
@@ -52,7 +54,12 @@ class ProductDetails extends StatefulWidget {
   State<ProductDetails> createState() => _ProductDetailsState();
 }
 
-class _ProductDetailsState extends State<ProductDetails> {
+class _ProductDetailsState extends State<ProductDetails>
+    with WidgetsBindingObserver {
+  /// Time the page is actually on screen (paused while the app is in the
+  /// background), sent when the page closes.
+  final Stopwatch _onScreen = Stopwatch();
+
   List<String> productFeatures = [];
   bool isLoadingFeatures = true;
   List<String> productImages = [];
@@ -67,6 +74,43 @@ class _ProductDetailsState extends State<ProductDetails> {
     }.toList();
     _fetchProductFeatures();
     _fetchProductImages();
+
+    // Google Analytics (all users) + per-customer view history ("Pour vous")
+    AnalyticsService.logViewItem(
+      productId: widget.productId,
+      name: widget.productName,
+      brand: widget.productBrand,
+      price: double.tryParse(widget.productNewPrice) ?? 0,
+    );
+    PersonalizationService.logProductView(widget.productId);
+
+    WidgetsBinding.instance.addObserver(this);
+    _onScreen.start();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _onScreen.start();
+    } else {
+      _onScreen.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _onScreen.stop();
+    // Cap at 30 min: longer usually means the phone was left on the page.
+    final seconds = _onScreen.elapsed.inSeconds.clamp(0, 1800);
+    if (seconds > 0) {
+      AnalyticsService.logProductTime(
+          productId: widget.productId,
+          name: widget.productName,
+          seconds: seconds);
+      PersonalizationService.logProductTime(widget.productId, seconds);
+    }
+    super.dispose();
   }
 
   Future<void> _fetchProductFeatures() async {

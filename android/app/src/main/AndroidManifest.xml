@@ -32,6 +32,10 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="push_channel" />
+        <!-- Screens are reported by the app itself (AnalyticsService), not as MainActivity -->
+        <meta-data
+            android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
