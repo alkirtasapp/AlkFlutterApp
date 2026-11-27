@@ -32,6 +32,7 @@ import '../../../../providers/loyalty_provider.dart';
 import '../../../../providers/odoo_account_provider.dart';
 import '../../../../features/authentication/services/google_sign_in_service.dart';
 import 'package:alkirtas/data/controllers/ets_service.dart';
+import 'package:alkirtas/services/push_device_service.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -99,6 +100,11 @@ class _SettingScreenState extends State<SettingScreen> {
       // Sign out from Google (no-op if user logged in classically)
       await GoogleSignInService.signOut();
       await EtsService.clearTicket();
+
+      // Stop personal notifications for this customer on this phone
+      // (never blocks logout for more than a few seconds).
+      await PushDeviceService.unregister()
+          .timeout(const Duration(seconds: 5), onTimeout: () {});
 
       // 2. Clear static UserData
       UserData.id = '';

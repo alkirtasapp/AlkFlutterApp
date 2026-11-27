@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alkirtas/services/analytics_service.dart';
+import 'package:alkirtas/services/push_device_service.dart';
 
  class UserData {
   static String id = '';
@@ -23,6 +24,7 @@ import 'package:alkirtas/services/analytics_service.dart';
     await prefs.setString('${_sessionPrefix}phone', phone);
     await prefs.setBool('isLoggedIn', id.isNotEmpty);
     AnalyticsService.setUser(id);
+    PushDeviceService.register();
   }
 
   /// Restore the last logged-in customer. Returns true if a session was found.

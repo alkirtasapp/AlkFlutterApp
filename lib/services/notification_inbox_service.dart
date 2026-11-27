@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
+import 'package:alkirtas/config/app_config.dart';
+import 'package:alkirtas/utils/backendData/userData.dart';
 
 /// A notification already broadcast from the back office.
 class InboxNotification {
@@ -76,13 +78,22 @@ class NotificationInboxService {
           .whereType<int>()
           .toSet();
 
+      // Logged in: also get the notifications sent personally to this customer.
+      final uri = UserData.id.isEmpty
+          ? Uri.parse(_url)
+          : Uri.parse(_url).replace(queryParameters: {
+              'customer_id': UserData.id,
+              'ws_key': AppConfig.prestashopApiKey,
+            });
       final response =
-          await http.get(Uri.parse(_url)).timeout(const Duration(seconds: 10));
+          await http.get(uri).timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) {
         AlkLoggerHelper.warning('Notification inbox HTTP ${response.statusCode}');
         return;
       }
-      final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      var text = utf8.decode(response.bodyBytes);
+      if (text.startsWith('﻿')) text = text.substring(1); // server BOM
+      final decoded = jsonDecode(text);
       items = ((decoded['items'] as List?) ?? const [])
           .whereType<Map>()
           .map((e) => InboxNotification.fromJson(Map<String, dynamic>.from(e)))

@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alkirtas/config/firebase_options.dart';
 import 'package:alkirtas/services/notification_inbox_service.dart';
+import 'package:alkirtas/services/push_device_service.dart';
 import 'package:alkirtas/utils/logging/logger.dart';
 
 /// Background/terminated messages with a `notification` block are shown by
@@ -134,14 +135,18 @@ class PushNotificationService {
       });
       FirebaseMessaging.onMessageOpenedApp.listen((m) => onTap?.call(m.data));
       // A new FCM token (e.g. APNs arriving late) is a good moment to retry.
-      messaging.onTokenRefresh.listen((_) => ensureSubscribed());
+      messaging.onTokenRefresh.listen((token) {
+        ensureSubscribed();
+        PushDeviceService.register(token: token);
+      });
     } catch (e) {
       lastError = 'FCM: $e';
       AlkLoggerHelper.error('Push notification setup failed', e);
     }
 
-    // Subscribe independently so a slow step above can't block it.
-    ensureSubscribed();
+    // Subscribe independently so a slow step above can't block it, then
+    // link this phone to the logged-in customer (personal notifications).
+    ensureSubscribed().whenComplete(PushDeviceService.register);
 
     try {
       final initial = await messaging.getInitialMessage();
