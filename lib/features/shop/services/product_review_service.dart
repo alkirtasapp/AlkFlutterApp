@@ -52,6 +52,53 @@ class ProductReviewService {
     return parseSubmissionResponse(response);
   }
 
+  /// Products already reviewed and orders already dismissed, as stored on the
+  /// server (survives reinstalls). Null when the server can't be reached.
+  Future<({Set<String> reviewedProductIds, Set<String> dismissedOrderIds})?>
+      fetchPromptState() async {
+    try {
+      final response = await http
+          .get(Uri.parse(
+            '$_mobileEndpoint?process=getPromptState&ajax=1&ws_key=${AppConfig.prestashopApiKey}&id_customer=${UserData.id}',
+          ))
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      if (response.statusCode != 200 || data is! Map || data['success'] != true) {
+        return null;
+      }
+      Set<String> ids(dynamic list) =>
+          list is List ? list.map((id) => id.toString()).toSet() : <String>{};
+      return (
+        reviewedProductIds: ids(data['data']?['reviewed_product_ids']),
+        dismissedOrderIds: ids(data['data']?['dismissed_order_ids']),
+      );
+    } catch (e) {
+      AlkLoggerHelper.warning('Review prompt state unavailable: $e');
+      return null;
+    }
+  }
+
+  /// Records on the server that this order's review sheet must not come back.
+  Future<bool> dismissOrder(String orderId) async {
+    try {
+      final response = await http.post(
+        Uri.parse(
+          '$_mobileEndpoint?process=dismissOrder&ajax=1&ws_key=${AppConfig.prestashopApiKey}',
+        ),
+        headers: const {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {'id_customer': UserData.id, 'order_id': orderId},
+      ).timeout(const Duration(seconds: 10));
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      return response.statusCode == 200 && data is Map && data['success'] == true;
+    } catch (e) {
+      AlkLoggerHelper.warning('Review prompt dismissal not saved on server: $e');
+      return false;
+    }
+  }
+
   static bool parseSubmissionResponse(http.Response response) {
     dynamic data;
     try {
